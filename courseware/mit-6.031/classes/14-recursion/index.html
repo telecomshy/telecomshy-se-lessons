@@ -1,0 +1,886 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Reading 14: Recursion</title>
+
+
+<style>
+#factorial-call-stacks tbody td { vertical-align: bottom; }
+#factorial-call-stacks .panel { margin-bottom: 10px; }
+#factorial-call-stacks .panel div { padding: 5px 7px; }
+#factorial-call-stacks .return-value { font-weight: bold; color: #31708f; }
+#factorial-call-stacks thead { font-size: 80%;}
+</style>
+<script>
+window.onHandoutDidRender = function() {
+  $('a[href*="pythontutor.com"]').each(function() {
+    $(this).attr('target', '_blank');
+  });
+}
+</script>
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#reading_14_recursion">Reading 14: Recursion</a></li><li><a href="#recursion">Recursion</a></li><li><a href="#choosing_the_right_decomposition_for_a_problem">Choosing the right decomposition for a problem</a></li><li><a href="#structure_of_recursive_implementations">Structure of recursive implementations</a></li><li><a href="#helper_methods">Helper methods</a></li><li><a href="#choosing_the_right_recursive_subproblem">Choosing the right recursive subproblem</a></li><li><a href="#recursive_problems_vs_recursive_data">Recursive problems vs. recursive data</a></li><li><a href="#mutual_recursion">Mutual recursion</a></li><li><a href="#reentrant_code">Reentrant code</a></li><li><a href="#when_to_use_recursion_rather_than_iteration">When to use recursion rather than iteration</a></li><li><a href="#common_mistakes_in_recursive_implementations">Common mistakes in recursive implementations</a></li><li><a href="#summary">Summary</a></li><li><a href="#more_practice">More practice</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="reading_14_recursion"><iframe class="exercises-status" src="https://6031.mit.edu/handx/sp21-java/status.php"></iframe><a class="jump" href="#reading_14_recursion"></a>Reading 14: Recursion</h1><div data-outline="reading_14_recursion">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><h4 id="@software_6-031"><a class="jump" href="#@software_6-031"></a>Software in 6.031</h4>
+
+<table class="table table-striped no-markdown" id="@safe_bugseasy_understandready">
+<tbody><tr><th width="33%"><a class="jump" href="#@safe_bugseasy_understandready"></a>Safe from bugs</th><th>Easy to understand</th><th>Ready for change</th></tr>
+<tr><td>
+  Correct today and correct in the unknown future.
+</td><td>
+  Communicating clearly with future programmers, including future you.
+</td><td>
+  Designed to accommodate change without rewriting.
+</td></tr>
+</tbody></table>
+
+<h4 id="@objectives"><a class="jump" href="#@objectives"></a>Objectives</h4>
+
+<p id="@after_today-s_class"><a class="jump" href="#@after_today-s_class"></a>After today’s class, you should:</p>
+
+<ul id="@be_able_decompose">
+<li><a class="jump" href="#@be_able_decompose"></a>be able to decompose a recursive problem into recursive steps and base cases</li>
+<li>know when and how to use helper methods in recursion</li>
+<li>understand the advantages and disadvantages of recursion vs. iteration</li>
+</ul>
+
+<h2 id="recursion"><a class="jump" href="#recursion"></a>Recursion</h2><div data-outline="recursion">
+
+<p id="@today-s_class_going"><a class="jump" href="#@today-s_class_going"></a>In today’s class, we’re going to talk about how to implement a method, once you already have a specification.  We’ll focus on one particular technique, <em>recursion</em>.  Recursion is not appropriate for every problem, but it’s an important tool in your software development toolbox, and one that many people scratch their heads over.  We want you to be comfortable and competent with recursion, because you will encounter it over and over.  (That’s a joke, but it’s also true.)</p>
+
+<p>Recursion should not be new to you, and you should have seen and written recursive functions before.
+Today’s class will delve more deeply into recursion than you may have gone before.
+Comfort with recursive implementations will be necessary for upcoming classes.</p>
+
+<p id="@recursive_function_defined"><a class="jump" href="#@recursive_function_defined"></a>A recursive function is defined in terms of <em>base cases</em> and <em>recursive steps</em>.</p>
+
+<ul id="@base_case_compute">
+<li><a class="jump" href="#@base_case_compute"></a>In a base case, we compute the result immediately given the inputs to the function call.</li>
+<li>In a recursive step, we compute the result with the help of one or more <em>recursive calls</em> to this same function, but with the inputs somehow reduced in size or complexity, closer to a base case.</li>
+</ul>
+
+<p id="@consider_writing_function"><a class="jump" href="#@consider_writing_function"></a>Consider writing a function to compute factorial.
+We can define factorial in two different ways:</p>
+
+<div class="pull-margin"><table class="table no-markdown" style="margin-bottom:0;" id="@productrecurrence_relation_empty">
+<thead>
+<tr><th width="50%"><a class="jump" href="#@productrecurrence_relation_empty"></a>Product</th><th>Recurrence relation</th></tr>
+</thead>
+<tbody><tr>
+<td><img src="figures/factorial-product.png" width="294"><br> (where the empty product equals<br> &nbsp;multiplicative identity <em>1</em>)</td>
+<td><img src="figures/factorial-recurrence.png" width="232"></td>
+</tr>
+</tbody></table>
+
+<p id="@which_leads_two"><a class="jump" href="#@which_leads_two"></a>which leads to two different implementations:</p>
+
+<table class="table" style="margin-bottom:0;"><thead class="no-markdown">
+<tr><th width="50%">Iterative</th><th>Recursive</th></tr>
+</thead>
+<tbody><tr><td><pre id="@public_static_long_factorial-int_n_long"><a class="jump" href="#@public_static_long_factorial-int_n_long"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">long</span> <span class="hljs-title">factorial</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+  <span class="hljs-keyword">long</span> fact = <span class="hljs-number">1</span>;
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">1</span>; i &lt;= n; i++) {
+    fact = fact * i;
+  }
+  <span class="hljs-keyword">return</span> fact;
+}</code></pre></td>
+<td><pre id="@public_static_long_factorial-int_n_if_n_0_return_1_else_return"><a class="jump" href="#@public_static_long_factorial-int_n_if_n_0_return_1_else_return"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">long</span> <span class="hljs-title">factorial</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+  <span class="hljs-keyword">if</span> (n == <span class="hljs-number">0</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-keyword">return</span> n * factorial(n-<span class="hljs-number">1</span>);
+  }
+}</code></pre></td></tr></tbody></table></div>
+
+<p id="@recursive_implementation_right"><a class="jump" href="#@recursive_implementation_right"></a>In the recursive implementation on the right, the base case is <em>n = 0</em>, where we compute and return the result immediately: <em>0!</em> is defined to be <em>1</em>.
+The recursive step is <em>n &gt; 0</em>, where we compute the result with the help of a recursive call to obtain <em>(n-1)!</em>, then complete the computation by multiplying by <em>n</em>.</p>
+
+<p id="@visualize_execution_recursive"><a class="jump" href="#@visualize_execution_recursive"></a>To visualize the execution of a recursive function, it is helpful to diagram the <em>call stack</em> of currently-executing functions as the computation proceeds.</p>
+
+<p id="@run_recursive_implementation"><a class="jump" href="#@run_recursive_implementation"></a>Let’s run the recursive implementation of <code>factorial</code> in a main method:</p>
+
+<pre id="@public_static_void"><a class="jump" href="#@public_static_void"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>{
+    <span class="hljs-keyword">long</span> x = factorial(<span class="hljs-number">3</span>);
+}</code></pre>
+
+<p id="@each_step_time"><a class="jump" href="#@each_step_time"></a>At each step, with time moving left to right:</p>
+
+<div id="factorial-call-stacks" class="pull-margin overflow:scroll"><table class="table"><thead><tr><td><p id="@starts_inmain"><a class="jump" href="#@starts_inmain"></a>starts in<br><code>main</code></p></td>
+<td><p id="@callsfactorial-3"><a class="jump" href="#@callsfactorial-3"></a>calls<br><code>factorial(3)</code></p></td>
+<td><p id="@callsfactorial-2"><a class="jump" href="#@callsfactorial-2"></a>calls<br><code>factorial(2)</code></p></td>
+<td><p id="@callsfactorial-1"><a class="jump" href="#@callsfactorial-1"></a>calls<br><code>factorial(1)</code></p></td>
+<td><p id="@callsfactorial-0"><a class="jump" href="#@callsfactorial-0"></a>calls<br><code>factorial(0)</code></p></td>
+<td><p id="@returns_tofactorial-1"><a class="jump" href="#@returns_tofactorial-1"></a>returns to<br><code>factorial(1)</code></p></td>
+<td><p id="@returns_tofactorial-2"><a class="jump" href="#@returns_tofactorial-2"></a>returns to<br><code>factorial(2)</code></p></td>
+<td><p id="@returns_tofactorial-3"><a class="jump" href="#@returns_tofactorial-3"></a>returns to<br><code>factorial(3)</code></p></td>
+<td><p id="@returns_tomain"><a class="jump" href="#@returns_tomain"></a>returns to<br><code>main</code></p></td></tr></thead>
+<tbody class="no-markdown">
+<tr>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">main</div><div class="panel-body">&nbsp;</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 2<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 1<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 2<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 0<br><span class="return-value">returns 1</span></div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 1<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 2<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 1<br><span class="return-value">returns 1</span></div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 2<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 2<br><span class="return-value">returns 2</span></div></div>
+  <div class="panel panel-info"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br>&nbsp;</div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">factorial</div><div class="panel-body">n = 3<br><span class="return-value">returns 6</span></div></div>
+  <div class="panel panel-info"><div class="panel-heading">main</div><div class="panel-body">x</div></div>
+</td>
+<td>
+  <div class="panel panel-primary"><div class="panel-heading">main</div><div class="panel-body">x = 6</div></div>
+</td>
+</tr>
+</tbody></table></div>
+
+<p id="@diagram_can_see"><a class="jump" href="#@diagram_can_see"></a>In the diagram, we can see how the stack grows as <code>main</code> calls <code>factorial</code> and <code>factorial</code> then calls <em>itself</em>, until <code>factorial(0)</code> does not make a recursive call.
+Then the call stack unwinds, each call to <code>factorial</code> returning its answer to the caller, until <code>factorial(3)</code> returns to <code>main</code>.</p>
+
+<p id="@here-s_interactive_visualization"><a class="jump" href="#@here-s_interactive_visualization"></a>Here’s an <a href="http://www.pythontutor.com/visualize.html#code=public+class+Factorial+%7B%0A++++public+static+void+main(String%5B%5D+args)+%7B%0A++++++++long+x+%3D+factorial(3)%3B%0A++++%7D%0A++++public+static+long+factorial(int+n)+%7B%0A++++++++if+(n+%3D%3D+0)+%7B%0A++++++++++++return+1%3B%0A++++++++%7D+else+%7B%0A++++++++++++return+n+*+factorial(n-1)%3B%0A++++++++%7D%0A++++%7D%0A%7D&amp;mode=display&amp;origin=opt-frontend.js&amp;cumulative=false&amp;heapPrimitives=false&amp;textReferences=false&amp;py=java&amp;rawInputLstJSON=%5B%5D&amp;curInstr=0" target="_blank"><strong>interactive visualization of <code>factorial</code></strong></a>.
+You can step through the computation to see the recursion in action.
+New stack frames grow down instead of up in this visualization.</p>
+
+<p id="@you-ve_probably_seen"><a class="jump" href="#@you-ve_probably_seen"></a>You’ve probably seen factorial before, because it’s a common example for recursive functions.  Another common example is the Fibonacci series: </p>
+
+<pre id="@param_n_0"><a class="jump" href="#@param_n_0"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> n &gt;= 0
+ * <span class="hljs-doctag">@return</span> the nth Fibonacci number 
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">fibonacci</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+    <span class="hljs-keyword">if</span> (n == <span class="hljs-number">0</span> || n == <span class="hljs-number">1</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>; <span class="hljs-comment">// base cases</span>
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> fibonacci(n-<span class="hljs-number">1</span>) + fibonacci(n-<span class="hljs-number">2</span>); <span class="hljs-comment">// recursive step</span>
+    }
+}</code></pre>
+
+<p id="@fibonacci_interesting_because"><a class="jump" href="#@fibonacci_interesting_because"></a>Fibonacci is interesting because it has multiple base cases: <em>n = 0</em> and <em>n = 1</em>.  You can look at an <a href="http://www.pythontutor.com/visualize.html#code=public+class+Fibonacci+%7B%0A++++public+static+void+main(String%5B%5D+args)+%7B%0A++++++++int+x+%3D+fibonacci(3)%3B%0A++++%7D%0A++++public+static+int+fibonacci(int+n)+%7B%0A++++++++if+(n+%3D%3D+0+%7C%7C+n+%3D%3D+1)+%7B%0A++++++++++++return+1%3B%0A++++++++%7D+else+%7B%0A++++++++++++return+fibonacci(n-1)+%2B+fibonacci(n-2)%3B%0A++++++++%7D%0A++++%7D%0A%7D&amp;mode=display&amp;origin=opt-frontend.js&amp;cumulative=false&amp;heapPrimitives=false&amp;textReferences=false&amp;py=java&amp;rawInputLstJSON=%5B%5D&amp;curInstr=0" target="_blank"><strong>interactive visualization of Fibonacci</strong></a>.
+Notice that where factorial’s stack steadily grows to a maximum depth and then shrinks back to the answer, Fibonacci’s stack grows and shrinks repeatedly over the course of the computation.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-recursion"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-recursion-recursive_factorial" data-target="#ex-recursion-recursive_factorial" data-toggle="collapse"><a class="jump" href="#@ex-recursion-recursive_factorial"></a><span class="panel-title">Recursive factorial</span></div><div class="panel-collapse collapse exercise-panel" id="ex-recursion-recursive_factorial" data-outline="recursive_factorial" data-ex-id="recursion/recursive_factorial" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@consider_recursive_implementation_factorial_function"><a class="jump" href="#@consider_recursive_implementation_factorial_function"></a>Consider this recursive implementation of the factorial function.</p>
+
+<pre id="@public_static_long_factorial-int_n_if_n_0_return_1_called_base"><a class="jump" href="#@public_static_long_factorial-int_n_if_n_0_return_1_called_base"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">long</span> <span class="hljs-title">factorial</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+    <span class="hljs-keyword">if</span> (n == <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>; <span class="hljs-comment">// this is called the base case</span>
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> n * factorial(n-<span class="hljs-number">1</span>); <span class="hljs-comment">// this is the recursive step</span>
+    }
+}</code></pre>
+
+<p id="@factorial-3_many_times"><a class="jump" href="#@factorial-3_many_times"></a>For <code>factorial(3)</code>, how many times will the base case <code>return 1</code> be executed?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="0 times"><label for="md_converted_choice_1_0"><input type="radio" id="md_converted_choice_1_0" name="md_converted_radio_1">0 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="1 time"><label for="md_converted_choice_1_1"><input type="radio" id="md_converted_choice_1_1" name="md_converted_radio_1">1 time</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="2 times"><label for="md_converted_choice_1_2"><input type="radio" id="md_converted_choice_1_2" name="md_converted_radio_1">2 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="3 times"><label for="md_converted_choice_1_3"><input type="radio" id="md_converted_choice_1_3" name="md_converted_radio_1">3 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="more than 3 times"><label for="md_converted_choice_1_4"><input type="radio" id="md_converted_choice_1_4" name="md_converted_radio_1">more than 3 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-recursion-recursive_fibonacci" data-target="#ex-recursion-recursive_fibonacci" data-toggle="collapse"><a class="jump" href="#@ex-recursion-recursive_fibonacci"></a><span class="panel-title">Recursive Fibonacci</span></div><div class="panel-collapse collapse exercise-panel" id="ex-recursion-recursive_fibonacci" data-outline="recursive_fibonacci" data-ex-id="recursion/recursive_fibonacci" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@consider_recursive_implementation_fibonacci_sequence"><a class="jump" href="#@consider_recursive_implementation_fibonacci_sequence"></a>Consider this recursive implementation of the Fibonacci sequence.</p>
+
+<pre id="@public_static_int"><a class="jump" href="#@public_static_int"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">fibonacci</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n)</span> </span>{
+    <span class="hljs-keyword">if</span> (n == <span class="hljs-number">0</span> || n == <span class="hljs-number">1</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>; <span class="hljs-comment">// base cases</span>
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> fibonacci(n-<span class="hljs-number">1</span>) + fibonacci(n-<span class="hljs-number">2</span>); <span class="hljs-comment">// recursive step</span>
+    }
+}</code></pre>
+
+<p id="@fibonacci-3_many_times"><a class="jump" href="#@fibonacci-3_many_times"></a>For <code>fibonacci(3)</code>, how many times will the base case <code>return 1</code> be executed?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="0 times"><label for="md_converted_choice_2_0"><input type="radio" id="md_converted_choice_2_0" name="md_converted_radio_2">0 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="1 time"><label for="md_converted_choice_2_1"><input type="radio" id="md_converted_choice_2_1" name="md_converted_radio_2">1 time</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="2 times"><label for="md_converted_choice_2_2"><input type="radio" id="md_converted_choice_2_2" name="md_converted_radio_2">2 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="3 times"><label for="md_converted_choice_2_3"><input type="radio" id="md_converted_choice_2_3" name="md_converted_radio_2">3 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="more than 3 times"><label for="md_converted_choice_2_4"><input type="radio" id="md_converted_choice_2_4" name="md_converted_radio_2">more than 3 times</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="choosing_the_right_decomposition_for_a_problem"><a class="jump" href="#choosing_the_right_decomposition_for_a_problem"></a>Choosing the right decomposition for a problem</h2><div data-outline="choosing_the_right_decomposition_for_a_problem">
+
+<p id="@finding_right_way"><a class="jump" href="#@finding_right_way"></a>Finding the right way to decompose a problem, such as a method implementation, is important.  Good decompositions are simple, short, easy to understand, safe from bugs, and ready for change.</p>
+
+<p id="@recursion_elegant_simple"><a class="jump" href="#@recursion_elegant_simple"></a>Recursion is an elegant and simple decomposition for some problems.  Suppose we want to implement this specification:</p>
+
+<pre id="@param_word_consisting"><a class="jump" href="#@param_word_consisting"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> word consisting only of letters A-Z or a-z
+ * <span class="hljs-doctag">@return</span> all subsequences of word, separated by commas,
+ * where a subsequence is a string of letters found in word 
+ * in the same order that they appear in word.
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequences</span><span class="hljs-params">(String word)</span></span></code></pre>
+
+<p id="@example_subsequences-abc_might"><a class="jump" href="#@example_subsequences-abc_might"></a>For example, <code>subsequences("abc")</code> might return <code>"abc,ab,bc,ac,a,b,c,"</code>.  Note the trailing comma preceding the empty subsequence, which is also a valid subsequence.</p>
+
+<p id="@problem_lends_itself"><a class="jump" href="#@problem_lends_itself"></a>This problem lends itself to an elegant recursive decomposition.  Take the first letter of the word.  We can form one set of subsequences that <em>include</em> that letter, and another set of subsequences that exclude that letter, and those two sets completely cover the set of possible subsequences.</p>
+
+<pre id="@1_public_static"><a class="jump" href="#@1_public_static"></a><code class="language-java hljs"> <span class="hljs-number">1</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequences</span><span class="hljs-params">(String word)</span> </span>{
+ <span class="hljs-number">2</span>     <span class="hljs-keyword">if</span> (word.isEmpty()) {
+ <span class="hljs-number">3</span>         <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>; <span class="hljs-comment">// base case</span>
+ <span class="hljs-number">4</span>     } <span class="hljs-keyword">else</span> {
+ <span class="hljs-number">5</span>         <span class="hljs-keyword">char</span> firstLetter = word.charAt(<span class="hljs-number">0</span>);
+ <span class="hljs-number">6</span>         String restOfWord = word.substring(<span class="hljs-number">1</span>);
+ <span class="hljs-number">7</span>         
+ <span class="hljs-number">8</span>         String subsequencesOfRest = subsequences(restOfWord);
+ <span class="hljs-number">9</span>         
+<span class="hljs-number">10</span>         String result = <span class="hljs-string">""</span>;
+<span class="hljs-number">11</span>         <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> withTrailingEmptyStrings = -<span class="hljs-number">1</span>; <span class="hljs-comment">// see String.split() spec</span>
+<span class="hljs-number">12</span>         <span class="hljs-keyword">for</span> (String subsequence : subsequencesOfRest.split(<span class="hljs-string">","</span>, withTrailingEmptyStrings)) {
+<span class="hljs-number">13</span>             result += <span class="hljs-string">","</span> + subsequence;
+<span class="hljs-number">14</span>             result += <span class="hljs-string">","</span> + firstLetter + subsequence;
+<span class="hljs-number">15</span>         }
+<span class="hljs-number">16</span>         result = result.substring(<span class="hljs-number">1</span>); <span class="hljs-comment">// remove extra leading comma</span>
+<span class="hljs-number">17</span>         <span class="hljs-keyword">return</span> result;
+<span class="hljs-number">18</span>     }
+<span class="hljs-number">19</span> }</code></pre>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-choosing_the_right_decomposition_for_a_problem"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-choosing_the_right_decomposition_for_a_problem-subsequencesc" data-target="#ex-choosing_the_right_decomposition_for_a_problem-subsequencesc" data-toggle="collapse"><a class="jump" href="#@ex-choosing_the_right_decomposition_for_a_problem-subsequencesc"></a><span class="panel-title">subsequences("c")</span></div><div class="panel-collapse collapse exercise-panel" id="ex-choosing_the_right_decomposition_for_a_problem-subsequencesc" data-outline="subsequencesc" data-ex-id="choosing_the_right_decomposition_for_a_problem/subsequencesc" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@does_subsequences-c_return"><a class="jump" href="#@does_subsequences-c_return"></a>What does <code>subsequences("c")</code> return?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="&quot;c&quot;"><label for="md_converted_choice_3_0"><input type="radio" id="md_converted_choice_3_0" name="md_converted_radio_3"><code>"c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;&quot;"><label for="md_converted_choice_3_1"><input type="radio" id="md_converted_choice_3_1" name="md_converted_radio_3"><code>""</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;,c&quot;"><label for="md_converted_choice_3_2"><input type="radio" id="md_converted_choice_3_2" name="md_converted_radio_3"><code>",c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;c,&quot;"><label for="md_converted_choice_3_3"><input type="radio" id="md_converted_choice_3_3" name="md_converted_radio_3"><code>"c,"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-choosing_the_right_decomposition_for_a_problem-subsequencesgc" data-target="#ex-choosing_the_right_decomposition_for_a_problem-subsequencesgc" data-toggle="collapse"><a class="jump" href="#@ex-choosing_the_right_decomposition_for_a_problem-subsequencesgc"></a><span class="panel-title">subsequences("gc")</span></div><div class="panel-collapse collapse exercise-panel" id="ex-choosing_the_right_decomposition_for_a_problem-subsequencesgc" data-outline="subsequencesgc" data-ex-id="choosing_the_right_decomposition_for_a_problem/subsequencesgc" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@does_subsequences-gc_return"><a class="jump" href="#@does_subsequences-gc_return"></a>What does <code>subsequences("gc")</code> return?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="&quot;g,c&quot;"><label for="md_converted_choice_4_0"><input type="radio" id="md_converted_choice_4_0" name="md_converted_radio_4"><code>"g,c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;,g,c,gc&quot;"><label for="md_converted_choice_4_1"><input type="radio" id="md_converted_choice_4_1" name="md_converted_radio_4"><code>",g,c,gc"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;,gc,g,c&quot;"><label for="md_converted_choice_4_2"><input type="radio" id="md_converted_choice_4_2" name="md_converted_radio_4"><code>",gc,g,c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;g,c,gc&quot;"><label for="md_converted_choice_4_3"><input type="radio" id="md_converted_choice_4_3" name="md_converted_radio_4"><code>"g,c,gc"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="structure_of_recursive_implementations"><a class="jump" href="#structure_of_recursive_implementations"></a>Structure of recursive implementations</h2><div data-outline="structure_of_recursive_implementations">
+
+<p id="@recursive_implementation_always"><a class="jump" href="#@recursive_implementation_always"></a>A recursive implementation always has two parts:</p>
+
+<ul>
+<li><p id="@base_case_which"><a class="jump" href="#@base_case_which"></a><mark data-structure-text="base case" id="^base_case"><strong>base case</strong></mark>, which is the simplest, smallest instance of the problem, that can’t be decomposed any further.  Base cases often correspond to emptiness – the empty string, the empty list, the empty set, the empty tree, zero, etc.</p></li>
+<li><p id="@recursive_step_which"><a class="jump" href="#@recursive_step_which"></a><mark data-structure-text="recursive step" id="^recursive_step"><strong>recursive step</strong></mark>, which <strong>decomposes</strong> a larger instance of the problem into one or more simpler or smaller instances that can be solved by recursive calls, and then <strong>recombines</strong> the results of those subproblems to produce the solution to the original problem.</p></li>
+</ul>
+
+<p id="@important_recursive_step"><a class="jump" href="#@important_recursive_step"></a>It’s important for the recursive step to transform the problem instance into something smaller, otherwise the recursion may never end.  If every recursive step shrinks the problem, and the base case lies at the bottom, then the recursion is guaranteed to be finite. </p>
+
+<p id="@recursive_implementation_may"><a class="jump" href="#@recursive_implementation_may"></a>A recursive implementation may have more than one base case, or more than one recursive step.  For example, the Fibonacci function has two base cases, <em>n = 0</em> and <em>n = 1</em>.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-structure_of_recursive_implementations"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-structure_of_recursive_implementations-recursive_structure" data-target="#ex-structure_of_recursive_implementations-recursive_structure" data-toggle="collapse"><a class="jump" href="#@ex-structure_of_recursive_implementations-recursive_structure"></a><span class="panel-title">Recursive structure</span></div><div class="panel-collapse collapse exercise-panel" id="ex-structure_of_recursive_implementations-recursive_structure" data-outline="recursive_structure" data-ex-id="structure_of_recursive_implementations/recursive_structure" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@recursive_methods_base"><a class="jump" href="#@recursive_methods_base"></a>Recursive methods have a base case and a recursive step.
+What other concepts from computer science also have (the equivalent of) a base case and a recursive step?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="proof by induction"><label for="md_converted_choice_5_0"><input type="checkbox" id="md_converted_choice_5_0">proof by induction</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="regression testing"><label for="md_converted_choice_5_1"><input type="checkbox" id="md_converted_choice_5_1">regression testing</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="recessive functions"><label for="md_converted_choice_5_2"><input type="checkbox" id="md_converted_choice_5_2">recessive functions</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="binary trees"><label for="md_converted_choice_5_3"><input type="checkbox" id="md_converted_choice_5_3">binary trees</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="helper_methods"><a class="jump" href="#helper_methods"></a>Helper methods</h2><div data-outline="helper_methods">
+
+<p id="@recursive_implementation_just"><a class="jump" href="#@recursive_implementation_just"></a>The recursive implementation we just saw for <code>subsequences()</code> is one possible recursive decomposition of the problem.  We took a solution to a subproblem – the subsequences of the remainder of the string after removing the first character – and used it to construct solutions to the original problem, by taking each subsequence and adding the first character or omitting it.  This is in a sense a <em>direct</em> recursive implementation, where we are using the existing specification of the recursive method to solve the subproblems. </p>
+
+<p id="@some_cases_useful"><a class="jump" href="#@some_cases_useful"></a>In some cases, it’s useful to require a stronger (or different) specification for the recursive steps, to make the recursive decomposition simpler or more elegant.  In this case, what if we built up a partial subsequence using the initial letters of the word, and used the recursive calls to <em>complete</em> that partial subsequence using the remaining letters of the word?  For example, suppose the original word is “orange”.  We’ll both select “o” to be in the partial subsequence, and recursively extend it with all subsequences of “range”; and we’ll skip “o”, use “” as the partial subsequence, and again recursively extend it with all subsequences of “range”.</p>
+
+<p id="@using_approach_our"><a class="jump" href="#@using_approach_our"></a>Using this approach, our code now looks much simpler:</p>
+
+<pre id="@param_partialsubsequence_subsequence-in-progress"><a class="jump" href="#@param_partialsubsequence_subsequence-in-progress"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> partialSubsequence  a subsequence-in-progress, consisting only of letters A-Z or a-z
+ * <span class="hljs-doctag">@param</span> word consisting only of letters A-Z or a-z
+ * <span class="hljs-doctag">@return</span> all subsequences of word, separated by commas, with partialSubsequence prefixed to each one
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequencesAfter</span><span class="hljs-params">(String partialSubsequence, String word)</span> </span>{
+    <span class="hljs-keyword">if</span> (word.isEmpty()) {
+        <span class="hljs-comment">// base case</span>
+        <span class="hljs-keyword">return</span> partialSubsequence;
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">// recursive step</span>
+        <span class="hljs-keyword">return</span> subsequencesAfter(partialSubsequence, word.substring(<span class="hljs-number">1</span>))
+             + <span class="hljs-string">","</span>
+             + subsequencesAfter(partialSubsequence + word.charAt(<span class="hljs-number">0</span>), word.substring(<span class="hljs-number">1</span>));
+    }
+}</code></pre>
+
+<p id="@subsequencesafter_method_called"><a class="jump" href="#@subsequencesafter_method_called"></a>This <code>subsequencesAfter</code> method is called a <mark data-structure-text="helper method" id="^helper_method"><strong>helper method</strong></mark>.  It satisfies a different spec from the original <code>subsequences</code>, because it has a new parameter <code>partialSubsequence</code>.  This parameter fills a similar role that a local variable would in an iterative implementation.  It holds temporary state during the evolution of the computation.  The recursive calls steadily extend this partial subsequence, selecting or ignoring each letter in the word, until finally reaching the end of the word (the base case), at which point the partial subsequence is returned as the only result. Then the recursion backtracks and fills in other possible subsequences.</p>
+
+<p id="@finish_implementation_need"><a class="jump" href="#@finish_implementation_need"></a>To finish the implementation, we need to implement the original <code>subsequences</code> spec, which gets the ball rolling by calling the helper method with an initial value for the partial subsequence parameter:</p>
+
+<pre id="@public_static_string_subsequences-string_word_return"><a class="jump" href="#@public_static_string_subsequences-string_word_return"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequences</span><span class="hljs-params">(String word)</span> </span>{
+    <span class="hljs-keyword">return</span> subsequencesAfter(<span class="hljs-string">""</span>, word);
+}</code></pre>
+
+<p id="@don-t_expose_helper"><a class="jump" href="#@don-t_expose_helper"></a><strong>Don’t expose the helper method to your clients.</strong>  Your decision to decompose the recursion this way instead of another way is entirely implementation-specific.  In particular, if you discover that you need temporary variables like <code>partialSubsequence</code> in your recursion, don’t change the original spec of your method, and don’t force your clients to correctly initialize those parameters.  That exposes your implementation to the client and reduces your ability to change it in the future.  Use a private helper function for the recursion, and have your public method call it with the correct initializations, as shown above.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-helper_methods"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-helper_methods-unhelpful_1" data-target="#ex-helper_methods-unhelpful_1" data-toggle="collapse"><a class="jump" href="#@ex-helper_methods-unhelpful_1"></a><span class="panel-title">Unhelpful 1</span></div><div class="panel-collapse collapse exercise-panel" id="ex-helper_methods-unhelpful_1" data-outline="unhelpful_1" data-ex-id="helper_methods/unhelpful_1" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@louis_reasoner_doesn-t"><a class="jump" href="#@louis_reasoner_doesn-t"></a>Louis Reasoner doesn’t want to use a helper method, so he tries to implement <code>subsequences()</code> by storing <code>partialSubsequence</code> as a static variable instead of a parameter.
+Here is his implementation: </p>
+
+<pre id="@private_static_string"><a class="jump" href="#@private_static_string"></a><code class="language-java hljs"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String partialSubsequence = <span class="hljs-string">""</span>;
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequencesLouis</span><span class="hljs-params">(String word)</span> </span>{
+    <span class="hljs-keyword">if</span> (word.isEmpty()) {
+        <span class="hljs-comment">// base case</span>
+        <span class="hljs-keyword">return</span> partialSubsequence;
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">// recursive step</span>
+        String withoutFirstLetter = subsequencesLouis(word.substring(<span class="hljs-number">1</span>));
+        partialSubsequence += word.charAt(<span class="hljs-number">0</span>);
+        String withFirstLetter = subsequencesLouis(word.substring(<span class="hljs-number">1</span>));
+        <span class="hljs-keyword">return</span> withoutFirstLetter + <span class="hljs-string">","</span> + withFirstLetter;
+    }
+}</code></pre>
+
+<p id="@suppose_call_subsequenceslouis-c"><a class="jump" href="#@suppose_call_subsequenceslouis-c"></a>Suppose we call <code>subsequencesLouis("c")</code> followed by <code>subsequencesLouis("a")</code>.</p>
+
+<label class="exercise-part-heading" id="@does_subsequenceslouis-c_return"><a class="jump" href="#@does_subsequenceslouis-c_return"></a>What does <code>subsequencesLouis("c")</code> return?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="&quot;c&quot;"><label for="md_converted_choice_7_0"><input type="radio" id="md_converted_choice_7_0" name="md_converted_radio_7"><code>"c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;&quot;"><label for="md_converted_choice_7_1"><input type="radio" id="md_converted_choice_7_1" name="md_converted_radio_7"><code>""</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;,c&quot;"><label for="md_converted_choice_7_2"><input type="radio" id="md_converted_choice_7_2" name="md_converted_radio_7"><code>",c"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;c,&quot;"><label for="md_converted_choice_7_3"><input type="radio" id="md_converted_choice_7_3" name="md_converted_radio_7"><code>"c,"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<label class="exercise-part-heading" id="@does_subsequenceslouis-a_return"><a class="jump" href="#@does_subsequenceslouis-a_return"></a>What does <code>subsequencesLouis("a")</code> return?</label>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="&quot;a&quot;"><label for="md_converted_choice_8_0"><input type="radio" id="md_converted_choice_8_0" name="md_converted_radio_8"><code>"a"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;&quot;"><label for="md_converted_choice_8_1"><input type="radio" id="md_converted_choice_8_1" name="md_converted_radio_8"><code>""</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;,a&quot;"><label for="md_converted_choice_8_2"><input type="radio" id="md_converted_choice_8_2" name="md_converted_radio_8"><code>",a"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;a,&quot;"><label for="md_converted_choice_8_3"><input type="radio" id="md_converted_choice_8_3" name="md_converted_radio_8"><code>"a,"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;c,ca&quot;"><label for="md_converted_choice_8_4"><input type="radio" id="md_converted_choice_8_4" name="md_converted_radio_8"><code>"c,ca"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-helper_methods-unhelpful_2" data-target="#ex-helper_methods-unhelpful_2" data-toggle="collapse"><a class="jump" href="#@ex-helper_methods-unhelpful_2"></a><span class="panel-title">Unhelpful 2</span></div><div class="panel-collapse collapse exercise-panel" id="ex-helper_methods-unhelpful_2" data-outline="unhelpful_2" data-ex-id="helper_methods/unhelpful_2" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@louis_fixes_problem"><a class="jump" href="#@louis_fixes_problem"></a>Louis fixes that problem by making <code>partialSubsequence</code> public:</p>
+
+<pre id="@requires_caller_must"><a class="jump" href="#@requires_caller_must"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Requires: caller must set partialSubsequence to "" before calling subsequencesLouis().
+ */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String partialSubsequence;</code></pre>
+
+<p id="@alyssa_p_hacker"><a class="jump" href="#@alyssa_p_hacker"></a>Alyssa P. Hacker throws up her hands when she sees what Louis did.
+Which of these statements are true about his code?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="partialSubsequence is risky – it should be final"><label for="md_converted_choice_6_0"><input type="checkbox" id="md_converted_choice_6_0"><code>partialSubsequence</code> is risky – it should be final</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="partialSubsequence is risky – it is a global variable"><label for="md_converted_choice_6_1"><input type="checkbox" id="md_converted_choice_6_1"><code>partialSubsequence</code> is risky – it is a global variable</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="partialSubsequence is risky – it points to a mutable object"><label for="md_converted_choice_6_2"><input type="checkbox" id="md_converted_choice_6_2"><code>partialSubsequence</code> is risky – it points to a mutable object</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-helper_methods-unhelpful_3" data-target="#ex-helper_methods-unhelpful_3" data-toggle="collapse"><a class="jump" href="#@ex-helper_methods-unhelpful_3"></a><span class="panel-title">Unhelpful 3</span></div><div class="panel-collapse collapse exercise-panel" id="ex-helper_methods-unhelpful_3" data-outline="unhelpful_3" data-ex-id="helper_methods/unhelpful_3" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@louis_gives_alyssa-s"><a class="jump" href="#@louis_gives_alyssa-s"></a>Louis gives in to Alyssa’s strenuous arguments, hides his static variable again, and takes care of initializing it properly before starting the recursion:</p>
+
+<pre id="@public_static_string_subsequences-string_word_partialsubsequence"><a class="jump" href="#@public_static_string_subsequences-string_word_partialsubsequence"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequences</span><span class="hljs-params">(String word)</span> </span>{
+    partialSubsequence = <span class="hljs-string">""</span>;
+    <span class="hljs-keyword">return</span> subsequencesLouis(word);
+}
+
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> String partialSubsequence = <span class="hljs-string">""</span>;
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequencesLouis</span><span class="hljs-params">(String word)</span> </span>{
+    <span class="hljs-keyword">if</span> (word.isEmpty()) {
+        <span class="hljs-comment">// base case</span>
+        <span class="hljs-keyword">return</span> partialSubsequence;
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">// recursive step</span>
+        String withoutFirstLetter = subsequencesLouis(word.substring(<span class="hljs-number">1</span>));
+        partialSubsequence += word.charAt(<span class="hljs-number">0</span>);
+        String withFirstLetter = subsequencesLouis(word.substring(<span class="hljs-number">1</span>));
+        <span class="hljs-keyword">return</span> withoutFirstLetter + <span class="hljs-string">","</span> + withFirstLetter;
+    }
+}</code></pre>
+
+<p id="@unfortunately_static_variable"><a class="jump" href="#@unfortunately_static_variable"></a>Unfortunately a static variable is simply a bad idea in recursion.
+Louis’s solution is still broken.
+To illustrate, let’s trace through the call <code>subsequences("xy")</code>.
+You can step through an <a href="http://www.pythontutor.com/java.html#code=public+class+Subsequences+%7B%0A++++%0A++++public+static+String+subsequences%28String+word%29+%7B%0A++++++++partialSubsequence+%3D+%22%22%3B%0A++++++++return+subsequencesLouis%28word%29%3B%0A++++%7D%0A++++%0A++++private+static+String+partialSubsequence+%3D+%22%22%3B%0A++++%0A++++public+static+String+subsequencesLouis%28String+word%29+%7B%0A++++++++if+%28word.isEmpty%28%29%29+%7B%0A++++++++++++//+base+case%0A++++++++++++return+partialSubsequence%3B%0A++++++++%7D+else+%7B%0A++++++++++++//+recursive+step%0A++++++++++++String+withoutFirstLetter+%3D+subsequencesLouis%28word.substring%281%29%29%3B%0A++++++++++++partialSubsequence+%2B%3D+word.charAt%280%29%3B%0A++++++++++++String+withFirstLetter+%3D+subsequencesLouis%28word.substring%281%29%29%3B%0A++++++++++++return+withoutFirstLetter+%2B+%22,%22+%2B+withFirstLetter%3B%0A++++++++%7D%0A++++%7D%0A++++%0A++++public+static+void+main%28String%5B%5D+args%29+%7B%0A++++++++String+result+%3D+subsequences%28%22xy%22%29%3B%0A++++%7D%0A%7D&amp;mode=display&amp;origin=opt-frontend.js&amp;cumulative=false&amp;heapPrimitives=false&amp;textReferences=false&amp;py=java&amp;rawInputLstJSON=%5B%5D&amp;curInstr=4" target="_blank"><strong>interactive visualization of this version</strong></a> to see what happens.
+It will produce these recursive calls to <code>subsequencesLouis()</code>:</p>
+
+<pre id="@1_subsequenceslouis-xy_2"><a class="jump" href="#@1_subsequenceslouis-xy_2"></a><code class="hljs less"><span class="hljs-selector-tag">1</span>. <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">"xy"</span>)
+<span class="hljs-selector-tag">2</span>.     <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">"y"</span>)
+<span class="hljs-selector-tag">3</span>.         <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">""</span>)
+<span class="hljs-selector-tag">4</span>.         <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">""</span>)
+<span class="hljs-selector-tag">5</span>.     <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">"y"</span>)
+<span class="hljs-selector-tag">6</span>.         <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">""</span>)
+<span class="hljs-selector-tag">7</span>.         <span class="hljs-selector-tag">subsequencesLouis</span>(<span class="hljs-string">""</span>)</code></pre>
+
+<p id="@each_these_calls"><a class="jump" href="#@each_these_calls"></a>When each of these calls <strong>starts</strong>, what is the value of the static variable partialSubsequence?</p>
+
+<ol>
+<li><p id="@subsequenceslouis-xy"><a class="jump" href="#@subsequenceslouis-xy"></a><code>subsequencesLouis("xy")</code></p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("y")</code></p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("")</code></p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("")</code></p>
+
+<div class="form-group exercise-part" data-outline="d"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("y")</code></p>
+
+<div class="form-group exercise-part" data-outline="e"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("")</code></p>
+
+<div class="form-group exercise-part" data-outline="f"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; yx"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>yx</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><p><code>subsequencesLouis("")</code></p>
+
+<div class="form-group exercise-part" data-outline="g"><div class="dropdown exercise-choice" data-outline="; empty string; x; y; xy; xyy; yx; yxy"><select class="form-control"><option selected="selected"></option><option>empty string</option>,<option>x</option>,<option>y</option>,<option>xy</option>,<option>xyy</option>,<option>yx</option>,<option>yxy</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+</ol>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="choosing_the_right_recursive_subproblem"><a class="jump" href="#choosing_the_right_recursive_subproblem"></a>Choosing the right recursive subproblem</h2><div data-outline="choosing_the_right_recursive_subproblem">
+
+<p id="@look_another_example"><a class="jump" href="#@look_another_example"></a>Let’s look at another example.  Suppose we want to convert an integer to a string representation with a given base, following this spec:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> n integer to convert to string
+ * <span class="hljs-doctag">@param</span> base base for the representation. Requires 2&lt;=base&lt;=10.
+ * <span class="hljs-doctag">@return</span> n represented as a string of digits in the specified base, with 
+ *           a minus sign if n&lt;0. No unnecessary leading zeros are included.
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">stringValue</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n, <span class="hljs-keyword">int</span> base)</span></span></code></pre>
+
+<p id="@example_stringvalue-16_10"><a class="jump" href="#@example_stringvalue-16_10"></a>For example, <code>stringValue(16, 10)</code> should return <code>"16"</code>, and <code>stringValue(16, 2)</code> should return <code>"10000"</code>.</p>
+
+<p id="@develop_recursive_implementation"><a class="jump" href="#@develop_recursive_implementation"></a>Let’s develop a recursive implementation of this method.  One recursive step here is straightforward: we can handle negative integers simply by recursively calling for the representation of the corresponding positive integer:</p>
+
+<pre id="@if_n_0"><a class="jump" href="#@if_n_0"></a><code class="language-java hljs"><span class="hljs-keyword">if</span> (n &lt; <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">"-"</span> + stringValue(-n, base);</code></pre>
+
+<p id="@shows_recursive_subproblem"><a class="jump" href="#@shows_recursive_subproblem"></a>This shows that the recursive subproblem can be smaller or simpler in more subtle ways than just the value of a numeric parameter or the size of a string or list parameter.  We have still effectively reduced the problem by reducing it to positive integers.  </p>
+
+<p id="@next_question_given"><a class="jump" href="#@next_question_given"></a>The next question is, given that we have a positive <code>n</code>, say <code>n = 829</code> in base 10, how should we decompose it into a recursive subproblem?  Thinking about the number as we would write it down on paper, we could either start with 8 (the leftmost or highest-order digit), or 9 (the rightmost, lower-order digit).  Starting at the left end seems natural, because that’s the direction we write, but it’s harder in this case, because we would need to first find the number of digits in the number to figure out how to extract the leftmost digit.  Instead, a better way to decompose <code>n</code> is to take its remainder modulo <code>base</code> (which gives the <em>rightmost</em> digit) and also divide by <code>base</code> (which gives the subproblem, the remaining higher-order digits):</p>
+
+<pre id="@return_stringvalue-n-base_base"><a class="jump" href="#@return_stringvalue-n-base_base"></a><code class="language-java hljs"><span class="hljs-keyword">return</span> stringValue(n/base, base) + <span class="hljs-string">"0123456789"</span>.charAt(n%base);</code></pre>
+
+<p id="@think_about_several"><a class="jump" href="#@think_about_several"></a><strong>Think about several ways to break down the problem, and try to write the recursive steps.</strong>  You want to find the one that produces the simplest, most natural recursive step.</p>
+
+<p id="@remains_figure_out"><a class="jump" href="#@remains_figure_out"></a>It remains to figure out what the base case is, and include an if statement that distinguishes the base case from this recursive step.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-choosing_the_right_recursive_subproblem"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-choosing_the_right_recursive_subproblem-implementing_stringvalue" data-target="#ex-choosing_the_right_recursive_subproblem-implementing_stringvalue" data-toggle="collapse"><a class="jump" href="#@ex-choosing_the_right_recursive_subproblem-implementing_stringvalue"></a><span class="panel-title">Implementing stringValue</span></div><div class="panel-collapse collapse exercise-panel" id="ex-choosing_the_right_recursive_subproblem-implementing_stringvalue" data-outline="implementing_stringvalue" data-ex-id="choosing_the_right_recursive_subproblem/implementing_stringvalue" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@here_recursive_implementation"><a class="jump" href="#@here_recursive_implementation"></a>Here is the recursive implementation of <code>stringValue()</code> with the recursive steps brought together but with the base case still missing:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> n integer to convert to string
+ * <span class="hljs-doctag">@param</span> base base for the representation. Requires 2&lt;=base&lt;=10.
+ * <span class="hljs-doctag">@return</span> n represented as a string of digits in the specified base, with 
+ *           a minus sign if n&lt;0.  No unnecessary leading zeros are included. 
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">stringValue</span><span class="hljs-params">(<span class="hljs-keyword">int</span> n, <span class="hljs-keyword">int</span> base)</span> </span>{
+    <span class="hljs-keyword">if</span> (n &lt; <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-string">"-"</span> + stringValue(-n, base);
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (BASE CONDITION) {
+        BASE CASE
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> stringValue(n/base, base) + <span class="hljs-string">"0123456789"</span>.charAt(n%base);
+    }
+}</code></pre>
+
+<div class="pull-right"><pre id="@stringvalue-16_10_16"><a class="jump" href="#@stringvalue-16_10_16"></a><code class="hljs apache"><span class="hljs-attribute">stringValue</span>(16, 10) → <span class="hljs-string">"16"</span>
+<span class="hljs-attribute">stringValue</span>(3, 10)  → <span class="hljs-string">"3"</span>
+<span class="hljs-attribute">stringValue</span>(0, 10)  → <span class="hljs-string">"0"</span></code></pre></div>
+
+<p id="@which_following_can"><a class="jump" href="#@which_following_can"></a>Which of the following can be substituted for the <code>BASE CONDITION</code> and <code>BASE CASE</code> to make the code correct?
+It may help to think about the test cases on the right.</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="else if (n == 0) { return &quot;0&quot;; }"><label for="md_converted_choice_9_0"><input type="checkbox" id="md_converted_choice_9_0"><code>else if (n == 0) { return "0"; }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="else if (n < base) { return &quot;&quot; + n; }"><label for="md_converted_choice_9_1"><input type="checkbox" id="md_converted_choice_9_1"><code>else if (n &lt; base) { return "" + n; }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="else if (n == 0) { return &quot;&quot;; }"><label for="md_converted_choice_9_2"><input type="checkbox" id="md_converted_choice_9_2"><code>else if (n == 0) { return ""; }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="else if (n < base) { return &quot;0123456789&quot;.substring(n,n+1); }"><label for="md_converted_choice_9_3"><input type="checkbox" id="md_converted_choice_9_3"><code>else if (n &lt; base) { return "0123456789".substring(n,n+1); }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-choosing_the_right_recursive_subproblem-calling_stringvalue" data-target="#ex-choosing_the_right_recursive_subproblem-calling_stringvalue" data-toggle="collapse"><a class="jump" href="#@ex-choosing_the_right_recursive_subproblem-calling_stringvalue"></a><span class="panel-title">Calling stringValue</span></div><div class="panel-collapse collapse exercise-panel" id="ex-choosing_the_right_recursive_subproblem-calling_stringvalue" data-outline="calling_stringvalue" data-ex-id="choosing_the_right_recursive_subproblem/calling_stringvalue" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@assuming_code_completed"><a class="jump" href="#@assuming_code_completed"></a>Assuming the code is completed with one of the base cases identified in the previous problem, what does <code>stringValue(170, 16)</code> do?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="returns &quot;AA&quot;"><label for="md_converted_choice_10_0"><input type="radio" id="md_converted_choice_10_0" name="md_converted_radio_10">returns <code>"AA"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns &quot;170&quot;"><label for="md_converted_choice_10_1"><input type="radio" id="md_converted_choice_10_1" name="md_converted_radio_10">returns <code>"170"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns &quot;1010&quot;"><label for="md_converted_choice_10_2"><input type="radio" id="md_converted_choice_10_2" name="md_converted_radio_10">returns <code>"1010"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="throws StringIndexOutOfBoundsException"><label for="md_converted_choice_10_3"><input type="radio" id="md_converted_choice_10_3" name="md_converted_radio_10">throws <code>StringIndexOutOfBoundsException</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="doesn’t compile, static error"><label for="md_converted_choice_10_4"><input type="radio" id="md_converted_choice_10_4" name="md_converted_radio_10">doesn’t compile, static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="StackOverflowError"><label for="md_converted_choice_10_5"><input type="radio" id="md_converted_choice_10_5" name="md_converted_radio_10"><code>StackOverflowError</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="infinite loop"><label for="md_converted_choice_10_6"><input type="radio" id="md_converted_choice_10_6" name="md_converted_radio_10">infinite loop</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="recursive_problems_vs_recursive_data"><a class="jump" href="#recursive_problems_vs_recursive_data"></a>Recursive problems vs. recursive data</h2><div data-outline="recursive_problems_vs_recursive_data">
+
+<p id="@examples_we-ve_seen"><a class="jump" href="#@examples_we-ve_seen"></a>The examples we’ve seen so far have been cases where the problem structure lends itself naturally to a recursive definition.  Factorial is easy to define in terms of smaller subproblems.  Having a <em>recursive problem</em> like this is one cue that you should pull a recursive solution out of your toolbox. </p>
+
+<p id="@another_cue_data"><a class="jump" href="#@another_cue_data"></a>Another cue is when the data you are operating on is inherently recursive in structure.  We’ll see many examples of recursive data a few classes from now, but for now let’s look at the recursive data found in every laptop computer: its filesystem.  A filesystem consists of named <em>files</em>.  Some files are <em>folders</em>, which can contain other files.  So a filesystem is recursive: folders contain other folders which contain other folders, until finally at the bottom of the recursion are plain (non-folder) files.</p>
+
+<p id="@java_library_represents"><a class="jump" href="#@java_library_represents"></a>The Java library represents the file system using <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/io/File.html"><code>java.io.File</code></a>.  This is a recursive data type, in the sense that <code>f.getParentFile()</code> returns the parent folder of a file <code>f</code>, which is a <code>File</code> object as well, and <code>f.listFiles()</code> returns the files contained by <code>f</code>, which is an array of other <code>File</code> objects.</p>
+
+<p id="@recursive_data_natural"><a class="jump" href="#@recursive_data_natural"></a>For recursive data, it’s natural to write recursive implementations:</p>
+
+<pre id="@param_f_file"><a class="jump" href="#@param_f_file"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> f a file in the filesystem
+ * <span class="hljs-doctag">@return</span> the full pathname of f from the root of the filesystem
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">fullPathname</span><span class="hljs-params">(File f)</span> </span>{
+    <span class="hljs-keyword">if</span> (f.getParentFile() == <span class="hljs-keyword">null</span>) {
+        <span class="hljs-comment">// base case: f is at the root of the filesystem</span>
+        <span class="hljs-keyword">return</span> f.getName();  
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">// recursive step</span>
+        <span class="hljs-keyword">return</span> fullPathname(f.getParentFile()) + <span class="hljs-string">"/"</span> + f.getName();
+    }
+}</code></pre>
+
+<p id="@recent_versions_java"><a class="jump" href="#@recent_versions_java"></a>Recent versions of Java have added a new API, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/nio/file/Files.html"><code>java.nio.Files</code></a> and <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/nio/file/Path.html"><code>java.nio.Path</code></a>, which offer a cleaner separation between the filesystem and the pathnames used to name files in it.  But the data structure is still fundamentally recursive.</p>
+
+</div><h2 id="mutual_recursion"><a class="jump" href="#mutual_recursion"></a>Mutual recursion</h2><div data-outline="mutual_recursion">
+
+<p id="@sometimes_multiple_helper"><a class="jump" href="#@sometimes_multiple_helper"></a>Sometimes multiple helper methods cooperate in a recursive implementation.
+If method A calls method B, which then calls method A again, then A and B are <mark data-mark-text="mutual recursion" data-structure-text="mutual recursion" id="^mutual_recursion"><em>mutually recursive</em></mark>.</p>
+
+<p>Mutual recursion is often found in code that operates over recursive data.
+Using the filesystem as an example, here are two mutually recursive methods that walk down the tree of files and folders:</p>
+
+<pre id="@param_file_file"><a class="jump" href="#@param_file_file"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> file a file in the filesystem
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">visitNode</span><span class="hljs-params">(File file)</span> </span>{
+  <span class="hljs-keyword">if</span> (file.isDirectory()) {
+    visitChildren(file.listFiles());
+  }
+}
+
+<span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> files a list of files
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">visitChildren</span><span class="hljs-params">(File[] files)</span> </span>{
+  <span class="hljs-keyword">for</span> (File file : files) {
+    visitNode(file);
+  }
+}</code></pre>
+
+<p id="@one_advantages_approach"><a class="jump" href="#@one_advantages_approach"></a>One of the advantages of this approach is that both methods are simple and short, and the client can choose to start the tree traversal from either single point (<code>visitNode</code>) or from multiple points (<code>visitChildren</code>) without needing any redundant code.</p>
+
+<p id="@see_many_examples"><a class="jump" href="#@see_many_examples"></a>We will see many examples of mutually recursive methods when we talk about recursive data types in a few classes.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-mutual_recursion"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-mutual_recursion-finding_the_files" data-target="#ex-mutual_recursion-finding_the_files" data-toggle="collapse"><a class="jump" href="#@ex-mutual_recursion-finding_the_files"></a><span class="panel-title">Finding the files</span></div><div class="panel-collapse collapse exercise-panel" id="ex-mutual_recursion-finding_the_files" data-outline="finding_the_files" data-ex-id="mutual_recursion/finding_the_files" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@suppose_you_want"><a class="jump" href="#@suppose_you_want"></a>Suppose you want to change the <code>visitNode</code>/<code>visitChildren</code> traversal so that it prints every visited file or folder that starts with a particular pattern.
+Here is the line of code:</p>
+
+<pre id="@if_file-getname-startswith-pattern_system-out-println-file"><a class="jump" href="#@if_file-getname-startswith-pattern_system-out-println-file"></a><code class="language-java hljs"><span class="hljs-keyword">if</span> (file.getName().startsWith(pattern)) { System.out.println(file); }</code></pre>
+
+<p id="@which_places_should"><a class="jump" href="#@which_places_should"></a>Which places should this code be added?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="as the first line of visitNode"><label for="md_converted_choice_14_0"><input type="checkbox" id="md_converted_choice_14_0">as the first line of <code>visitNode</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="as the first line of the if statement body"><label for="md_converted_choice_14_1"><input type="checkbox" id="md_converted_choice_14_1">as the first line of the <code>if</code> statement body</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="as the first line of visitChildren"><label for="md_converted_choice_14_2"><input type="checkbox" id="md_converted_choice_14_2">as the first line of <code>visitChildren</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="as the first line of the for loop body"><label for="md_converted_choice_14_3"><input type="checkbox" id="md_converted_choice_14_3">as the first line of the <code>for</code> loop body</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@should_pattern_variable"><a class="jump" href="#@should_pattern_variable"></a>Where should the <code>pattern</code> variable be declared?</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="checkbox exercise-choice" data-outline="as a static variable outside both methods"><label for="md_converted_choice_15_0"><input type="checkbox" id="md_converted_choice_15_0">as a static variable outside both methods</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="as a parameter of visitNode"><label for="md_converted_choice_15_1"><input type="checkbox" id="md_converted_choice_15_1">as a parameter of <code>visitNode</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="as a parameter of visitChildren"><label for="md_converted_choice_15_2"><input type="checkbox" id="md_converted_choice_15_2">as a parameter of <code>visitChildren</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-mutual_recursion-accumulating_results" data-target="#ex-mutual_recursion-accumulating_results" data-toggle="collapse"><a class="jump" href="#@ex-mutual_recursion-accumulating_results"></a><span class="panel-title">Accumulating results</span></div><div class="panel-collapse collapse exercise-panel" id="ex-mutual_recursion-accumulating_results" data-outline="accumulating_results" data-ex-id="mutual_recursion/accumulating_results" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@instead_printing_matching"><a class="jump" href="#@instead_printing_matching"></a>Instead of printing the matching files, <a href="../04-code-review/#methods_should_return_results_not_print_them">it would be better to return them</a>, perhaps by gathering them up into a <code>Set</code>.</p>
+
+<p id="@exercise_considers_one"><a class="jump" href="#@exercise_considers_one"></a>This exercise considers one way to do this, using a single mutable <code>Set</code> object that accumulates the results.
+This is analogous to what you would do if this file traversal were done iteratively in a loop.
+The next exercise will consider doing it with immutable <code>Set</code> values instead, since immutability is generally a better pattern for safe and understandable recursion.</p>
+
+<p id="@should_code_be"><a class="jump" href="#@should_code_be"></a>How should the code be changed to accumulate the results in a mutable <code>Set</code>?</p>
+
+<p id="@first_declare_resultset"><a class="jump" href="#@first_declare_resultset"></a>First declare <code>resultSet</code> as a:</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="static variable"><label for="md_converted_choice_16_0"><input type="checkbox" id="md_converted_choice_16_0">static variable</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="parameter of visitNode "><label for="md_converted_choice_16_1"><input type="checkbox" id="md_converted_choice_16_1">parameter of <code>visitNode</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="parameter of visitChildren "><label for="md_converted_choice_16_2"><input type="checkbox" id="md_converted_choice_16_2">parameter of <code>visitChildren</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="Set<File>"><label for="md_converted_choice_16_3"><input type="checkbox" id="md_converted_choice_16_3"><code>Set&lt;File&gt;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="HashSet<File>"><label for="md_converted_choice_16_4"><input type="checkbox" id="md_converted_choice_16_4"><code>HashSet&lt;File&gt;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@replace_system-out-println-file_following"><a class="jump" href="#@replace_system-out-println-file_following"></a>Replace <code>System.out.println(file);</code> with the following line(s):</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="checkbox exercise-choice" data-outline="resultSet = new HashSet<>();"><label for="md_converted_choice_17_0"><input type="checkbox" id="md_converted_choice_17_0"><code>resultSet = new HashSet&lt;&gt;();</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="resultSet.add(file);"><label for="md_converted_choice_17_1"><input type="checkbox" id="md_converted_choice_17_1"><code>resultSet.add(file);</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="resultSet.remove(file);"><label for="md_converted_choice_17_2"><input type="checkbox" id="md_converted_choice_17_2"><code>resultSet.remove(file);</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="resultSet.clear();"><label for="md_converted_choice_17_3"><input type="checkbox" id="md_converted_choice_17_3"><code>resultSet.clear();</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@finally"><a class="jump" href="#@finally"></a>Finally:</p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="checkbox exercise-choice" data-outline="change the return type of both visitNode and visitChildren from void to Set<File>"><label for="md_converted_choice_18_0"><input type="checkbox" id="md_converted_choice_18_0">change the return type of both <code>visitNode</code> and <code>visitChildren</code> from <code>void</code> to <code>Set&lt;File&gt;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="change the calls to visitNode and visitChildren to pass in resultSet"><label for="md_converted_choice_18_1"><input type="checkbox" id="md_converted_choice_18_1">change the calls to <code>visitNode</code> and <code>visitChildren</code> to pass in <code>resultSet</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="document the fact that resultSet is mutated in the specs for visitNode and visitChildren "><label for="md_converted_choice_18_2"><input type="checkbox" id="md_converted_choice_18_2">document the fact that <code>resultSet</code> is mutated in the specs for <code>visitNode</code> and <code>visitChildren</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-mutual_recursion-immutable_results" data-target="#ex-mutual_recursion-immutable_results" data-toggle="collapse"><a class="jump" href="#@ex-mutual_recursion-immutable_results"></a><span class="panel-title">Immutable results</span></div><div class="panel-collapse collapse exercise-panel" id="ex-mutual_recursion-immutable_results" data-outline="immutable_results" data-ex-id="mutual_recursion/immutable_results" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@instead_mutating_result"><a class="jump" href="#@instead_mutating_result"></a>Instead of mutating a result set provided by the caller, let’s build our implementation around immutable sets.
+Select the best pieces of code to complete the implementation:</p>
+
+<pre id="@public_static_set-file"><a class="jump" href="#@public_static_set-file"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Set&lt;File&gt; <span class="hljs-title">visitNode</span><span class="hljs-params">(File file, String pattern)</span> </span>{
+    Set&lt;File&gt; resultSet = ▶▶A◀◀;
+    <span class="hljs-keyword">if</span> (file.getName().startsWith(pattern)) { resultSet.add(file); }
+    <span class="hljs-keyword">if</span> (file.isDirectory()) {
+        ▶▶B◀◀(visitChildren(file.listFiles(), pattern));
+    }
+    <span class="hljs-keyword">return</span> ▶▶C◀◀;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Set&lt;File&gt; <span class="hljs-title">visitChildren</span><span class="hljs-params">(File[] files, String pattern)</span> </span>{
+    Set&lt;File&gt; resultSet = ▶▶A◀◀;
+    <span class="hljs-keyword">for</span> (File file : files) {
+        ▶▶B◀◀(visitNode(file));
+    }
+    <span class="hljs-keyword">return</span> ▶▶C◀◀;
+}</code></pre>
+
+<p id="@same_three_pieces"><a class="jump" href="#@same_three_pieces"></a>The same three pieces will complete both <code>visitNode</code> and <code>visitChildren</code>…</p>
+
+<div class="list-style-upper-alpha"><ol id="@new_hashset_collections-unmodifiableset-new">
+<li><a class="jump" href="#@new_hashset_collections-unmodifiableset-new"></a><div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="new HashSet<>()"><label for="md_converted_choice_11_0"><input type="radio" id="md_converted_choice_11_0" name="md_converted_radio_11"><code>new HashSet&lt;&gt;()</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="Collections.unmodifiableSet(new HashSet<>())"><label for="md_converted_choice_11_1"><input type="radio" id="md_converted_choice_11_1" name="md_converted_radio_11"><code>Collections.unmodifiableSet(new HashSet&lt;&gt;())</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="Set.of()"><label for="md_converted_choice_11_2"><input type="radio" id="md_converted_choice_11_2" name="md_converted_radio_11"><code>Set.of()</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="resultSet.add"><label for="md_converted_choice_12_0"><input type="radio" id="md_converted_choice_12_0" name="md_converted_radio_12"><code>resultSet.add</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="resultSet.addAll"><label for="md_converted_choice_12_1"><input type="radio" id="md_converted_choice_12_1" name="md_converted_radio_12"><code>resultSet.addAll</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="resultSet.retainAll"><label for="md_converted_choice_12_2"><input type="radio" id="md_converted_choice_12_2" name="md_converted_radio_12"><code>resultSet.retainAll</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+<li><div class="form-group exercise-part" data-outline="c"><div class="radio exercise-choice" data-outline="resultSet"><label for="md_converted_choice_13_0"><input type="radio" id="md_converted_choice_13_0" name="md_converted_radio_13"><code>resultSet</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="new HashSet<>(resultSet)"><label for="md_converted_choice_13_1"><input type="radio" id="md_converted_choice_13_1" name="md_converted_radio_13"><code>new HashSet&lt;&gt;(resultSet)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="Collections.unmodifiableSet(resultSet)"><label for="md_converted_choice_13_2"><input type="radio" id="md_converted_choice_13_2" name="md_converted_radio_13"><code>Collections.unmodifiableSet(resultSet)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></li>
+</ol></div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="reentrant_code"><a class="jump" href="#reentrant_code"></a>Reentrant code</h2><div data-outline="reentrant_code">
+
+<p id="@recursion_method_calling"><a class="jump" href="#@recursion_method_calling"></a>Recursion – a method calling itself – is a special case of a general phenomenon in programming called <mark data-structure-text="reentrancy" id="^reentrancy"><strong>reentrancy</strong></mark>.  Reentrant code can be safely re-entered, meaning that it can be called again <em>even while a call to it is underway.</em>  Reentrant code keeps its state entirely in parameters and local variables, and doesn’t use static variables or global variables, and doesn’t share aliases to mutable objects with other parts of the program, or other calls to itself.</p>
+
+<p id="@direct_recursion_one"><a class="jump" href="#@direct_recursion_one"></a>Direct recursion is one way that reentrancy can happen.  We’ve seen many examples of that during this reading.  The <code>factorial()</code> method is designed so that <code>factorial(n-1)</code> can be called even though <code>factorial(n)</code> hasn’t yet finished working.</p>
+
+<p id="@mutual_recursion_between"><a class="jump" href="#@mutual_recursion_between"></a>Mutual recursion between two or more functions is another way this can happen – A calls B, which calls A again.  Mutual recursion is often intentional, designed by the programmer.  But unexpected mutual recursion can lead to bugs.</p>
+
+<p id="@talk_about_concurrency"><a class="jump" href="#@talk_about_concurrency"></a>When we talk about concurrency later in the course, reentrancy will come up again, since in a concurrent program, a method may be called at the same time by different parts of the program that are running concurrently.</p>
+
+<p id="@good_design_your"><a class="jump" href="#@good_design_your"></a>It’s good to design your code to be reentrant as much as possible.  Reentrant code is safer from bugs and can be used in more situations, like concurrency, callbacks, or mutual recursion.</p>
+
+</div><h2 id="when_to_use_recursion_rather_than_iteration"><a class="jump" href="#when_to_use_recursion_rather_than_iteration"></a>When to use recursion rather than iteration</h2><div data-outline="when_to_use_recursion_rather_than_iteration">
+
+<p id="@we-ve_seen_two"><a class="jump" href="#@we-ve_seen_two"></a>We’ve seen two common reasons for using recursion:</p>
+
+<ul id="@problem_naturally_recursive">
+<li><a class="jump" href="#@problem_naturally_recursive"></a>The problem is naturally recursive (e.g. Fibonacci)</li>
+<li>The data are naturally recursive (e.g. filesystem)</li>
+</ul>
+
+<p id="@another_reason_use"><a class="jump" href="#@another_reason_use"></a>Another reason to use recursion is to take more advantage of immutability.  In an ideal recursive implementation, all variables are final, all data are immutable, and the recursive methods are all pure functions in the sense that they do not mutate anything.  The behavior of a method can be understood simply as a relationship between its parameters and its return value, with no side effects on any other part of the program.  This kind of paradigm is called <mark data-structure-text="functional programming" id="^functional_programming"><em>functional programming</em></mark>, and it is far easier to reason about than <mark data-structure-text="imperative programming" id="^imperative_programming"><em>imperative programming</em></mark> with loops and variables.</p>
+
+<p id="@iterative_implementations_contrast"><a class="jump" href="#@iterative_implementations_contrast"></a>In iterative implementations, by contrast, you inevitably have non-final variables or mutable objects that are modified during the course of the iteration.  Reasoning about the program then requires thinking about snapshots of the program state at various points in time, rather than thinking about pure input/output behavior. </p>
+
+<p id="@one_downside_recursion"><a class="jump" href="#@one_downside_recursion"></a>One downside of recursion is that it may take more space than an iterative solution.
+Building up a stack of recursive calls consumes memory temporarily, and the stack is limited in size.
+If the maximum depth of recursion grows only logarithmically with the size of the input (as in, say, a recursive binary search), then this is rarely a problem.
+But if the maximum depth grows <em>linearly</em> with the input (as in factorial and Fibonacci), then the stack size may become a limit on the size of the problem that your recursive implementation can solve.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-when_to_use_recursion_rather_than_iteration"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-when_to_use_recursion_rather_than_iteration-subsequences123456" data-target="#ex-when_to_use_recursion_rather_than_iteration-subsequences123456" data-toggle="collapse"><a class="jump" href="#@ex-when_to_use_recursion_rather_than_iteration-subsequences123456"></a><span class="panel-title">subsequences("123456")</span></div><div class="panel-collapse collapse exercise-panel" id="ex-when_to_use_recursion_rather_than_iteration-subsequences123456" data-outline="subsequences123456" data-ex-id="when_to_use_recursion_rather_than_iteration/subsequences123456" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@recall_implementation_subsequences"><a class="jump" href="#@recall_implementation_subsequences"></a>Recall the implementation of <code>subsequences()</code> from the start of this reading:</p>
+
+<pre id="@public_static_string_subsequences-string_word_if"><a class="jump" href="#@public_static_string_subsequences-string_word_if"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">subsequences</span><span class="hljs-params">(String word)</span> </span>{
+    <span class="hljs-keyword">if</span> (word.isEmpty()) {
+        <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>; <span class="hljs-comment">// base case</span>
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">char</span> firstLetter = word.charAt(<span class="hljs-number">0</span>);
+        String restOfWord = word.substring(<span class="hljs-number">1</span>);
+
+        String subsequencesOfRest = subsequences(restOfWord);
+
+        String result = <span class="hljs-string">""</span>;
+        <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> withTrailingEmptyStrings = -<span class="hljs-number">1</span>; <span class="hljs-comment">// see String.split() spec</span>
+        <span class="hljs-keyword">for</span> (String subsequence : subsequencesOfRest.split(<span class="hljs-string">","</span>, withTrailingEmptyStrings)) {
+            result += <span class="hljs-string">","</span> + subsequence;
+            result += <span class="hljs-string">","</span> + firstLetter + subsequence;
+        }
+        <span class="hljs-keyword">if</span> (result.startsWith(<span class="hljs-string">","</span>)) result = result.substring(<span class="hljs-number">1</span>); <span class="hljs-comment">// remove extra leading comma</span>
+        <span class="hljs-keyword">return</span> result;
+    }
+}</code></pre>
+
+<p>For <code>subsequences("123456")</code>, how deep does its recursive call stack get — i.e., how many calls to <code>subsequences()</code> are on the stack at the same time?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="common_mistakes_in_recursive_implementations"><a class="jump" href="#common_mistakes_in_recursive_implementations"></a>Common mistakes in recursive implementations</h2><div data-outline="common_mistakes_in_recursive_implementations">
+
+<p id="@here_three_common"><a class="jump" href="#@here_three_common"></a>Here are three common ways that a recursive implementation can go wrong:</p>
+
+<ul id="@base_case_missing">
+<li><a class="jump" href="#@base_case_missing"></a>The base case is missing entirely, or the problem needs more than one base case but not all the base cases are covered.</li>
+<li>The recursive step doesn’t reduce to a smaller subproblem, so the recursion doesn’t converge.</li>
+<li>Aliases to a mutable data structure are inadvertently shared, and mutated, among the recursive calls.</li>
+</ul>
+
+<p id="@look_these_you-re"><a class="jump" href="#@look_these_you-re"></a>Look for these when you’re debugging.</p>
+
+<p id="@bright_side_would"><a class="jump" href="#@bright_side_would"></a>On the bright side, what would be an infinite loop in an iterative implementation usually becomes a <code>StackOverflowError</code> in a recursive implementation.  A buggy recursive program sometimes fails faster.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-common_mistakes_in_recursive_implementations"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-common_mistakes_in_recursive_implementations-danger_zone" data-target="#ex-common_mistakes_in_recursive_implementations-danger_zone" data-toggle="collapse"><a class="jump" href="#@ex-common_mistakes_in_recursive_implementations-danger_zone"></a><span class="panel-title">Danger zone</span></div><div class="panel-collapse collapse exercise-panel" id="ex-common_mistakes_in_recursive_implementations-danger_zone" data-outline="danger_zone" data-ex-id="common_mistakes_in_recursive_implementations/danger_zone" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-14-recursion"><div class="panel-body">
+
+<p id="@here_buggy_recursive"><a class="jump" href="#@here_buggy_recursive"></a>Here is a buggy recursive implementation:</p>
+
+<pre id="@param_list_must"><a class="jump" href="#@param_list_must"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> list must be nonempty
+ * <span class="hljs-doctag">@return</span> the maximum integer in list
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">maxList</span><span class="hljs-params">(List&lt;Integer&gt; list)</span> </span>{
+  <span class="hljs-keyword">return</span> maxOfRange(list, <span class="hljs-number">0</span>, list.size()-<span class="hljs-number">1</span>);
+}
+
+<span class="hljs-comment">// helper method -- finds the max of list[start]...list[end]</span>
+<span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">maxOfRange</span><span class="hljs-params">(List&lt;Integer&gt; list, <span class="hljs-keyword">int</span> start, <span class="hljs-keyword">int</span> end)</span> </span>{
+  <span class="hljs-keyword">if</span> (start == end) {
+    <span class="hljs-keyword">return</span> list.remove(start);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-keyword">int</span> midpoint = (start + end + <span class="hljs-number">1</span>)/<span class="hljs-number">2</span>;
+    <span class="hljs-keyword">return</span> Math.max(maxOfRange(list, start, midpoint), maxOfRange(list, midpoint+<span class="hljs-number">1</span>, end));
+  }
+}</code></pre>
+
+<p id="@which_following_bugs"><a class="jump" href="#@which_following_bugs"></a>Which of the following bugs does this implementation suffer from?
+If a single bug could be described in more than one way, select all the matching choices.</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="recursive case may fail to reduce to a smaller subproblem"><label for="md_converted_choice_19_0"><input type="checkbox" id="md_converted_choice_19_0">recursive case may fail to reduce to a smaller subproblem</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="a base case is missing"><label for="md_converted_choice_19_1"><input type="checkbox" id="md_converted_choice_19_1">a base case is missing</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="some inputs lead to infinite recursion"><label for="md_converted_choice_19_2"><input type="checkbox" id="md_converted_choice_19_2">some inputs lead to infinite recursion</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="mutual recursion between maxList and maxOfRange leads to infinite recursion"><label for="md_converted_choice_19_3"><input type="checkbox" id="md_converted_choice_19_3">mutual recursion between <code>maxList</code> and <code>maxOfRange</code> leads to infinite recursion</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="aliases to a mutable object are shared among recursive calls, and harmful mutation occurs"><label for="md_converted_choice_19_4"><input type="checkbox" id="md_converted_choice_19_4">aliases to a mutable object are shared among recursive calls, and harmful mutation occurs</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="summary"><a class="jump" href="#summary"></a>Summary</h2><div data-outline="summary">
+
+<p id="@saw_these_ideas"><a class="jump" href="#@saw_these_ideas"></a>We saw these ideas:</p>
+
+<ul id="@recursive_problems_recursive">
+<li><a class="jump" href="#@recursive_problems_recursive"></a>recursive problems and recursive data</li>
+<li>comparing alternative decompositions of a recursive problem</li>
+<li>using helper methods to strengthen a recursive step</li>
+<li>recursion vs. iteration</li>
+</ul>
+
+<p id="@topics_today-s_reading"><a class="jump" href="#@topics_today-s_reading"></a>The topics of today’s reading connect to our three key properties of good software as follows:</p>
+
+<ul>
+<li><p id="@safe_bugs_recursive"><a class="jump" href="#@safe_bugs_recursive"></a><strong>Safe from bugs.</strong>  Recursive code is simpler and often uses unreassignable variables and immutable objects.  </p></li>
+<li><p id="@easy_understand_recursive"><a class="jump" href="#@easy_understand_recursive"></a><strong>Easy to understand.</strong>  Recursive implementations for naturally recursive problems and recursive data are often shorter and easier to understand than iterative solutions.</p></li>
+<li><p id="@ready_change_recursive"><a class="jump" href="#@ready_change_recursive"></a><strong>Ready for change.</strong>  Recursive code is also naturally reentrant, which makes it safer from bugs and ready to use in more situations.   </p></li>
+</ul>
+
+</div><h2 id="more_practice"><a class="jump" href="#more_practice"></a>More practice</h2><div data-outline="more_practice">
+
+<p id="@if_you_would"><a class="jump" href="#@if_you_would"></a>If you would like to get more practice with the concepts covered in this reading, you can visit the <a href="https://qable.mit.edu:8001/practice.html#Recursion">question bank</a>. The questions in this bank were written in previous semesters by students and staff, and are provided for review purposes only – doing them will not affect your classwork grades.  </p></div></div>
+
+</div></main>
+<footer class="col-sm-2 footer-margin"><div>Collaboratively authored with contributions from: Saman Amarasinghe, Adam Chlipala, Srini Devadas, Michael Ernst, Max Goldman, John Guttag, Daniel Jackson, Rob Miller, Martin Rinard, and Armando Solar-Lezama. This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a>.</div></footer>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="classes-14-recursion"></script></body><!--
+Handout delivered Fri Jun 04 2021 14:07:26 GMT+0000 (Greenwich Mean Time)
+--></html>

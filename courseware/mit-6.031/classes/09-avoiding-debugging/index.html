@@ -1,0 +1,666 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Reading 9: Avoiding Debugging</title>
+
+<style>
+.indented { margin-left: 40px; }
+</style>
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#reading_9_avoiding_debugging">Reading 9: Avoiding Debugging</a></li><li><a href="#first_defense_make_bugs_impossible">First defense: make bugs impossible</a></li><li><a href="#second_defense_localize_bugs">Second defense: localize bugs</a></li><li><a href="#assertions">Assertions</a></li><li><a href="#what_to_assert">What to assert</a></li><li><a href="#what_not_to_assert">What not to assert</a></li><li><a href="#incremental_development">Incremental development</a></li><li><a href="#modularity_encapsulation">Modularity &amp; encapsulation</a></li><li><a href="#more_practice">More practice</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="reading_9_avoiding_debugging"><a class="jump" href="#reading_9_avoiding_debugging"></a>Reading 9: Avoiding Debugging</h1><div data-outline="reading_9_avoiding_debugging">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><h4 id="@software_6-031"><a class="jump" href="#@software_6-031"></a>Software in 6.031</h4>
+
+<table class="table table-striped no-markdown" id="@safe_bugseasy_understandready">
+<tbody><tr><th width="33%"><a class="jump" href="#@safe_bugseasy_understandready"></a>Safe from bugs</th><th>Easy to understand</th><th>Ready for change</th></tr>
+<tr><td>
+  Correct today and correct in the unknown future.
+</td><td>
+  Communicating clearly with future programmers, including future you.
+</td><td>
+  Designed to accommodate change without rewriting.
+</td></tr>
+</tbody></table>
+
+<h4 id="@objectives"><a class="jump" href="#@objectives"></a>Objectives</h4>
+
+<p id="@topic_today-s_class"><a class="jump" href="#@topic_today-s_class"></a>The topic of today’s class is debugging.
+More precisely, we’re going to look at ways to write code that either avoids debugging entirely, or at least makes it easy when we have to do it. </p>
+
+<h2 id="first_defense_make_bugs_impossible"><a class="jump" href="#first_defense_make_bugs_impossible"></a>First defense: make bugs impossible</h2><div data-outline="first_defense_make_bugs_impossible">
+
+<p id="@best_defense_against"><a class="jump" href="#@best_defense_against"></a>The best defense against bugs is to make them impossible by design.</p>
+
+<p id="@one_way_we-ve"><a class="jump" href="#@one_way_we-ve"></a>One way that we’ve already talked about is <strong><mark data-structure-text="static checking" id="^static_checking"><a href="../01-static-checking/#static_checking_dynamic_checking_no_checking">static checking</a></mark></strong>.
+Static checking eliminates many bugs by catching them at compile time.</p>
+
+<p id="@also_saw_some"><a class="jump" href="#@also_saw_some"></a>We also saw some examples of <strong><mark data-structure-text="dynamic checking" id="^dynamic_checking">dynamic checking</mark></strong> in earlier readings.
+For example, Java makes array overflow bugs impossible by catching them dynamically.
+If you try to use an index outside the bounds of an array or a List, then Java automatically produces an error.
+Older languages like C and C++ silently allow the bad access, which leads to bugs and <a href="http://en.wikipedia.org/wiki/Buffer_overflow">security vulnerabilities</a>.</p>
+
+<p id="@immutability_another_design"><a class="jump" href="#@immutability_another_design"></a><strong><a href="../08-immutability/">Immutability</a></strong> is another design principle that prevents bugs.</p>
+
+<p id="@string_immutable_type"><a class="jump" href="#@string_immutable_type"></a>String is an immutable type.
+There are no methods that you can call on a String that will change the sequence of characters that it represents.
+Strings can be passed around and shared without fear that they will be modified by other code.</p>
+
+<p id="@java_also_gives"><a class="jump" href="#@java_also_gives"></a>Java also gives us unreassignable references: variables declared with the keyword <code>final</code>, which can be assigned once but never reassigned.
+It’s good practice to use <code>final</code> for declaring the parameters of a method and as many local variables as possible.
+Like the type of the variable, these declarations are important documentation, which is useful to the reader of the code and statically checked by the compiler. </p>
+
+<p id="@consider_example"><a class="jump" href="#@consider_example"></a>Consider this example:</p>
+
+<pre id="@final_char_letters"><a class="jump" href="#@final_char_letters"></a><code class="language-java hljs"><span class="hljs-keyword">final</span> <span class="hljs-keyword">char</span>[] letters = <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'a'</span>, <span class="hljs-string">'e'</span>, <span class="hljs-string">'i'</span>, <span class="hljs-string">'o'</span>, <span class="hljs-string">'u'</span> };</code></pre>
+
+<p id="@letters_variable_declared"><a class="jump" href="#@letters_variable_declared"></a>The <code>letters</code> variable is declared <code>final</code>, but is it really unchanging?  Which of the following statements will be illegal (caught statically by the compiler), and which will be allowed?</p>
+
+<pre id="@letters_new_char"><a class="jump" href="#@letters_new_char"></a><code class="language-java hljs">letters = <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'x'</span>, <span class="hljs-string">'y'</span>, <span class="hljs-string">'z'</span> }; 
+letters[<span class="hljs-number">0</span>] = <span class="hljs-string">'z'</span>;</code></pre>
+
+<p id="@you-ll_find_answers"><a class="jump" href="#@you-ll_find_answers"></a>You’ll find the answers in the exercise below.  Be careful about what <code>final</code> means!  It only makes the reference unreassignable, but the object that the reference points to may be mutable.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-first_defense_make_bugs_impossible"><iframe class="exercises-status" src="https://6031.mit.edu/handx/sp21-java/status.php"></iframe><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-first_defense_make_bugs_impossible-final_variables_immutable_objects" data-target="#ex-first_defense_make_bugs_impossible-final_variables_immutable_objects" data-toggle="collapse"><a class="jump" href="#@ex-first_defense_make_bugs_impossible-final_variables_immutable_objects"></a><span class="panel-title">Final variables, immutable objects</span></div><div class="panel-collapse collapse exercise-panel" id="ex-first_defense_make_bugs_impossible-final_variables_immutable_objects" data-outline="final_variables_immutable_objects" data-ex-id="first_defense_make_bugs_impossible/final_variables_immutable_objects" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-09-avoiding-debugging"><div class="panel-body">
+
+<p id="@consider_legal_java"><a class="jump" href="#@consider_legal_java"></a>Consider this (legal) Java code, executed in order:</p>
+
+<pre><code class="hljs rust"><span class="hljs-built_in">char</span> text0 = <span class="hljs-string">'a'</span>;
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">char</span> text1 = text0;
+
+<span class="hljs-built_in">String</span> text2 = text1 + <span class="hljs-string">"eiou"</span>;
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> text3 = text2;
+
+<span class="hljs-built_in">char</span>[] text4 = new <span class="hljs-built_in">char</span>[] { text0, <span class="hljs-string">'e'</span>, <span class="hljs-string">'i'</span>, <span class="hljs-string">'o'</span>, <span class="hljs-string">'u'</span> };
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">char</span>[] text5 = text4;</code></pre>
+
+<label class="exercise-part-heading" id="@which_following_statements"><a class="jump" href="#@which_following_statements"></a>Which of the following statements are also legal Java (i.e. produce no compiler error if placed after the code above)?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="text0 = 'y';"><label for="md_converted_choice_1_0"><input type="checkbox" id="md_converted_choice_1_0"><code>text0 = 'y';</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text1 = text0;"><label for="md_converted_choice_1_1"><input type="checkbox" id="md_converted_choice_1_1"><code>text1 = text0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text2 = &quot;uoie&quot; + text1;"><label for="md_converted_choice_1_2"><input type="checkbox" id="md_converted_choice_1_2"><code>text2 = "uoie" + text1;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text3 = text2;"><label for="md_converted_choice_1_3"><input type="checkbox" id="md_converted_choice_1_3"><code>text3 = text2;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text2[0] = 'x';"><label for="md_converted_choice_1_4"><input type="checkbox" id="md_converted_choice_1_4"><code>text2[0] = 'x';</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text3[0] = 'x';"><label for="md_converted_choice_1_5"><input type="checkbox" id="md_converted_choice_1_5"><code>text3[0] = 'x';</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text4 = text5;"><label for="md_converted_choice_1_6"><input type="checkbox" id="md_converted_choice_1_6"><code>text4 = text5;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text5 = text4;"><label for="md_converted_choice_1_7"><input type="checkbox" id="md_converted_choice_1_7"><code>text5 = text4;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text4[0] = 'x';"><label for="md_converted_choice_1_8"><input type="checkbox" id="md_converted_choice_1_8"><code>text4[0] = 'x';</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="text5[0] = 'z';"><label for="md_converted_choice_1_9"><input type="checkbox" id="md_converted_choice_1_9"><code>text5[0] = 'z';</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-first_defense_make_bugs_impossible-afterwards" data-target="#ex-first_defense_make_bugs_impossible-afterwards" data-toggle="collapse"><a class="jump" href="#@ex-first_defense_make_bugs_impossible-afterwards"></a><span class="panel-title">Afterwards</span></div><div class="panel-collapse collapse exercise-panel" id="ex-first_defense_make_bugs_impossible-afterwards" data-outline="afterwards" data-ex-id="first_defense_make_bugs_impossible/afterwards" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-09-avoiding-debugging"><div class="panel-body">
+
+<p id="@after_all_legal"><a class="jump" href="#@after_all_legal"></a>After all the legal statements in the previous exercise’s answers are executed:</p>
+
+<pre><code class="hljs rust"><span class="hljs-built_in">char</span> text0 = <span class="hljs-string">'a'</span>;
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">char</span> text1 = text0;
+
+<span class="hljs-built_in">String</span> text2 = text1 + <span class="hljs-string">"eiou"</span>;
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> text3 = text2;
+
+<span class="hljs-built_in">char</span>[] text4 = new <span class="hljs-built_in">char</span>[] { text0, <span class="hljs-string">'e'</span>, <span class="hljs-string">'i'</span>, <span class="hljs-string">'o'</span>, <span class="hljs-string">'u'</span> };
+<span class="hljs-keyword">final</span> <span class="hljs-built_in">char</span>[] text5 = text4;
+
+text0 = <span class="hljs-string">'y'</span>;
+text2 = <span class="hljs-string">"uoie"</span> + text1;
+text4 = text5;
+text4[<span class="hljs-number">0</span>] = <span class="hljs-string">'x'</span>;
+text5[<span class="hljs-number">0</span>] = <span class="hljs-string">'z'</span>;</code></pre>
+
+<p id="@resulting_value_each"><a class="jump" href="#@resulting_value_each"></a>… what is the resulting value of each variable?  Write just the sequence of letters found in the variable’s value, with no punctuation or spaces.  For example:</p>
+
+<p id="@text0"><a class="jump" href="#@text0"></a><code>text0</code></p>
+
+<div class="indented"><p id="@y"><a class="jump" href="#@y"></a>y</p></div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@text1"><a class="jump" href="#@text1"></a><code>text1</code></p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@text2"><a class="jump" href="#@text2"></a><code>text2</code></p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@text3"><a class="jump" href="#@text3"></a><code>text3</code></p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@text4"><a class="jump" href="#@text4"></a><code>text4</code></p>
+
+<div class="form-group exercise-part" data-outline="d"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@text5"><a class="jump" href="#@text5"></a><code>text5</code></p>
+
+<div class="form-group exercise-part" data-outline="e"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="second_defense_localize_bugs"><a class="jump" href="#second_defense_localize_bugs"></a>Second defense: localize bugs</h2><div data-outline="second_defense_localize_bugs">
+
+<p id="@if_can-t_prevent"><a class="jump" href="#@if_can-t_prevent"></a>If we can’t prevent bugs, we can try to <mark data-mark-text="localization" data-structure-text="localization" id="^localization">localize</mark> them to a small part of the program, so that we don’t have to look too hard to find the cause of a bug.
+When localized to a single method or small module, bugs may be found simply by studying the program text.</p>
+
+<p id="@already_talked_about"><a class="jump" href="#@already_talked_about"></a>We already talked about <strong><mark data-structure-text="fail fast" id="^fail_fast"><a href="../04-code-review/#fail_fast">fail fast</a></mark></strong>: the earlier a problem is observed (the closer to its cause), the easier it is to fix.</p>
+
+<p id="@begin_simple_example"><a class="jump" href="#@begin_simple_example"></a>Let’s begin with a simple example:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> x  requires x &gt;= 0
+ * <span class="hljs-doctag">@return</span> approximation to square root of x
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">double</span> <span class="hljs-title">sqrt</span><span class="hljs-params">(<span class="hljs-keyword">double</span> x)</span> </span>{ ... }</code></pre>
+
+<p id="@now_suppose_somebody"><a class="jump" href="#@now_suppose_somebody"></a>Now suppose somebody calls <code>sqrt</code> with a negative argument.
+What’s the best behavior for <code>sqrt</code>?
+Since the caller has failed to satisfy the requirement that <code>x</code> should be nonnegative, <code>sqrt</code> is no longer bound by the terms of its contract, so it is technically free to do whatever it wants: return an arbitrary value, or enter an infinite loop, or melt down the CPU.
+Since the bad call indicates a bug in the caller, however, the most useful behavior would point out the bug as early as possible.
+We do this by inserting a runtime check of the precondition.
+Here is one way we might write that check:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * <span class="hljs-doctag">@param</span> x  requires x &gt;= 0
+ * <span class="hljs-doctag">@return</span> approximation to square root of x
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">double</span> <span class="hljs-title">sqrt</span><span class="hljs-params">(<span class="hljs-keyword">double</span> x)</span> </span>{ 
+    <span class="hljs-keyword">if</span> (! (x &gt;= <span class="hljs-number">0</span>)) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(<span class="hljs-string">"required x &gt;= 0, but was: "</span> + x);
+    ...
+}</code></pre>
+
+<p id="@precondition_not_satisfied"><a class="jump" href="#@precondition_not_satisfied"></a>When the precondition is not satisfied, this code terminates the program by throwing an unchecked <code>IllegalArgument­Exception</code>.
+The effects of the caller’s bug are prevented from propagating.</p>
+
+<p id="@checking_preconditions_example"><a class="jump" href="#@checking_preconditions_example"></a>Checking preconditions is an example of <strong><mark data-structure-text="defensive programming" id="^defensive_programming">defensive programming</mark></strong>.
+Real programs are rarely bug-free.
+Defensive programming offers a way to mitigate the effects of bugs even if you don’t know where they are.</p>
+
+</div><h2 id="assertions"><a class="jump" href="#assertions"></a>Assertions</h2><div data-outline="assertions">
+
+<p id="@common_practice_define"><a class="jump" href="#@common_practice_define"></a>It is common practice to define a function for these kinds of defensive checks, usually called <code>assert</code>.
+This approach abstracts away from what exactly happens when the assertion fails.
+The failed assertion might exit; it might record an event in a log file; it might email a report to a maintainer.</p>
+
+<p id="@java_assert_not"><a class="jump" href="#@java_assert_not"></a>In Java, <code>assert</code> is not a method but a built-in statement in the language.
+The simplest form of <mark data-structure-text="assertion" id="^assertion">assertion</mark> takes a boolean expression and throws <code>AssertionError</code> if the boolean expression evaluates to false:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-keyword">assert</span> x &gt;= <span class="hljs-number">0</span>;</code></pre>
+
+<p>Assertions have the added benefit of documenting an assumption about the state of the program at that point.
+To somebody reading your code, <code>assert x &gt;= 0</code> says “at this point, it should always be true that x &gt;= 0.”
+Unlike a comment, however, an assertion is executable code that enforces the assumption at runtime.</p>
+
+<p id="@java_assertion_may"><a class="jump" href="#@java_assertion_may"></a>A Java assertion may also include a description expression, which is usually a string, but may also be a primitive type or a reference to an object.
+The description is printed in an error message when the assertion fails, so it can be used to provide additional details to the programmer about the cause of the failure.
+The description follows the asserted expression, separated by a colon. For example:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-keyword">assert</span> x &gt;= <span class="hljs-number">0</span> : <span class="hljs-string">"x is "</span> + x;</code></pre>
+
+<p id="@if_x_1"><a class="jump" href="#@if_x_1"></a>If <code>x == -1</code>, then this assertion fails with the error message</p>
+
+<blockquote>
+  <p id="@x_1"><a class="jump" href="#@x_1"></a><code>x is -1</code></p>
+</blockquote>
+
+<p id="@along_stack_trace"><a class="jump" href="#@along_stack_trace"></a>along with a stack trace that tells you where the assertion was found in your code and the sequence of calls that brought the program to that point.
+This information is often enough to get started in finding the bug.</p>
+
+<p id="@serious_problem_java"><a class="jump" href="#@serious_problem_java"></a><strong>A serious problem with Java assertions is that assertions are <em>off by default</em>.</strong></p>
+
+<p id="@if_you_just"><a class="jump" href="#@if_you_just"></a>If you just run your program as usual, none of your assertions will be checked!
+Java’s designers did this because checking assertions can sometimes be costly to performance.
+For example, a function that searches an array using binary search has a requirement that the array be sorted.
+Asserting this requirement requires scanning through the entire array, however, turning an operation that should run in logarithmic time into one that takes linear time.
+You should be willing (eager!) to pay this cost during testing, since it makes debugging much easier, but not after the program is released to users.
+For most applications, however, assertions are <em>not</em> expensive compared to the rest of the code, and the benefit they provide in bug-checking is worth that small cost in performance.</p>
+
+<p id="@so_you_enable"><a class="jump" href="#@so_you_enable"></a>So you have to enable assertions explicitly by passing <code>-ea</code> (which stands for <em>enable assertions</em>) to the Java virtual machine.
+In Eclipse, you enable assertions by going to Run →  Run Configurations →  Arguments, and putting <code>-ea</code> in the VM arguments box.
+It’s best, in fact, to enable them by default by going to Preferences → Java → Installed JREs → Edit → Default VM Arguments, as you hopefully did in the <a href="../../getting-started/#assertions-on">Getting Started</a> instructions. </p>
+
+<p id="@always_good_idea"><a class="jump" href="#@always_good_idea"></a>It’s always a good idea to have assertions turned on when you’re running JUnit tests.
+You can ensure that assertions are enabled using the following test case: </p>
+
+<pre id="@test_public_void"><a class="jump" href="#@test_public_void"></a><code class="language-java hljs"><span class="hljs-meta">@Test</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testAssertionsEnabled</span><span class="hljs-params">()</span> </span>{
+    assertThrows(AssertionError<span class="hljs-class">.<span class="hljs-keyword">class</span>, () -&gt; </span>{ <span class="hljs-keyword">assert</span> <span class="hljs-keyword">false</span>; });
+}</code></pre>
+
+<p id="@assertthrows_method_takes"><a class="jump" href="#@assertthrows_method_takes"></a>The <code>assertThrows()</code> method takes two parameters: the kind of error to expect (here, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/AssertionError.html"><code>AssertionError</code></a>), and a function that should throw the error (here, we use a <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html">lambda expression</a>, similar to Python).
+If assertions are turned on as desired, then <code>assert false</code> throws an <code>AssertionError</code> inside the lambda, and <code>assertThrows</code> passes.
+If assertions are turned off, however, then the body of the lambda will do nothing, failing to throw the expected exception, and <code>assertThrows</code> will fail.</p>
+
+<p id="@note_java_assert"><a class="jump" href="#@note_java_assert"></a>Note that the Java <code>assert</code> statement is a different mechanism from the JUnit methods <code>assertTrue()</code>, <code>assertEquals()</code>, etc.
+They all assert a predicate about your code, but are designed for use in different contexts.
+The <code>assert</code> statement should be used in implementation code, for defensive checks inside the implementation.
+JUnit <code>assert...()</code> methods should be used in JUnit tests, to check the result of a test.
+The <code>assert</code> statements don’t run without <code>-ea</code>, but the JUnit <code>assert...()</code> methods always run.</p>
+
+</div><h2 id="what_to_assert"><a class="jump" href="#what_to_assert"></a>What to assert</h2><div data-outline="what_to_assert">
+
+<p id="@here_some_things"><a class="jump" href="#@here_some_things"></a>Here are some things you should assert:</p>
+
+<p id="@method_argument_requirements"><a class="jump" href="#@method_argument_requirements"></a><strong>Method argument requirements</strong>, like we saw for <code>sqrt</code> <a href="#second_defense_localize_bugs">above</a>.</p>
+
+<p id="@method_return_value"><a class="jump" href="#@method_return_value"></a><strong>Method return value requirements.</strong>  This kind of assertion is sometimes called a <em><mark data-structure-text="self check" id="^self_check">self check</mark></em>. For example, the <code>sqrt</code> method might square its result to check whether it is reasonably close to x:</p>
+
+<pre id="@public_double_sqrt-double"><a class="jump" href="#@public_double_sqrt-double"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">double</span> <span class="hljs-title">sqrt</span><span class="hljs-params">(<span class="hljs-keyword">double</span> x)</span> </span>{
+    <span class="hljs-keyword">assert</span> x &gt;= <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">double</span> r;
+    ... <span class="hljs-comment">// compute result r</span>
+    <span class="hljs-keyword">assert</span> Math.abs(r*r - x) &lt; .<span class="hljs-number">0001</span>;
+    <span class="hljs-keyword">return</span> r;
+}</code></pre>
+
+<p id="@should_you_write"><a class="jump" href="#@should_you_write"></a>When should you write runtime assertions?
+As you write the code, not after the fact.
+When you’re writing the code, you have the invariants in mind.
+If you postpone writing assertions, you’re less likely to do it, and you’re liable to omit some important invariants.</p>
+
+</div><h2 id="what_not_to_assert"><a class="jump" href="#what_not_to_assert"></a>What not to assert</h2><div data-outline="what_not_to_assert">
+
+<p id="@runtime_assertions_not"><a class="jump" href="#@runtime_assertions_not"></a>Runtime assertions are not free.
+They can clutter the code, so they must be used judiciously.
+Avoid trivial assertions, just as you would avoid uninformative comments.
+For example:</p>
+
+<pre id="@don-t_do_x"><a class="jump" href="#@don-t_do_x"></a><code class="language-java hljs"><span class="hljs-comment">// don't do this:</span>
+x = y + <span class="hljs-number">1</span>;
+<span class="hljs-keyword">assert</span> x == y+<span class="hljs-number">1</span>;</code></pre>
+
+<p id="@assertion_doesn-t_find"><a class="jump" href="#@assertion_doesn-t_find"></a>This assertion doesn’t find bugs in your code.
+It finds bugs in the compiler or Java virtual machine, which are components that you should trust until you have good reason to doubt them.
+If an assertion is obvious from its local context, leave it out.</p>
+
+<p id="@never_use_assertions"><a class="jump" href="#@never_use_assertions"></a>Never use assertions to test conditions that are external to your program, such as the existence of files, the availability of the network, or the correctness of input typed by a human user.
+Assertions test the internal state of your program to ensure that it is within the bounds of its specification.
+When an assertion fails, it indicates that the program has run off the rails in some sense, into a state in which it was not designed to function properly.
+Assertion failures therefore indicate bugs.
+External failures are not bugs, and there is no change you can make to your program in advance that will prevent them from happening.
+External failures should be handled using exceptions instead, like <code>FileNotFoundException</code> or <code>NoRouteToHostException</code>.</p>
+
+<p id="@many_assertion_mechanisms"><a class="jump" href="#@many_assertion_mechanisms"></a>Many assertion mechanisms are designed so that assertions are executed only during testing and debugging, and turned off when the program is released to users.
+Java’s <code>assert</code> statement behaves this way.
+Since assertions may be disabled, the correctness of your program should never depend on whether or not the assertion expressions are executed.
+In particular, asserted expressions should not have <em>side-effects</em>.
+For example, if you want to assert that an element removed from a list was actually found in the list, don’t write it like this:</p>
+
+<pre id="@don-t_do_assert"><a class="jump" href="#@don-t_do_assert"></a><code class="language-java hljs"><span class="hljs-comment">// don't do this:</span>
+<span class="hljs-keyword">assert</span> list.remove(x);</code></pre>
+
+<p id="@if_assertions_disabled"><a class="jump" href="#@if_assertions_disabled"></a>If assertions are disabled, the entire expression is skipped, and <code>x</code> is never removed from the list. Write it like this instead:</p>
+
+<pre id="@boolean_found_list-remove-x"><a class="jump" href="#@boolean_found_list-remove-x"></a><code class="language-java hljs"><span class="hljs-keyword">boolean</span> found = list.remove(x);
+<span class="hljs-keyword">assert</span> found;</code></pre>
+
+<p id="@similarly_if_conditional"><a class="jump" href="#@similarly_if_conditional"></a>Similarly, if a conditional statement or <code>switch</code> does not cover all the possible cases, it is good practice to use a check to block the illegal cases.
+But don’t use the <code>assert</code> statement here, because it can be turned off.
+Instead, throw an exception in the illegal cases, so that the check will always happen:</p>
+
+<pre id="@switch_vowel_case"><a class="jump" href="#@switch_vowel_case"></a><code class="language-java hljs"><span class="hljs-keyword">switch</span> (vowel) {
+  <span class="hljs-keyword">case</span> <span class="hljs-string">'a'</span>:
+  <span class="hljs-keyword">case</span> <span class="hljs-string">'e'</span>:
+  <span class="hljs-keyword">case</span> <span class="hljs-string">'i'</span>:
+  <span class="hljs-keyword">case</span> <span class="hljs-string">'o'</span>:
+  <span class="hljs-keyword">case</span> <span class="hljs-string">'u'</span>: <span class="hljs-keyword">return</span> <span class="hljs-string">"A"</span>;
+  <span class="hljs-keyword">default</span>: <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> AssertionError(<span class="hljs-string">"must be a vowel, but was: "</span> + vowel);
+}</code></pre>
+
+<p id="@exception_default_clause"><a class="jump" href="#@exception_default_clause"></a>The exception in the default clause has the effect of asserting that <code>vowel</code> must be one of the five vowel letters.</p>
+
+<div class="handout-solo alert alert-warning"><p id="@6-031_you_required"><a class="jump" href="#@6-031_you_required"></a>For 6.031, you are required to have assertions turned on, all the time.  Make sure you did this in Eclipse, following the instructions in the <a href="../../getting-started/#assertions-on" class="alert-link">Getting Started handout</a>.  If you don’t have assertions turned on, you will be sad, and the staff won’t have much sympathy.</p></div>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-what_not_to_assert"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-what_not_to_assert-assertions" data-target="#ex-what_not_to_assert-assertions" data-toggle="collapse"><a class="jump" href="#@ex-what_not_to_assert-assertions"></a><span class="panel-title">Assertions</span></div><div class="panel-collapse collapse exercise-panel" id="ex-what_not_to_assert-assertions" data-outline="assertions" data-ex-id="what_not_to_assert/assertions" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-09-avoiding-debugging"><div class="panel-body">
+
+<p id="@consider_incomplete_function"><a class="jump" href="#@consider_incomplete_function"></a>Consider this (incomplete) function:</p>
+
+<pre id="@solves_quadratic_equation"><a class="jump" href="#@solves_quadratic_equation"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Solves quadratic equation ax^2 + bx + c = 0.
+ * 
+ * <span class="hljs-doctag">@param</span> a quadratic coefficient, requires a != 0
+ * <span class="hljs-doctag">@param</span> b linear coefficient
+ * <span class="hljs-doctag">@param</span> c constant term
+ * <span class="hljs-doctag">@return</span> a list of the distinct real roots of the equation
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> List&lt;Double&gt; <span class="hljs-title">quadraticRoots</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> a, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> b, <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> c)</span> </span>{
+    List&lt;Double&gt; roots = <span class="hljs-keyword">new</span> ArrayList&lt;Double&gt;();
+    <span class="hljs-comment">// A</span>
+    ... <span class="hljs-comment">// compute roots        </span>
+    <span class="hljs-comment">// B</span>
+    <span class="hljs-keyword">return</span> roots;
+}</code></pre>
+
+<label class="exercise-part-heading">What statements would be reasonable to write at position A?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="assert a != 0;"><label for="md_converted_choice_2_0"><input type="checkbox" id="md_converted_choice_2_0"><code>assert a != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert b != 0;"><label for="md_converted_choice_2_1"><input type="checkbox" id="md_converted_choice_2_1"><code>assert b != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert c != 0;"><label for="md_converted_choice_2_2"><input type="checkbox" id="md_converted_choice_2_2"><code>assert c != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert roots.size() >= 0;"><label for="md_converted_choice_2_3"><input type="checkbox" id="md_converted_choice_2_3"><code>assert roots.size() &gt;= 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert roots.size() <= 2;"><label for="md_converted_choice_2_4"><input type="checkbox" id="md_converted_choice_2_4"><code>assert roots.size() &lt;= 2;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="for (double x : roots) { assert Math.abs(a*x*x + b*x + c) < 0.0001; }"><label for="md_converted_choice_2_5"><input type="checkbox" id="md_converted_choice_2_5"><code>for (double x : roots) { assert Math.abs(a*x*x + b*x + c) &lt; 0.0001; }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<label class="exercise-part-heading">What statements would be reasonable to write at position B?</label>
+
+<div class="form-group exercise-part" data-outline="b"><div class="checkbox exercise-choice" data-outline="assert a != 0;"><label for="md_converted_choice_3_0"><input type="checkbox" id="md_converted_choice_3_0"><code>assert a != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert b != 0;"><label for="md_converted_choice_3_1"><input type="checkbox" id="md_converted_choice_3_1"><code>assert b != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert c != 0;"><label for="md_converted_choice_3_2"><input type="checkbox" id="md_converted_choice_3_2"><code>assert c != 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert roots.size() >= 0;"><label for="md_converted_choice_3_3"><input type="checkbox" id="md_converted_choice_3_3"><code>assert roots.size() &gt;= 0;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assert roots.size() <= 2;"><label for="md_converted_choice_3_4"><input type="checkbox" id="md_converted_choice_3_4"><code>assert roots.size() &lt;= 2;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="for (double x : roots) { assert Math.abs(a*x*x + b*x + c) < 0.0001; }"><label for="md_converted_choice_3_5"><input type="checkbox" id="md_converted_choice_3_5"><code>for (double x : roots) { assert Math.abs(a*x*x + b*x + c) &lt; 0.0001; }</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="incremental_development"><a class="jump" href="#incremental_development"></a>Incremental development</h2><div data-outline="incremental_development">
+
+<p id="@great_way_localize"><a class="jump" href="#@great_way_localize"></a>A great way to localize bugs to a tiny part of the program is <mark data-structure-text="incremental development" id="^incremental_development"><em>incremental development</em></mark>.
+Build only a bit of your program at a time, and test that bit thoroughly before you move on.
+That way, when you discover a bug, it’s more likely to be in the part that you just wrote, rather than anywhere in a huge pile of code.</p>
+
+<p id="@our_class_testing"><a class="jump" href="#@our_class_testing"></a>Our class on testing talked about two techniques that help with this:</p>
+
+<ul id="@unit_testing_you">
+<li><a class="jump" href="#@unit_testing_you"></a><a href="../03-testing/#unit_and_integration_testing"><strong>Unit testing</strong></a>: when you test a module in isolation, you can be confident that any bug you find is in that unit – or maybe in the test cases themselves.</li>
+<li><a href="../03-testing/#automated_regression_testing"><strong>Regression testing</strong></a>: when you’re adding a new feature to a big system, run the regression test suite as often as possible.  If a test fails, the bug is probably in the code you just changed.</li>
+</ul>
+
+</div><h2 id="modularity_encapsulation"><a class="jump" href="#modularity_encapsulation"></a>Modularity &amp; encapsulation</h2><div data-outline="modularity_encapsulation">
+
+<p id="@you_can_also"><a class="jump" href="#@you_can_also"></a>You can also localize bugs by better software design.</p>
+
+<p id="@modularity_means_dividing"><a class="jump" href="#@modularity_means_dividing"></a><mark data-mark-text="modular" data-structure-text="modular" id="^modular"><strong>Modularity</strong></mark> means dividing up a system into components, or modules, each of which can be designed, implemented, tested, reasoned about, and reused separately from the rest of the system.
+The opposite of a modular system is a <mark data-structure-text="monolithic" id="^monolithic"><em>monolithic</em></mark> system – big and with all of its pieces tangled up and dependent on each other.</p>
+
+<p id="@program_consisting_single"><a class="jump" href="#@program_consisting_single"></a>A program consisting of a single, very long <code>main</code> function is monolithic – harder to understand, and harder to isolate bugs in.
+By contrast, a program broken up into small functions and classes is more modular.</p>
+
+<p id="@encapsulation_means_building"><a class="jump" href="#@encapsulation_means_building"></a><mark data-structure-text="encapsulation" id="^encapsulation"><strong>Encapsulation</strong></mark> means building walls around a module so that the module is responsible for its own internal behavior, and bugs in other parts of the system can’t damage its integrity.</p>
+
+<span id="access-control"></span>
+
+<p id="@one_kind_encapsulation"><a class="jump" href="#@one_kind_encapsulation"></a>One kind of encapsulation is <a href="http://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html">access control</a>, using <code>public</code> and <code>private</code> to control the visibility and accessibility of your variables and methods.
+A public variable or method can be accessed by any code (assuming the class containing that variable or method is also public).
+A private variable or method can only be accessed by code in the same class.
+Keeping things private as much as possible, especially for variables, provides encapsulation, since it limits the code that could inadvertently cause bugs.</p>
+
+<p id="@another_kind_encapsulation"><a class="jump" href="#@another_kind_encapsulation"></a>Another kind of encapsulation comes from <strong>variable scope</strong>.
+The <em><mark data-structure-text="scope" id="^scope">scope</mark></em> of a variable is the portion of the program text over which that variable is defined, in the sense that expressions and statements can refer to the variable.
+A method parameter’s scope is the body of the method.
+A local variable’s scope extends from its declaration to the next closing curly brace. 
+Keeping variable scopes as small as possible makes it much easier to reason about where a bug might be in the program.
+For example, suppose you have a loop like this:</p>
+
+<pre id="@i_0_i"><a class="jump" href="#@i_0_i"></a><code class="language-java hljs"><span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; ++i) {
+    ...
+    doSomeThings();
+    ...
+}</code></pre>
+
+<p id="@you-ve_discovered_loop"><a class="jump" href="#@you-ve_discovered_loop"></a>… and you’ve discovered that this loop keeps running forever – <code>i</code> never reaches 100.  Somewhere, somebody is changing <code>i</code>.
+But where?
+If <code>i</code> is declared as a global variable like this:</p>
+
+<pre id="@public_static_int"><a class="jump" href="#@public_static_int"></a><code class="language-java hljs"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> i;
+...
+<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; ++i) {
+    ...
+    doSomeThings();
+    ...
+}</code></pre>
+
+<p id="@then_scope_entire"><a class="jump" href="#@then_scope_entire"></a>… then its scope is the entire program.
+It might be changed anywhere in your program: by <code>doSomeThings()</code>, by some other method that <code>doSomeThings()</code> calls, by a concurrent thread running some completely different code.
+But if <code>i</code> is instead declared as a local variable with a narrow scope, like this:</p>
+
+<pre id="@int_i_0_i_100_i_dosomethings"><a class="jump" href="#@int_i_0_i_100_i_dosomethings"></a><code class="language-java hljs"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; ++i) {
+    ...
+    doSomeThings();
+    ...
+}</code></pre>
+
+<p id="@then_only_place"><a class="jump" href="#@then_only_place"></a>… then the only place where <code>i</code> can be changed is within the for statement – in fact, only in the <code>...</code> parts that we’ve omitted.
+You don’t even have to consider <code>doSomeThings()</code>, because <code>doSomeThings()</code> doesn’t have access to this local variable.</p>
+
+<p id="@minimizing_scope_variables"><a class="jump" href="#@minimizing_scope_variables"></a><strong>Minimizing the scope of variables</strong> is a powerful practice for bug localization.
+Here are a few rules that are good for Java:</p>
+
+<ul>
+<li><p id="@always_declare_loop"><a class="jump" href="#@always_declare_loop"></a><strong>Always declare a loop variable in the for-loop initializer.</strong>  So rather than declaring it before the loop:</p>
+
+<pre id="@int_i_i"><a class="jump" href="#@int_i_i"></a><code class="language-java hljs"><span class="hljs-keyword">int</span> i;
+<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; ++i) {</code></pre>
+
+<p id="@which_makes_scope_variable_entire_rest"><a class="jump" href="#@which_makes_scope_variable_entire_rest"></a>which makes the scope of the variable the entire rest of the outer curly-brace block containing this code, you should do this:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; ++i) {</code></pre>
+
+<p id="@which_makes_scope_i_limited_just"><a class="jump" href="#@which_makes_scope_i_limited_just"></a>which makes the scope of <code>i</code> limited just to the for loop.</p></li>
+<li><p id="@declare_variable_only"><a class="jump" href="#@declare_variable_only"></a><strong>Declare a variable only when you first need it, and in the innermost curly-brace block that you can.</strong>
+Variable scopes in Java are curly-brace blocks, so put your variable declaration in the innermost one that contains all the expressions that need to use the variable.
+Don’t declare all your variables at the start of the function – it makes their scopes unnecessarily large.
+But note that in languages without static type declarations, like Python and JavaScript, the scope of a variable is normally the entire function anyway, so you can’t restrict the scope of a variable with curly braces, alas.</p></li>
+<li><p id="@avoid_global_variables"><a class="jump" href="#@avoid_global_variables"></a><strong>Avoid global variables.</strong>
+Using global variables is a very bad idea, especially as programs get large.
+Global variables are often used as a shortcut to provide a parameter to several parts of your program.
+It’s better to just pass the parameter into the code that needs it, rather than putting it in global space where it can inadvertently be reassigned.</p></li>
+</ul>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-modularity_encapsulation"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-modularity_encapsulation-variable_scope" data-target="#ex-modularity_encapsulation-variable_scope" data-toggle="collapse"><a class="jump" href="#@ex-modularity_encapsulation-variable_scope"></a><span class="panel-title">Variable scope</span></div><div class="panel-collapse collapse exercise-panel" id="ex-modularity_encapsulation-variable_scope" data-outline="variable_scope" data-ex-id="modularity_encapsulation/variable_scope" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-09-avoiding-debugging"><div class="panel-body">
+
+<p id="@consider_following_code"><a class="jump" href="#@consider_following_code"></a>Consider the following code (which is missing some variable declarations):</p>
+
+<pre id="@1_class_apartment"><a class="jump" href="#@1_class_apartment"></a><code class="language-java hljs"> <span class="hljs-number">1</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Apartment</span> </span>{
+ <span class="hljs-number">2</span>     Apartment(<span class="hljs-keyword">int</span> bathrooms) {
+ <span class="hljs-number">3</span>         <span class="hljs-keyword">this</span>.roommates = <span class="hljs-keyword">new</span> HashSet&lt;Person&gt;();
+ <span class="hljs-number">4</span>         <span class="hljs-keyword">this</span>.bathrooms = bathrooms;
+ <span class="hljs-number">5</span>     }
+ <span class="hljs-number">6</span>     
+ <span class="hljs-number">7</span>     <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">addRoommate</span><span class="hljs-params">(Person newRoommate)</span> </span>{
+ <span class="hljs-number">8</span>         roommates.add(newRoommate);
+ <span class="hljs-number">9</span>         <span class="hljs-keyword">if</span> (roommates.size() &gt; PEOPLE_PER_BATHROOM * bathrooms) {
+<span class="hljs-number">10</span>             roommates.remove(newRoommate);
+<span class="hljs-number">11</span>             <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> TooManyPeopleException();
+<span class="hljs-number">12</span>         }
+<span class="hljs-number">13</span>     }
+<span class="hljs-number">14</span>     
+<span class="hljs-number">15</span>     <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getMaximumOccupancy</span><span class="hljs-params">()</span> </span>{
+<span class="hljs-number">16</span>         <span class="hljs-keyword">return</span> PEOPLE_PER_BATHROOM * bathrooms;
+<span class="hljs-number">17</span>     }
+<span class="hljs-number">18</span> }</code></pre>
+
+<label class="exercise-part-heading" id="@which_these_lines"><a class="jump" href="#@which_these_lines"></a>Which of these lines are within the scope of the <code>newRoommate</code> variable?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="line 3"><label for="md_converted_choice_4_0"><input type="checkbox" id="md_converted_choice_4_0">line 3</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="line 8"><label for="md_converted_choice_4_1"><input type="checkbox" id="md_converted_choice_4_1">line 8</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="line 10"><label for="md_converted_choice_4_2"><input type="checkbox" id="md_converted_choice_4_2">line 10</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="line 16"><label for="md_converted_choice_4_3"><input type="checkbox" id="md_converted_choice_4_3">line 16</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<label class="exercise-part-heading" id="@which_part_file"><a class="jump" href="#@which_part_file"></a>Which part of the file is the scope of the (currently undeclared) <code>roommates</code> instance variable?</label>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="lines 2-17"><label for="md_converted_choice_5_0"><input type="radio" id="md_converted_choice_5_0" name="md_converted_radio_5">lines 2-17</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="lines 3-4"><label for="md_converted_choice_5_1"><input type="radio" id="md_converted_choice_5_1" name="md_converted_radio_5">lines 3-4</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="lines 8-12"><label for="md_converted_choice_5_2"><input type="radio" id="md_converted_choice_5_2" name="md_converted_radio_5">lines 8-12</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="line 16"><label for="md_converted_choice_5_3"><input type="radio" id="md_converted_choice_5_3" name="md_converted_radio_5">line 16</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<label class="exercise-part-heading" id="@out_choices_below_best_declaration_roommates"><a class="jump" href="#@out_choices_below_best_declaration_roommates"></a>Out of the choices below, what is the best declaration for the <code>roommates</code> variable?</label>
+
+<div class="form-group exercise-part" data-outline="c"><div class="radio exercise-choice" data-outline="List<Person> roommates;"><label for="md_converted_choice_6_0"><input type="radio" id="md_converted_choice_6_0" name="md_converted_radio_6"><code>List&lt;Person&gt; roommates;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="Set<Person> roommates;"><label for="md_converted_choice_6_1"><input type="radio" id="md_converted_choice_6_1" name="md_converted_radio_6"><code>Set&lt;Person&gt; roommates;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="final Set<Person> roommates;"><label for="md_converted_choice_6_2"><input type="radio" id="md_converted_choice_6_2" name="md_converted_radio_6"><code>final Set&lt;Person&gt; roommates;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="HashSet<Person> roommates;"><label for="md_converted_choice_6_3"><input type="radio" id="md_converted_choice_6_3" name="md_converted_radio_6"><code>HashSet&lt;Person&gt; roommates;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<label class="exercise-part-heading" id="@out_choices_below_best_declaration_people_per_bathroom"><a class="jump" href="#@out_choices_below_best_declaration_people_per_bathroom"></a>Out of the choices below, what is the best declaration for the <code>PEOPLE_PER_BATHROOM</code> variable?</label>
+
+<div class="form-group exercise-part" data-outline="d"><div class="radio exercise-choice" data-outline="int PEOPLE_PER_BATHROOM = 5;"><label for="md_converted_choice_7_0"><input type="radio" id="md_converted_choice_7_0" name="md_converted_radio_7"><code>int PEOPLE_PER_BATHROOM = 5;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="final int PEOPLE_PER_BATHROOM = 5;"><label for="md_converted_choice_7_1"><input type="radio" id="md_converted_choice_7_1" name="md_converted_radio_7"><code>final int PEOPLE_PER_BATHROOM = 5;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static int PEOPLE_PER_BATHROOM = 5;"><label for="md_converted_choice_7_2"><input type="radio" id="md_converted_choice_7_2" name="md_converted_radio_7"><code>static int PEOPLE_PER_BATHROOM = 5;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static final int PEOPLE_PER_BATHROOM = 5;"><label for="md_converted_choice_7_3"><input type="radio" id="md_converted_choice_7_3" name="md_converted_radio_7"><code>static final int PEOPLE_PER_BATHROOM = 5;</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-modularity_encapsulation-snapshots_of_scope" data-target="#ex-modularity_encapsulation-snapshots_of_scope" data-toggle="collapse"><a class="jump" href="#@ex-modularity_encapsulation-snapshots_of_scope"></a><span class="panel-title">Snapshots of scope</span></div><div class="panel-collapse collapse exercise-panel" id="ex-modularity_encapsulation-snapshots_of_scope" data-outline="snapshots_of_scope" data-ex-id="modularity_encapsulation/snapshots_of_scope" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-09-avoiding-debugging"><div class="panel-body">
+
+<div class="panel panel-default panel-figure pull-right pull-margin"><img src="figures/snapshot-diagram.svg" width="400">
+
+<div class="panel-body"><pre id="@class_apartment_final"><a class="jump" href="#@class_apartment_final"></a><code class="language-java hljs"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Apartment</span> </span>{
+    <span class="hljs-keyword">final</span> Set&lt;Person&gt; roommates;
+    <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> bathrooms;
+
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> PEOPLE_PER_BATHROOM = <span class="hljs-number">5</span>;
+
+    Apartment(<span class="hljs-keyword">int</span> bathrooms) {
+        <span class="hljs-keyword">this</span>.roommates = <span class="hljs-keyword">new</span> HashSet&lt;Person&gt;();
+        <span class="hljs-keyword">this</span>.bathrooms = bathrooms;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">addRoommate</span><span class="hljs-params">(Person newRoommate)</span> </span>{
+        roommates.add(newRoommate);
+        <span class="hljs-keyword">if</span> (roommates.size() &gt; PEOPLE_PER_BATHROOM * bathrooms) {
+            roommates.remove(newRoommate);
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> TooManyPeopleException();
+        }
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getMaximumOccupancy</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> PEOPLE_PER_BATHROOM * bathrooms;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>{
+        Apartment apt = <span class="hljs-keyword">new</span> Apartment(<span class="hljs-number">1</span>);
+        apt.addRoommate(<span class="hljs-keyword">new</span> Person(<span class="hljs-string">"Sherlock Holmes"</span>));
+    }
+}</code></pre></div></div>
+
+<p id="@same_code_shown"><a class="jump" href="#@same_code_shown"></a>The same code is shown at right, now with instance and static variable declarations included, plus a <code>main</code> method.</p>
+
+<p id="@suppose_stop_code"><a class="jump" href="#@suppose_stop_code"></a>Suppose we stop the code just inside the call to <code>addRoommate()</code>.
+An incomplete snapshot diagram for this point is shown at the right.
+Fill in the snapshot diagram with the names that would appear at each location.
+If you don’t remember what each labeled box represents, refer back to the <a href="../04-code-review/#kinds_of_variables_in_snapshot_diagrams">kinds of variables in snapshot diagrams</a>.</p>
+
+<p id="@location_inside_box"><a class="jump" href="#@location_inside_box"></a>location A, inside the box labeled addRoommate</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="b"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@location_b_inside"><a class="jump" href="#@location_b_inside"></a>location B, inside the box labeled main</p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="d"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@location_c_inside"><a class="jump" href="#@location_c_inside"></a>location C, inside the oval labeled Apartment</p>
+
+<div class="form-group exercise-part" data-outline="e"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="f"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@location_d_outside"><a class="jump" href="#@location_d_outside"></a>location D, outside of all shapes, but labeled Apartment</p>
+
+<div class="form-group exercise-part" data-outline="g"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="h"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@which_names_out_scope_do_not"><a class="jump" href="#@which_names_out_scope_do_not"></a>Which names are out of scope and <strong>do not exist</strong> in the state of the program at this point?</p>
+
+<div class="form-group exercise-part" data-outline="i"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="j"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@which_names_out_scope_point_i-e"><a class="jump" href="#@which_names_out_scope_point_i-e"></a>Which names are out of scope at this point (i.e. inaccessible for the code inside <code>addRoommate()</code>) but <strong>still exist</strong> in the state of the program?</p>
+
+<div class="form-group exercise-part" data-outline="k"><div class="dropdown exercise-choice" data-outline="; args; PEOPLE_PER_BATHROOM; newRoommate; roommates; none of these"><select class="form-control"><option selected="selected"></option><option>args</option>,<option>PEOPLE_PER_BATHROOM</option>,<option>newRoommate</option>,<option>roommates</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="form-group exercise-part" data-outline="l"><div class="dropdown exercise-choice" data-outline="; apt; bathrooms (instance variable); bathrooms (local variable); this; none of these"><select class="form-control"><option selected="selected"></option><option>apt</option>,<option>bathrooms (instance variable)</option>,<option>bathrooms (local variable)</option>,<option>this</option>,<option>none of these</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+<h3 id="summary"><a class="jump" href="#summary"></a>Summary</h3><div data-outline="summary">
+
+<p id="@reading_looked_some"><a class="jump" href="#@reading_looked_some"></a>In this reading, we looked at some ways to minimize the cost of debugging:</p>
+
+<ul id="@avoid_debugging_make">
+<li><a class="jump" href="#@avoid_debugging_make"></a>Avoid debugging
+
+<ul><li>make bugs impossible with techniques like static typing, automatic dynamic checking, and immutability</li></ul></li>
+<li>Keep bugs confined 
+
+<ul><li>failing fast with assertions keeps a bug’s effects from spreading </li>
+<li>incremental development and unit testing confine bugs to your recent code</li>
+<li>scope minimization reduces the amount of the program you have to search</li></ul></li>
+</ul>
+
+<p id="@thinking_about_our"><a class="jump" href="#@thinking_about_our"></a>Thinking about our three main measures of code quality:</p>
+
+<ul id="@safe_bugs_trying">
+<li><a class="jump" href="#@safe_bugs_trying"></a><strong>Safe from bugs.</strong>  We’re trying to prevent them and get rid of them.</li>
+<li><strong>Easy to understand.</strong> Techniques like static typing, final declarations, and assertions are additional documentation of the assumptions in your code.  Variable scope minimization makes it easier for a reader to understand how the variable is used, because there’s less code to look at.</li>
+<li><strong>Ready for change.</strong>  Assertions and static typing document the assumptions in an automatically-checkable way, so that when a future programmer changes the code, accidental violations of those assumptions are detected.</li>
+</ul>
+
+</div></div><h2 id="more_practice"><a class="jump" href="#more_practice"></a>More practice</h2><div data-outline="more_practice">
+
+<p id="@if_you_would"><a class="jump" href="#@if_you_would"></a>If you would like to get more practice with the concepts covered in this reading, you can visit the <a href="https://qable.mit.edu:8001/practice.html#Avoiding%20Debugging">question bank</a>. The questions in this bank were written in previous semesters by students and staff, and are provided for review purposes only – doing them will not affect your classwork grades.</p></div></div>
+
+</div></main>
+<footer class="col-sm-2 footer-margin"><div>Collaboratively authored with contributions from: Saman Amarasinghe, Adam Chlipala, Srini Devadas, Michael Ernst, Max Goldman, John Guttag, Daniel Jackson, Rob Miller, Martin Rinard, and Armando Solar-Lezama. This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a>.</div></footer>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="classes-09-avoiding-debugging"></script></body><!--
+Handout delivered Fri Jun 04 2021 14:04:12 GMT+0000 (Greenwich Mean Time)
+--></html>

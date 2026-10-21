@@ -1,0 +1,244 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>6.031: Software Construction</title>
+<link href="web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="general/icons/6031.ico"><link rel="apple-touch-icon" href="general/icons/6031.png"></head>
+<body><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-1"></div>
+<main class="widepage container-fluid"><h1 class="handout-title col-sm-10 col-sm-offset-1" id="6031_software_construction"><a class="jump" href="#6031_software_construction"></a>6.031: Software Construction</h1><div data-outline="6031_software_construction">
+
+<div class="markdown col-sm-10 col-sm-offset-1 converted">
+
+<div class="info"><p>Spring 2021 · <a href="general/staff.html">Course Staff</a> · MWF11-12:30</p></div>
+
+<div class="row"><div class="col-sm-6 col-sm-push-6"><div class="shortcuts"><h3 id="go_to"><a class="jump" href="#go_to"></a>Go to…</h3><div data-outline="go_to">
+
+<div class="col-xs-6"><ul>
+<li><a href="https://whoosh.mit.edu/6.031"><strong>Online classes</strong></a> <br>
+for technical difficulties: <br>
+go to <a href="https://mit.zoom.us/j/91818820472">backup Zoom</a></li>
+</ul></div>
+
+<div class="col-xs-6"><ul>
+<li><a href="https://whoosh.mit.edu/6.031-lab"><strong>Online lab hours</strong></a> <br>
+for technical difficulties: <br>
+please post on <a href="https://piazza.com/class#spring2021/6031">Piazza</a></li>
+</ul></div>
+
+<div class="clearfix"></div>
+
+<ul>
+<li><a href="https://piazza.com/class#spring2021/6031"><img src="general/icons/piazza.ico" alt="" title=""> <strong>Piazza</strong></a></li>
+<li><a href="https://didit.mit.edu/6.031/sp21/"><img src="general/icons/didit.ico" alt="" title=""> <strong>Didit</strong> build reports &amp; grades</a></li>
+<li><a href="https://caesar.mit.edu/"><img src="general/icons/caesar.png" alt="" title=""> <strong>Caesar</strong> code reviews &amp; extensions</a></li>
+<li><a href="https://github.mit.edu/6031-sp21/"><img src="general/icons/github.ico" alt="" title=""> <strong>GitHub.mit.edu</strong> web view of Git remotes</a></li>
+<li><a href="https://qable.mit.edu/"><img src="general/icons/google-forms.png" alt="" title=""> <strong>Makeup</strong> form</a></li>
+<li><a href="https://omni.mit.edu/6.031/sp21/"><img src="general/icons/omnivore.ico" alt="" title=""> <strong>Omnivore</strong> grade reports</a></li>
+</ul>
+
+<div class="visible-xs-block"><ul>
+<li><a href="#general"><span class="glyphicon glyphicon-hand-down"></span> Jump to <strong>materials</strong></a></li>
+</ul></div></div></div>
+
+<h3 id="announcements"><a class="jump" href="#announcements"></a>Announcements</h3><div data-outline="announcements">
+
+<div id="announce"><h4 id="@fri_may_28"><a class="jump" href="#@fri_may_28"></a>Fri May 28: Project, Quiz 2, and final grades</h4>
+
+<p><a href="https://omni.csail.mit.edu/6.031/sp21/user/projects/starb">Project grades and feedback are now available on Omnivore</a>.</p>
+
+<p>Quiz 2 has now been graded, so you should get an email from Gradescope with a link to your graded quiz.</p>
+
+<p><a href="http://web.mit.edu/6.031/www/sp21/quizzes/archive/quiz2_soln.pdf">Quiz 2 solutions</a> are posted on the web site.
+Note that parts of the quiz were randomized.
+Gradescope shows the complete quiz, including the parts you weren’t asked as faded-out text.
+The solutions include answers to all the possible parts.</p>
+
+<p>Final grades have also been submitted to the registrar, so should become available on WebSIS.</p>
+
+<p>Have a good summer!</p>
+
+<h4 id="@wed_may_26"><a class="jump" href="#@wed_may_26"></a>Wed May 26: Quiz 2 tomorrow</h4>
+
+<p>Quiz 2 will be tomorrow, Thursday, 11:05-11:55am US Eastern time, at <a href="https://quiz.mit.edu/quiz2">quiz.mit.edu/quiz2</a>.</p>
+
+<p>As announced previously, the quiz is open-book: you may access any 6.031 or other resources, but you may not communicate with anyone except the course staff.</p>
+
+<p>During the quiz, if you want to ask a clarification question, visit <a href="https://whoosh.mit.edu/6.031">whoosh.mit.edu/6.031</a> and click “raise hand” to talk to a staff member.</p>
+
+<p>Good luck!</p>
+
+<h4 id="@sat_may_15"><a class="jump" href="#@sat_may_15"></a>Sat May 15: Quiz 2 during final exam period</h4>
+
+<p>Quiz 2 will be on Thursday, May 27, 11:05am-11:55am MIT time.
+This is during the scheduled final exam period for 6.031, but the quiz is only 50 minutes long, so we will not use the entire scheduled final exam slot.</p>
+
+<p>Quiz 2 will have a similar format to Quiz 1, and be offered through the same online system as Quiz 1.</p>
+
+<p>The quiz will cover readings 1-30.
+Any concepts from any of those readings may appear on the quiz, but you can expect a greater focus on readings 16-30, since those were not covered by Quiz 1.</p>
+
+<p>Quizzes from previous semesters of 6.031 can be found in the <a href="http://web.mit.edu/6.031/www/sp21/quizzes/archive/">quiz archive</a>, although their content may differ a bit from the topics we’ve discussed this semester.</p>
+
+<p>The quiz is open-book: you may access any 6.031 or other resources, but you may not communicate with anyone except the course staff.
+In past semesters, quizzes were closed-book with one double-sided page of notes allowed.
+The process of creating such a crib sheet conveys most of its learning benefit, so we still recommend doing it this semester as part of your studying.</p>
+
+<p>A quiz review will be held during class time on Wed May 19, and as always, you can visit lab &amp; office hours to ask quiz review questions, or post on Piazza.</p>
+
+<h4 id="@mon_may_10"><a class="jump" href="#@mon_may_10"></a>Mon May 10: Problem Set 4 grades</h4>
+
+<p><a href="https://omni.csail.mit.edu/6.031/sp21/user/psets/ps4">Overall ps4 grades and grade reports are now available on Omnivore.</a></p>
+
+<p>If you have questions, please see the <a href="http://web.mit.edu/6.031/www/sp21/general/#problem-with-my-grade">FAQ about grading questions</a>.</p>
+
+<h4 id="@fri_may_7"><a class="jump" href="#@fri_may_7"></a>Fri May 7: Problem Set 4 reflection</h4>
+
+<p>Once you’ve completed ps4 beta, please fill out the required <a href="http://web.mit.edu/6.031/www/sp21/psets/ps4/reflection.html">Problem Set 4 reflection</a>, which asks a few questions about how you worked on ps4.
+It should take only a minute to fill out, and is due by Monday classtime (11am US Eastern).</p></div>
+
+<div class="info"><p><a href="announcements.html"><strong>Announcements Archive</strong></a></p></div></div></div>
+<div class="col-sm-6 col-sm-pull-6"><div class="shortcuts"><h3 id="general"><a class="jump" href="#general"></a>General</h3><div data-outline="general">
+
+<ul>
+<li><a href="general/"><strong>General information</strong></a></li>
+<li><a href="general/collaboration.html">Collaboration and public sharing</a></li>
+<li><a href="general/code-review.html">Code reviewing</a></li>
+<li><a href="general/classwork-grading.html">Classwork grading and makeups</a></li>
+<li><a href="general/technical-faq/">Technical tips and troubleshooting</a></li>
+<li><p><a href="general/#who-to-ask">I have a question, who do I ask?</a></p></li>
+<li><p><a href="calendar"><img src="general/icons/google-calendar.ico" alt="" title=""> <strong>Calendar</strong>: classes, assignments, OH/lab</a></p></li>
+</ul>
+
+</div><h3 id="getting_started"><a class="jump" href="#getting_started"></a>Getting Started</h3><div data-outline="getting_started">
+
+<ul>
+<li data-active="2021-02-19T23:00:00.000Z"><a href="getting-started/">Getting Started: Java, Eclipse, &amp; Git</a></li>
+</ul>
+
+</div><h3 id="readings"><a class="jump" href="#readings"></a>Readings</h3><div data-outline="readings">
+
+<ul>
+<li data-active="2021-02-17T12:30:00.000Z"><a href="classes/01-static-checking/">01: Static Checking</a></li>
+<li data-active="2021-02-19T12:00:00.000Z"><a href="classes/02-basic-java/">02: Basic Java</a></li>
+<li data-active="2021-02-22T12:00:00.000Z"><a href="classes/03-testing/">03: Testing</a></li>
+<li data-active="2021-02-24T12:00:00.000Z"><a href="classes/04-code-review/">04: Code Review</a></li>
+<li data-active="2021-02-26T12:00:00.000Z"><a href="classes/05-version-control/">05: Version Control</a></li>
+<li data-active="2021-03-01T12:00:00.000Z"><a href="classes/06-specifications/">06: Specifications</a></li>
+<li data-active="2021-03-03T12:00:00.000Z"><a href="classes/07-designing-specs/">07: Designing Specifications</a></li>
+<li data-active="2021-03-05T12:00:00.000Z"><a href="classes/08-immutability/">08: Mutability &amp; Immutability</a></li>
+<li data-active="2021-03-09T12:00:00.000Z"><a href="classes/09-avoiding-debugging/">09: Avoiding Debugging</a></li>
+<li data-active="2021-03-10T12:00:00.000Z"><a href="classes/10-abstract-data-types/">10: Abstract Data Types</a></li>
+<li data-active="2021-03-12T12:00:00.000Z"><a href="classes/11-abstraction-functions-rep-invariants/">11: Abstraction Functions &amp; Rep Invariants</a></li>
+<li data-active="2021-03-15T12:00:00.000Z"><a href="classes/12-interfaces-generics-enums/">12: Interfaces, Generics, &amp; Enums</a></li>
+<li data-active="2021-03-17T12:00:00.000Z"><a href="classes/13-debugging/">13: Debugging</a></li>
+<li data-active="2021-03-19T12:00:00.000Z"><a href="classes/14-recursion/">14: Recursion</a></li>
+<li data-active="2021-03-24T12:00:00.000Z"><a href="classes/15-equality/">15: Equality</a></li>
+<li data-active="2021-03-26T12:00:00.000Z"><a href="classes/16-recursive-data-types/">16: Recursive Data Types</a></li>
+<li data-active="2021-03-29T12:00:00.000Z"><a href="classes/17-regex-grammars/">17: Regular Expressions &amp; Grammars</a></li>
+<li data-active="2021-03-31T12:00:00.000Z"><a href="classes/18-parsers/">18: Parsers</a></li>
+<li data-active="2021-04-02T12:00:00.000Z"><a href="classes/19-programming-with-adts/">19: Programming with ADTs</a></li>
+<li data-active="2021-04-07T12:00:00.000Z"><a href="classes/20-concurrency/">20: Concurrency</a></li>
+<li data-active="2021-04-09T12:00:00.000Z"><a href="classes/21-thread-safety/">21: Thread Safety</a></li>
+<li data-active="2021-04-12T12:00:00.000Z"><a href="classes/22-locks/">22: Locks &amp; Synchronization</a></li>
+<li data-active="2021-04-14T12:00:00.000Z"><a href="classes/23-queues/">23: Queues &amp; Message-Passing</a></li>
+<li data-active="2021-04-16T12:00:00.000Z"><a href="classes/24-sockets-networking/">24: Sockets &amp; Networking</a></li>
+<li data-active="2021-04-21T12:00:00.000Z"><a href="classes/25-callbacks/">25: Callbacks</a></li>
+<li data-active="2021-04-23T12:00:00.000Z"><a href="classes/26-map-filter-reduce/">26: Map, Filter, Reduce</a></li>
+<li data-active="2021-04-26T12:00:00.000Z"><a href="classes/27-little-languages-1/">27: Little Languages I</a></li>
+<li data-active="2021-04-28T12:00:00.000Z"><a href="classes/28-little-languages-2/">28: Little Languages II</a></li>
+<li data-active="2021-04-30T12:00:00.000Z"><a href="classes/29-team-version-control/">29: Team Version Control</a></li>
+<li data-active="2021-05-17T12:00:00.000Z"><a href="classes/30-ethics/">30: Ethical Software Engineering</a></li>
+</ul>
+
+<span></span>
+
+<ul>
+<li><a href="general/toc.html"><img src="general/icons/octicon-book.svg" alt="" title=""> Topics and terms</a></li>
+</ul>
+
+</div><h3 id="problem_sets"><a class="jump" href="#problem_sets"></a>Problem Sets</h3><div data-outline="problem_sets">
+
+<ul>
+<li data-active="2021-03-01T23:00:00.000Z"><a href="psets/ps0/">0: Turtle Graphics</a></li>
+<li data-active="2021-03-15T23:00:00.000Z"><a href="psets/ps1/">1: Flashcards</a></li>
+<li data-active="2021-03-31T23:00:00.000Z"><a href="psets/ps2/">2: Multi-Startup Set</a></li>
+<li data-active="2021-04-21T23:00:00.000Z"><a href="psets/ps3/">3: Memely</a></li>
+<li data-active="2021-05-03T23:00:00.000Z"><a href="psets/ps4/">4: Memory Scramble</a></li>
+</ul>
+
+</div><h3 id="project"><a class="jump" href="#project"></a>Project</h3><div data-outline="project">
+
+<ul>
+<li data-active="2021-05-14T23:00:00.000Z"><a href="projects/starb/">Star Battle</a></li>
+</ul>
+
+</div><h3 id="quizzes"><a class="jump" href="#quizzes"></a>Quizzes</h3><div data-outline="quizzes">
+
+<ul>
+<li><a href="quizzes/archive/quiz1.pdf">Quiz 1</a> and <a href="quizzes/archive/quiz1_soln.pdf">Quiz 1 solutions</a></li>
+<li><p><a href="quizzes/archive/quiz2.pdf">Quiz 2</a> and <a href="quizzes/archive/quiz2_soln.pdf">Quiz 2 solutions</a></p></li>
+<li><p><a href="quizzes/archive/">Quiz archive</a></p></li>
+</ul>
+
+</div><h3 id="course_archive"><a class="jump" href="#course_archive"></a>Course Archive</h3><div data-outline="course_archive">
+
+<ul>
+<li><a href="general/previous-semesters.html">Previous semesters</a></li>
+</ul></div></div></div></div>
+</div>
+
+<style>
+/* Home styles */
+.shortcuts ul { padding-left: 0; }
+.shortcuts ul li { list-style-type: none; margin-bottom: 1px; }
+.shortcuts ul li a, .info a { color: #769; }
+.shortcuts ul li a:hover, .info a:hover { color: #659; }
+.shortcuts ul li img:first-child { height: 16px; width: 16px; position: relative; bottom: 2px; border-radius: 1px; }
+.shortcuts ul li .glyphicon:first-child { font-size: 16px; }
+.shortcuts ul li.active { font-weight: bold; }
+h4 { margin-top: 20px; }
+h3:first-child, h4:first-child { margin-top: 10px; }
+</style>
+
+
+<script>
+/* Home script */
+window.onHandoutWillRender = function(converter) {
+  // icon URLs
+  converter.hooks.chain('postConversion', function(html) {
+    return html.replace(/="icon:/g, function() {
+      return '="general/icons/';
+    });
+  });
+  // announcements
+  announcements($('#announce'), { recent: true });
+}
+window.onHandoutDidRender = function() {
+  // active
+  $('li').each(function() {
+    var li = $(this);
+    this.innerHTML = this.innerHTML.replace(/ +~ +(.+)$/, function(item, date) {
+      li.attr('data-active', new Date(date).toISOString());
+      return '';
+    });
+  });
+  // announcements
+  if (HANDOUT_PREVIEW) { announceable($('#announce')); }
+}
+window.onHandoutReady = function() {
+  // active
+  $('ul').each(function() {
+    $('li[data-active]', this).each(function() {
+      if (new Date($(this).data('active')) > new Date()) {
+        $(this).addClass('active');
+        return false;
+      }
+    });
+  });
+}
+</script>
+
+</div></main>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="home-index"></script></body><!--
+Handout delivered Fri Jun 04 2021 13:49:04 GMT+0000 (Greenwich Mean Time)
+--></html>

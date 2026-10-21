@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 课 · 领域语言：需求的前置条件</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 1 · 需求与语言 · 第 4 课</p>
+  <h1>领域语言：需求的前置条件</h1>
+  <p class="lede">一个词只准有一个意思。这不是文字洁癖，而是需求、设计、测试和交接共同依赖的前置条件。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 40–50 分钟</span>
+  <span><b>前置</b> 第 2、3 课</span>
+  <span><b>产出</b> <code>GLOSSARY.md</code> 三个词条 + 一张位置卡</span>
+  <span><b>主读物</b> Evans《Domain-Driven Design》第 2 章；SWEBOK 第 1 章</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清领域语言属于第 2 课八个活动里的哪一块，为什么它是需求的前置条件。</li>
+    <li>区分同形异义和同义词漂移，判断一个词该不该进词表。</li>
+    <li>说清业内对领域语言的标准、主流做法和取舍，以及常见失败。</li>
+    <li>写出符合格式的词条，并让 agent 按经典清单和技能清单检查。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动。这一课在 <strong>Requirements（需求）</strong> 里，但它不是需求列表、用户故事或验收标准。它发生在这些东西之前：你得先能一致地叫出领域里的东西，才可能写出一条不歧义的需求。</p>
+  <p>举个简单的例子。如果「文档」既指磁盘上的 Markdown 文件，又指索引里的一条记录，那么「删除文档」这条需求就无法执行。你不知道删的是哪一个，测试也不知道该断言什么。词没定，需求就没法验收。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>活动</th><th>领域语言在其中的作用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">Requirements（需求）</td><td>需求句里的名词必须唯一，否则验收标准无法执行。</td></tr>
+        <tr><td class="what">Design &amp; Architecture（设计与架构）</td><td>类型、接口、模块名都从领域词来；命名漂移会让接口失真。</td></tr>
+        <tr><td class="what">Testing（测试）</td><td>测试名、场景和 oracle（判定标准）都依赖词义；一个词两个意思，测试就测错东西。</td></tr>
+        <tr><td class="what">Maintenance（维护）</td><td>三个月后的你和 agent 靠词表读代码；词表是交接的入口。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>所以领域语言不是一个独立阶段，而是一条横线。它最早出现在需求里，但会一直延伸到设计、测试和维护。第 2 课说这些活动互相牵制；领域语言是最早被牵动、也最容易被忽略的那一根线。</p>
+  <p>SWEBOK 把需求活动拆成 elicitation（需求获取）、analysis（分析）、specification（规格说明）、validation（验证）、management（管理）五类（SWEBOK v4, ch1, p48–61）。领域语言横跨前三类：它决定你怎么问、怎么分析、怎么写进规格。这不是某一个工具的偏好，而是需求活动本身的约束。</p>
+  <p>这一课只解决「词」。下一课「逼问」解决「到底要不要做」；第 6 课「需求工程」解决「怎么把需求写完整」。三节课合起来，才是模块 1 的 Requirements。</p>
+</section>
+
+<section>
+  <h2>问题与概念：一个词，两个意思</h2>
+  <p>你在沙盒里对 agent 说：加一个命令，把文档从知识库里删掉。它很快做完了。你看 diff：它把索引里的那条记录删了，磁盘上的 <code>.md</code> 文件还在。</p>
+  <p>你说：我要的是删文件。它说：好。于是又删了文件。第二天你搜不到那篇东西了，但 <code>kb list</code> 还列着它——因为 <code>list</code> 读的是磁盘目录，而 <code>delete</code> 只动了索引。两条路径各有各的「文档」。</p>
+  <p>这里没有谁粗心。<strong>你们说的「文档」不是同一个东西。</strong>你说的是一份 Markdown 文件，它说的是索引里的一条记录。这两个东西都需要名字，而你们共用了同一个。这种事故在单人项目里一样常见，因为对面坐着的 agent 不会反问你「你说的文档是哪个文档」。它会挑一个它见过的用法，而且挑得很有道理。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>方向</th><th>长什么样</th><th>怎么修</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="what">同形异义<br><span class="skill">one word, two meanings</span></td>
+          <td>「文档」既指源文件，又指索引记录；「入库」既指读完文件，又指能被搜到。</td>
+          <td><strong>拆成两个词</strong>，各自定义边界。一个名字只能指一个东西。</td>
+        </tr>
+        <tr>
+          <td class="what">同义词漂移<br><span class="skill">two words, one meaning</span></td>
+          <td>讨论时说 Document，代码里叫 <code>Note</code>，测试里叫 <code>Page</code>，工单里写「文档」。</td>
+          <td><strong>选一个，其余进 Avoid</strong>。不是建议不用，是禁用。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>同形异义让一句话无法执行：<em>删文档</em> 到底删什么？同义词漂移让每次沟通多一层翻译：你读代码时要在脑子里把 <code>Note</code> 翻成 Document，agent 写测试时又要猜你指的是哪个。翻译一次不贵，翻译三年很贵，而且每次翻译都可能译错。</p>
+  <p>Eric Evans 在《Domain-Driven Design》里把这件事叫做 <strong>ubiquitous language（通用语言）</strong>：一种围绕领域模型建立的、在团队所有沟通和代码中通用的语言。它的重点不在「写一份术语表」，而在「同一个词在说话、代码、测试、工单里指的是同一件事」（Evans, DDD, 第 2 章）。</p>
+
+  <blockquote>
+    <p>By using the model-based language pervasively and not being satisfied until it flows, we approach a model that is complete and comprehensible, made up of simple elements that combine to express complex ideas.<br>只有当这种基于模型的语言被彻底使用、并且不满足于它还没顺口时，我们才能逼近一个完整、可理解的模型。</p>
+  </blockquote>
+
+  <p>这里有一个容易被跳过的词：<em>pervasively</em>，彻底地。它意味着术语不能只活在文档里。如果 <code>GLOSSARY.md</code> 写 Document，代码里却叫 <code>Note</code>，那不是 ubiquitous language，那是一份没人执行的建议。判断术语有没有落地，看的不是文档写得多好，而是三处有没有跟着变：<strong>类型和方法的名字</strong>、<strong>测试的名字</strong>、<strong>工单和提交信息的措辞</strong>。</p>
+  <p>需要说清的是，术语表和数据字典并不是 DDD 发明的。需求工程里早就有 glossary（术语表）、data dictionary（数据字典）这类产物。DDD 的贡献是把语言和模型绑在一起，并且要求它贯穿说话、代码和文档，而不只是躺在需求规格的附录里。这一区分很重要：你不需要先信 DDD，才能承认「一个词只准有一个意思」是对的。</p>
+  <p>严格地说，一个词只在一个 <strong>bounded context（限界上下文）</strong> 里唯一。同一个词在另一个上下文里可以是另一个意思，那时候用 <code>GLOSSARY-MAP.md</code> 记录各个上下文和它们的关系。本课的沙盒是单上下文，一个根目录的 <code>GLOSSARY.md</code> 就够；多上下文留到你有第二个子系统时再说。</p>
+</section>
+
+<section>
+  <h2>行业做法：标准、主流、取舍</h2>
+  <p>业内有没有标准做法？有，但要分清三种东西。分不清，你就会把「别人这么做」当成「必须这么做」，或者把「有争议的取舍」当成「标准」。</p>
+
+  <p><strong>第一种是标准（standard）。</strong>它有正式规范、合同或法规约束，偏离要付出明确代价。比如受监管行业可能对需求规格、审计追溯有硬性要求，具体依行业而定。标准的特点是：你可以不同意，但不能不遵守。</p>
+  <p><strong>第二种是主流做法（mainstream practice）。</strong>业内广泛采用，但没有法律强制。比如术语表、验收标准、代码评审。它们通常有用，但要不要用、用多细，取决于项目规模、团队和风险。</p>
+  <p><strong>第三种是取舍（trade-off）。</strong>没有统一答案，两边都有道理。比如术语表写多细、要不要拆多个 bounded context、命名要不要在代码评审里强制执行。取舍要靠判断，不能靠背结论。</p>
+
+  <p>领域语言这件事，没有一条「所有项目都必须写术语表」的通用标准。受监管行业可能有自己的规范和审计要求；普通项目里，术语表是主流做法，不是法律。可以对照两份权威材料：SWEBOK 的五类需求活动（「位置」一节引用过）没有把术语表列为必做产物；SE-EDU 的 Requirements 一章把需求分成 functional / non-functional（功能性 / 非功能性），讨论了 elicitation 与 prioritization（优先级排序），同样没规定你必须写 glossary。</p>
+
+  <p>下面五个做法，是业内最常见的几种。每个都写清：是什么、怎么做、什么时候用、代价。你不需要全用；你需要知道自己现在用的是哪一种，以及为什么。</p>
+
+  <h3>1. Ubiquitous Language（通用语言）</h3>
+  <p><strong>是什么：</strong>让同一个词在需求、代码、测试和工单里都指同一件事。它不是「写一份文档」，而是「说话和写代码时用同一套词」。</p>
+  <p><strong>怎么做：</strong>先把领域里反复出现的名词列出来；每个词选一个规范说法；用一两句话定义它的边界；然后在代码、测试、工单里统一使用。发现有人（包括 agent）用了别的词，就改回来，或者把那个词写进 Avoid 列表。</p>
+  <p><strong>例子：</strong>Document 指磁盘上的 Markdown 文件，Entry 指索引里的一条记录。代码里不要用 Note 指 Document，也不要用 Document 指 Entry。</p>
+  <p><strong>什么时候用：</strong>领域比较复杂，或者多人、多 agent 协作，沟通成本高的时候。</p>
+  <p><strong>代价：</strong>需要持续维护。只写在文档里、代码不跟，它就会变成一句口号。</p>
+
+  <h3>2. Glossary / data dictionary（术语表 / 数据字典）</h3>
+  <p><strong>是什么：</strong>一张词表，列出词、定义、不要怎么说；数据字典还会列出字段类型、长度、来源。它可以是 Markdown、Wiki，也可以是需求规格里的附录。</p>
+  <p><strong>怎么做：</strong>只收被争过的领域词；每条两句话，说清「是什么」；把真实用过的替身写进 Avoid；放在仓库里，词义一变就更新。不要一次写完一本词典，先收三个真正会用的。</p>
+  <p><strong>例子：</strong>Document / 知识库接管的 Markdown 文件 / Avoid: file, note, page, doc。</p>
+  <p><strong>什么时候用：</strong>术语多、交接频繁、需要审计；受监管行业可能把它当成标准要求。</p>
+  <p><strong>代价：</strong>容易变成死文档。只写不用，或者一次写太多，最后没人维护。</p>
+
+  <h3>3. Bounded context（限界上下文）</h3>
+  <p><strong>是什么：</strong>一个词只在一个边界内唯一。不同子系统可以各自定义同一个词，不需要强行统一。</p>
+  <p><strong>怎么做：</strong>先画出子系统边界；每个边界维护自己的 GLOSSARY.md；根目录用 GLOSSARY-MAP.md 记录各个上下文和它们之间的关系。跨上下文沟通时，明确说「这是哪个上下文里的 Order」。</p>
+  <p><strong>例子：</strong>Order 在销售上下文指客户订单，在仓储上下文指拣货单。两个上下文各自定义，不要为了「统一」把它们硬合成一个词。</p>
+  <p><strong>什么时候用：</strong>多个子系统，同一个词在不同地方含义不同。</p>
+  <p><strong>代价：</strong>增加映射成本；小项目里容易过度设计。</p>
+
+  <h3>4. Acceptance criteria（验收标准）</h3>
+  <p><strong>是什么：</strong>一条需求被接受的条件。它必须可测试，不能是「系统应该友好」这种愿望。</p>
+  <p><strong>怎么做：</strong>每条需求写「给定 / 当 / 则」，或者写一个可勾选的清单；和提出需求的人确认；把它变成测试用例。写不出来，通常说明需求还没想清。</p>
+  <p><strong>例子：</strong>给定一个已入库的 Document，当用户执行 delete，则 search 不再返回它，磁盘文件被删除。</p>
+  <p><strong>什么时候用：</strong>需求需要验收、需要测试的时候。大多数功能需求都适用。</p>
+  <p><strong>代价：</strong>需要精确表述。写不好，它会变成另一句不可测的口号。</p>
+
+  <h3>5. Traceability matrix（追溯矩阵）</h3>
+  <p><strong>是什么：</strong>一张表，把需求、设计、测试和代码连起来，证明每条需求都被实现和验证。</p>
+  <p><strong>怎么做：</strong>给需求编号；在设计文档、测试用例、提交信息里引用编号；定期检查有没有断链。它可以是一张表，也可以是工具里的链接。</p>
+  <p><strong>例子：</strong>R-01 删除文档 → D-03 删除流程 → T-12 删除后搜索不到。</p>
+  <p><strong>什么时候用：</strong>审计、强监管、需求变更频繁的大项目。普通小项目通常不需要。</p>
+  <p><strong>代价：</strong>维护成本高；小项目里是纯负担。</p>
+
+  <p>这五个做法不是互斥的。一个项目可能只用前两个；一个受监管项目可能五个都用。关键是知道自己在用哪一档，以及为什么。</p>
+  <p>常见的失败有四种：把术语表写成第二份 spec；一次写完一本词典，收了一堆没验证过的词；只写不用，代码和测试完全不跟；以及把「标准」和「主流」混为一谈，用小项目的轻量做法去应付合规场景，或者反过来，用大项目的重流程压死一个单人项目。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：<code>domain-modeling</code></h2>
+  <p>这一课的概念由 <code>domain-modeling</code> 落地。它通常不需要你手动输入，而是一个<strong>模型调用（model-invoked）</strong>的底层技能：你在跑 <code>/grill-with-docs</code> 时，它会和 <code>grilling</code> 一起被调用。</p>
+  <p>第 3 课已经讲过技能包的调用方式，这里不再重复整张表。你只需要记住：<code>domain-modeling</code> 不需要你输入 <code>/domain-modeling</code>；它由流程拉起，你负责回答、拍板和审查产物。</p>
+
+  <p>正常流程是这样的：你运行 <code>/grill-with-docs</code>。它同时调用 <code>grilling</code>（一轮一轮问你）和 <code>domain-modeling</code>（盯住词）。当你说「把文档从知识库里删掉」时，<code>domain-modeling</code> 会追问：你说的 Document 是磁盘文件，还是索引记录？你选一个，它就把词条写进 <code>GLOSSARY.md</code>。你不需要专门打开这个技能，也不需要对它说「请使用 domain-modeling」。</p>
+  <p>你实际要做的事有四件。第一，提供领域里的真实说法和例子，别只给抽象名词。第二，回答它的追问，拍板哪个词是规范说法、边界在哪。第三，审查它写出来的词条：是不是两句以内、有没有 Avoid、有没有混进实现细节。第四，在代码、测试、工单里用这个词；agent 漂了，就把它指回 <code>GLOSSARY.md</code>。</p>
+  <p>如果你不在 grill 流程里，也可以直接说「用 domain-modeling 把这三个词收进 GLOSSARY.md」。但这不是必须记住的命令；它只是同一个技能的另一种入口。</p>
+  <p>它自动化了什么？三件事。第一，agent 每次开始工作前都会读词表，命名会跟着走。第二，词条有固定格式，Avoid 列表把「不要怎么说」写死，减少同义词漂移。第三，它把「什么时候写」变成了懒创建：第一次有词被真正定下来时才建文件，不提前写一本词典。</p>
+  <p>它没有自动化什么？三件更重要的判断。第一，一个词到底该怎么定边界，agent 只能指出矛盾，不能替你决定。第二，哪些词是这个上下文特有的，哪些只是通用编程概念，得你来分。第三，什么时候该拆出第二个 bounded context，技能包不会替你判断。</p>
+  <p>怎么判断它生效了？看四处：<code>GLOSSARY.md</code> 是否出现并被更新；agent 后续产出的类型名、方法名、测试名是否跟着它；代码、测试、工单是否用同一个词；下一次新会话里，agent 是否还会先读它。四处都跟了，才算落地；只有文件、没有使用，就只是多了一份文档。</p>
+  <p>它和经典 DDD 也不完全一样。DDD（Domain-Driven Design，领域驱动设计）的 ubiquitous language 是围绕领域模型建立的，通常和 bounded context、领域专家、模型演化绑在一起；技能包的 <code>GLOSSARY.md</code> 是一个轻量的、给 agent 读的术语表。它适合单人、小项目、agent 协作，不覆盖复杂的领域建模。这是有意的取舍，不是「技能包比 DDD 更好」。第 2 课说技能包是练习场，不是标准答案，这里就是一个具体例子。</p>
+</section>
+
+<section>
+  <h2>动作：给沙盒写三个词条</h2>
+  <p>只写三个。三个是一个下午能写完、也真的会用的量；写二十个的结果通常是写完就没人再打开。这一步是把上面的行业做法落到沙盒，不是背 <code>GLOSSARY-FORMAT.md</code> 的格式；格式只是让词条能被 agent 读。</p>
+
+  <ol class="steps">
+    <li><strong>建文件。</strong>在仓库根目录新建 <code>GLOSSARY.md</code>，写一行上下文说明，再加 <code>## Language</code>。用英文写：词必须是代码里能直接用的标识符，定义用英文，agent 才能把它原样变成类型名、方法名和测试名。</li>
+    <li><strong>挑已经被用混的词。</strong>沙盒里现成的三个候选在下面。先各自写下它在你嘴里的两个意思，再决定边界画在哪。</li>
+    <li><strong>每条两句话，加一行 Avoid。</strong>第一句说它是什么，第二句只在需要时写边界。Avoid 里放你真实用过的替身，不是同义词词典里抄来的。</li>
+    <li><strong>存盘，先别改代码。</strong>这一课的产物是词，不是重命名。改代码留到下一张工单，那时你才有词可供对照。</li>
+  </ol>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>候选词</th><th>你已经在用的两个意思</th><th>边界建议</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="what">Document</td>
+          <td>磁盘上的 <code>.md</code> 文件 / 索引里的一条记录</td>
+          <td>只有前者是 Document；后者是实现细节，不进词表。删除的边界写进词条。</td>
+        </tr>
+        <tr>
+          <td class="what">Ingest</td>
+          <td>把文件读完 / 已经能被 search 返回</td>
+          <td>后者才算完成。定义里写清这条边界，别写解析、分块、写索引的顺序。</td>
+        </tr>
+        <tr>
+          <td class="what">Citation</td>
+          <td>回答里的那行定位信息 / 被引用的那篇文档</td>
+          <td>只有前者是 Citation；后者是 Document。定位信息包含什么，属于约定还是实现，你得选一边。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>写完把三个词条贴给我，或者贴给 agent。下一节是反馈回路。</p>
+</section>
+
+<section>
+  <h2>反馈回路：两套清单一起用</h2>
+  <p>词条最常见的毛病不是想错，而是写松：定义里混进了步骤，Avoid 漏掉了你最常用的那个替身，或者干脆把通用词也收了进来。技能包能检查格式，经典做法能检查内容，所以两套都要用。</p>
+
+  <pre><code>读仓库根的 GLOSSARY.md，再读
+C:\Users\admin\.agents\skills\domain-modeling\GLOSSARY-FORMAT.md。
+
+先按格式检查：
+1. 每个词条有没有明确的主张 —— 同义词是不是都进了 _Avoid_？
+2. 定义是不是两句以内，说的是「它是什么」而不是「它怎么做」？
+3. 有没有混进实现细节或通用编程概念？
+4. 词之间该不该分组？
+
+再按领域语言的作用检查：
+5. 这个词条能不能裁决一句真实出现过的歧义句？
+6. 这个词在这个上下文里特有，还是通用编程概念？
+7. 代码、测试、工单里有没有跟着用这个词？
+
+逐条指出问题，引用我的原句。最后给三个词条各下一个结论：
+能用 / 需要改（说清改哪句）/ 重写。</code></pre>
+
+  <p>读反馈时，把意见分成两类。第一类是<strong>词的边界没定</strong>：定义覆盖不了你真实遇到的场景，或者两个词互相重叠。这类要你自己想，agent 只能指出矛盾。第二类是<strong>写松了</strong>：多了一句步骤、少了一个 Avoid、同类词没归组。这类直接改，不用讨论。</p>
+  <p>有一个反馈要主动拒绝：agent 很可能热情地帮你补齐到十几个词条，把 timeout、retry、parser 这些也写进去。它是在照着「术语表」这个词的字面意思做事，但技能包的规则正好相反——只收这个上下文特有的概念，而且只在词被定下来时写。告诉它：<strong>这一轮只收三个，其余的等我真用到再写。</strong></p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>词条收进词表只是开始。这套做法有三个常见的坑，先认清，再去做下面的练习。</p>
+  <p>第一个，是<strong>一次写完一本词典</strong>。提前给每个名词都写词条，等于给未来的自己留一堆没人验证过的假设。词条应该跟着争论走：谁被争过，谁进来；没争过的，等它们被争。</p>
+  <p>第二个，是<strong>只写不用</strong>。文件建好，代码里还是 <code>Note</code>、<code>load</code>、<code>file</code>，工单里还是「文档」。这种词表不会坏事，但也不会有用。检验方法很简单：下一次让 agent 改代码，看它产出的名字有没有跟着 <code>GLOSSARY.md</code> 走。</p>
+  <p>第三个，是<strong>把技能包的 <code>GLOSSARY.md</code> 当成完整的领域模型</strong>。它只是一个轻量的术语表，适合单人和小项目；它不替代 bounded context、领域专家和模型演化。知道它的边界，才不会把「用一个文件」误当成「做完了领域建模」。</p>
+</section>
+
+<section>
+  <h2>练习：六个句子，判断问题在哪一层</h2>
+  <p>每个句子只归到一个地方。先自己判，再展开「看判断」。判断标准不是「这句话好不好」，而是「如果它出了问题，该改哪一层」。答案里会顺便标出它属于哪个活动。</p>
+
+  <div class="quiz">
+    <div class="quiz-item">
+      <p class="quiz-q">1.「把文档入库，然后更新索引里的文档。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>词的问题，同形异义。</b>两个「文档」指两件事：源文件和索引记录。属于 Requirements 阶段：需求句里的名词没有唯一含义。要么给第二个东西另一个名字，要么承认它只是实现细节、不该出现在讨论里。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">2.「新建一个 <code>Note</code> 类，用来装 Document。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>词的问题，同义词漂移。</b>属于 Design 阶段：接口和类型名没有跟着领域词走。Document 已经在词表里，代码就该用 Document；<code>Note</code> 进 Avoid。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">3.「Ingest 先解析 front matter，再按 512 token 分块，最后写倒排索引。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>实现问题。</b>属于 Construction 阶段：这是步骤，应该进设计文档或 spec。词条里只能留边界：什么状态才算 Ingest 完成。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">4.「索引用 SQLite 存，不用 JSON 文件。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>决定该记下来。</b>属于 Design &amp; Architecture 阶段：有人会问「当初为什么不用 JSON」，这是 ADR（Architecture Decision Record，架构决策记录）的活，第 7 课讲。写进 <code>GLOSSARY.md</code> 会让它变成第二份设计文档。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">5.「测试叫 <code>test_load_file</code>，方法叫 <code>import_document</code>，工单写「入库」。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>词的问题。</b>属于 Testing 和维护阶段：一个行为三个名字，ubiquitous language 没落地。词表里定了 Ingest，测试名、方法名和工单都该用它。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">6.「search 要在 200ms 内返回。」</p>
+      <p class="choices"><span>词的问题</span><span>实现问题</span><span>需求问题</span><span>决定该记下来</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>需求问题。</b>属于 Requirements 阶段的非功能需求（第 6 课），不是词义。它该进需求清单和验收标准，而不是词条。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>领域语言是 Requirements 的前置条件，并贯穿设计、测试和维护；它不是一个独立的文档任务。</li>
+    <li>业内没有通用的「必须写 glossary」标准；有主流做法和取舍。要分清标准、主流、观点，再决定用哪一档。</li>
+    <li>技能包的 <code>GLOSSARY.md</code> 是轻量实现，适合单人 / 小项目；边界判断仍然由人做，不能交给 agent。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>Eric Evans, <em>Domain-Driven Design</em>（2003）第 2 章 “Communication and the Use of Language” 的 Ubiquitous Language 一节；<a href="../courseware/swebok/swebok-v4.pdf">SWEBOK v4 第 1 章（Software Requirements），p48–61</a>；<a href="../courseware/se-education/book/requirements/print.html">SE-EDU：Requirements</a>。</p>
+  <p><strong>实践工具（以此为准）：</strong><code>C:\Users\admin\.agents\skills\domain-modeling\SKILL.md</code> 与 <code>GLOSSARY-FORMAT.md</code>。前者说什么时候写、写完放哪；后者说词条怎么写。它们是落地方式，不是理论出处。</p>
+  <p><strong>延伸：</strong>Martin Fowler, <a href="https://martinfowler.com/bliki/UbiquitousLanguage.html">“Ubiquitous Language”</a>（2006）。五分钟读完，重点看「软件不适应歧义」这个理由。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 5 课「逼问：把模糊想法问成决定」。词表给了你一套可用的词，但词表不会告诉你「这个功能到底要不要做」。下一课你会看到 agent 怎么用一轮一轮的问题，把一个模糊想法逼成一个能写进工单的决定。</p>
+  <p>三个词条写完后直接贴给我，我按格式清单和领域语言清单一起看。写不出来也贴给我——写不出来的地方，通常就是边界没想清的地方。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0004-glossary-card.html">GLOSSARY.md 词条卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

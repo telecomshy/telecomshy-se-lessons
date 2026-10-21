@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLOSSARY.md 词条卡 · 领域语言是需求的前置条件</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 4 课</p>
+  <h1>GLOSSARY.md 词条卡</h1>
+  <p class="lede">领域语言是需求的前置条件。它是术语表，不是 spec（规格说明），不是设计文档；只收本项目特有、已经被争过的词。</p>
+</header>
+
+<h2>位置：它影响哪些活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>词在这里的作用</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements（需求）</td><td>需求句里的名词必须唯一，否则验收标准无法执行。</td></tr>
+      <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>类型、接口、模块名从领域词来；命名漂移会让接口失真。</td></tr>
+      <tr><td class="skill">Testing（测试）</td><td>测试名、场景、oracle（判定标准）都依赖词义。</td></tr>
+      <tr><td class="skill">Maintenance（维护）</td><td>三个月后的你和 agent 靠词表读代码。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>行业做法：先分清标准、主流、取舍</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>档</th><th>领域语言里的例子</th><th>怎么用</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">标准（standard）</td><td>受监管行业的需求规格、审计追溯</td><td>有合规要求时按行业规范做；没有通用强制标准。</td></tr>
+      <tr><td class="skill">主流（mainstream）</td><td>Ubiquitous Language（通用语言）、术语表、bounded context（限界上下文）、验收标准</td><td>多数项目适用，但要看规模和风险。</td></tr>
+      <tr><td class="skill">取舍（trade-off）</td><td>词表多细、单上下文还是多上下文、要不要在 review 里强制命名</td><td>给两边理由，按当前项目选。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>五个常见做法，具体怎么做</h3>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做（一句话）</th><th>什么时候用</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Ubiquitous Language（通用语言）</td><td>每个词选一个规范说法，在需求、代码、测试、工单里统一用。</td><td>领域复杂、多人或多 agent 协作。</td></tr>
+      <tr><td class="what">Glossary / data dictionary（术语表 / 数据字典）</td><td>只收被争过的词，每条两句 + Avoid，放仓库里，词义变了就更新。</td><td>术语多、交接频繁、需要审计。</td></tr>
+      <tr><td class="what">Bounded context（限界上下文）</td><td>按子系统划边界，各自维护 GLOSSARY.md，根目录用 GLOSSARY-MAP.md 记录关系。</td><td>一词多义、多个子系统。</td></tr>
+      <tr><td class="what">Acceptance criteria（验收标准）</td><td>每条需求写「给定 / 当 / 则」，并把它变成测试用例。</td><td>需求需要验收、需要测试。</td></tr>
+      <tr><td class="what">Traceability matrix（追溯矩阵）</td><td>需求编号 → 设计 → 测试，定期检查有没有断链。</td><td>审计、强监管、大型项目。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>先判方向</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>现象</th><th>诊断</th><th>修法</th></tr></thead>
+    <tbody>
+      <tr><td>一句话里同一个词指两个东西</td><td>同形异义（one word, two meanings）</td><td>拆成两个词，各定边界</td></tr>
+      <tr><td>讨论、代码、测试用三个词指一件事</td><td>同义词漂移（two words, one meaning）</td><td>留一个，其余进 <code>_Avoid_</code>（避免词）</td></tr>
+      <tr><td>词只活在文档里，代码里没跟</td><td>没有 ubiquitous language</td><td>改类型名、方法名、测试名、工单措辞</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>词条模板</h2>
+<pre><code># {Context Name}
+
+{一或两句：这个上下文是什么、为什么存在。}
+
+## Language
+
+**Term**:
+{一或两句，说清它是什么；需要时补一句边界。}
+_Avoid_: synonym-a, synonym-b</code></pre>
+
+<h2>四条规则</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>规则</th><th>检查什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Be opinionated</td><td>同一概念有多个词时，选一个，其余全进 Avoid。不留「也可以叫……」。</td></tr>
+      <tr><td class="what">Keep it tight</td><td>一到两句。定义「是什么」，不描述「怎么做」。</td></tr>
+      <tr><td class="what">Project-specific only</td><td>只收这个上下文独有的概念。timeout、retry、adapter、parser 不进。</td></tr>
+      <tr><td class="what">Group when natural</td><td>词多了按簇分组；只有一簇时平铺。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card-rule">
+  <p><strong>边界能写，步骤不写。</strong>「删除一个 Document 意味着它不再能被 search 返回」是边界，写。<br>「先删索引记录，再删文件，最后清缓存」是步骤，交给设计文档或 ADR（架构决策记录）。</p>
+</div>
+
+<h2>什么进，什么不进</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>进 GLOSSARY.md</th><th>不进（去哪）</th></tr></thead>
+    <tbody>
+      <tr><td>被争过的领域名词：Document、Ingest、Citation</td><td>行为与返回码 → spec</td></tr>
+      <tr><td>词之间的边界：什么算完成、什么不算</td><td>技术选型与数据格式 → ADR / design doc</td></tr>
+      <tr><td>真实用过的替身（放进 Avoid）</td><td>通用编程概念 → 哪都不进</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>一个能用的例子</h2>
+<pre><code>**Document**:
+A Markdown file the knowledge base has taken in, identified by its
+path. A deleted Document is no longer returned by search.
+_Avoid_: file, note, page, doc</code></pre>
+<p><strong>合格线：</strong>拿一句真的吵过的歧义句，读词条能不能裁决它？不能，说明还缺一条边界。</p>
+
+<h2>AI + Matt 怎么落地：<code>domain-modeling</code></h2>
+<p>领域语言由 <code>domain-modeling</code> 落地。它是<strong>模型调用（model-invoked）</strong>的底层技能，通常由 <code>/grill-with-docs</code> 拉起；你也可以手动输入 <code>/domain-modeling</code>。你运行 <code>/grill-with-docs</code> 时，它会和 <code>grilling</code> 一起被调用。</p>
+<p>你要做四件事：给真实说法和例子；回答追问、拍板定义；审查词条（两句内、有 Avoid、无实现细节）；在代码、测试、工单里用这个词。agent 漂了，就把它指回 <code>GLOSSARY.md</code>。</p>
+<p><strong>怎么判断生效：</strong><code>GLOSSARY.md</code> 出现并更新；agent 命名跟着它；代码、测试、工单一致；新会话还会先读它。只有文件、没有使用，就只是多了一份文档。</p>
+
+<h2>写完怎么验</h2>
+<pre><code>读 GLOSSARY.md，再读
+C:\Users\admin\.agents\skills\domain-modeling\GLOSSARY-FORMAT.md。
+
+先按格式检查：
+1. 同义词是否都进了 _Avoid_？
+2. 定义是否两句内、说「是什么」而非「怎么做」？
+3. 是否混进实现细节或通用编程概念？
+4. 词之间是否该分组？
+
+再按领域语言的作用检查：
+5. 能不能裁决一句真实出现过的歧义句？
+6. 这个词是这个上下文特有，还是通用编程概念？
+7. 代码、测试、工单里有没有跟着用这个词？
+
+逐条指出问题并引用原句，最后每条给结论：能用 / 需要改 / 重写。</code></pre>
+
+<div class="note">
+  <p><strong>只要三个词。</strong>一轮只收已经被争过的词。agent 想帮你补到十几个时，拒绝——提前写的词条是没验证过的假设，会把后来的讨论带偏。</p>
+  <p><strong>多上下文？</strong>才需要根目录的 <code>GLOSSARY-MAP.md</code> 指向各自的 <code>GLOSSARY.md</code>。单仓库单产品用一个根文件就够。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>Eric Evans, <em>Domain-Driven Design</em>（2003）第 2 章 Ubiquitous Language；SWEBOK v4 第 1 章，p48–61；SE-EDU Requirements。</p>
+  <p><strong>实践工具：</strong>格式以 <code>C:\Users\admin\.agents\skills\domain-modeling\GLOSSARY-FORMAT.md</code> 为准；它是落地方式，不是理论出处。</p>
+  <p><strong>版本：</strong>最新版用 <code>GLOSSARY.md</code>；旧版用 <code>CONTEXT.md</code>，作用相同。以你装到的 <code>SKILL.md</code> 为准。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0004-domain-language-and-context.html">第 4 课：领域语言：需求的前置条件</a> · <a href="course-map.html">课程地图</a> · <a href="0003-skill-map.html">技能包地图</a></p>
+</footer>
+
+</main>
+</body>
+</html>

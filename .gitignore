@@ -1,0 +1,17 @@
+# 第三方课件（有版权且体积大，只在本机作理论来源；来源清单见 courseware/README.md）
+*.pdf
+*.epub
+
+# 会话与工具临时文件
+.temp/
+background-registry-*
+*.bak
+*.bak-*
+.opencode/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

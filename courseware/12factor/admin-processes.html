@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>The Twelve-Factor App </title>
+  <meta name="description" content="A methodology for building modern, scalable, maintainable software-as-a-service apps.">
+  <meta name="author" content="Adam Wiggins">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="canonical" href="https://12factor.net/admin-processes">
+  <link rel="alternate" hreflang="x-default" href="https://12factor.net/admin-processes">
+<link rel="alternate" hreflang="cs" href="https://12factor.net/cs/admin-processes">
+<link rel="alternate" hreflang="de" href="https://12factor.net/de/admin-processes">
+<link rel="alternate" hreflang="el" href="https://12factor.net/el/admin-processes">
+<link rel="alternate" hreflang="en" href="https://12factor.net/admin-processes">
+<link rel="alternate" hreflang="es" href="https://12factor.net/es/admin-processes">
+<link rel="alternate" hreflang="fa" href="https://12factor.net/fa/admin-processes">
+<link rel="alternate" hreflang="fr" href="https://12factor.net/fr/admin-processes">
+<link rel="alternate" hreflang="it" href="https://12factor.net/it/admin-processes">
+<link rel="alternate" hreflang="ja" href="https://12factor.net/ja/admin-processes">
+<link rel="alternate" hreflang="ko" href="https://12factor.net/ko/admin-processes">
+<link rel="alternate" hreflang="pl" href="https://12factor.net/pl/admin-processes">
+<link rel="alternate" hreflang="pt_br" href="https://12factor.net/pt_br/admin-processes">
+<link rel="alternate" hreflang="ru" href="https://12factor.net/ru/admin-processes">
+<link rel="alternate" hreflang="sk" href="https://12factor.net/sk/admin-processes">
+<link rel="alternate" hreflang="th" href="https://12factor.net/th/admin-processes">
+<link rel="alternate" hreflang="tr" href="https://12factor.net/tr/admin-processes">
+<link rel="alternate" hreflang="uk" href="https://12factor.net/uk/admin-processes">
+<link rel="alternate" hreflang="vi" href="https://12factor.net/vi/admin-processes">
+<link rel="alternate" hreflang="zh_cn" href="https://12factor.net/zh_cn/admin-processes">
+  <link rel="shortcut icon" href="/images/favicon.ico">
+
+  <link rel="stylesheet" href="/css/screen.css" media="screen">
+  <link rel="stylesheet" href="/css/mobile.css" media="screen">
+
+  <script type="text/javascript" src="//use.typekit.com/rsq7tro.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+</head>
+<body>
+  
+  <!-- Google Tag Manager -->
+  <noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-TK5QTP"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  '//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TK5QTP');</script>
+  <!-- End Google Tag Manager -->
+  
+
+  <header>
+  <div class="header-container">
+  
+    <div class="title-wrapper">
+        <h1><a href="/" title="The Twelve-Factor App">The Twelve-Factor App</a></h1>
+    </div>
+    <div class="top-nav">
+      <ul>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/community">Community</a></li>
+        <li><a href="https://github.com/twelve-factor/twelve-factor" class="github-button">
+          <img src="/images/github-mark.svg" alt="GitHub logo" class="github-logo">GitHub
+        </a></li>
+      </ul>
+    </div>
+  
+  </div>
+  </header>
+
+  <section class="abstract" id="factor">
+  <article class="ltr">
+    
+<h2 id="xii_admin_processes">XII. Admin processes</h2>
+
+<h3 id="run_adminmanagement_tasks_as_oneoff_processes">Run admin/management tasks as one-off processes</h3>
+
+<p>The <a href="./concurrency">process formation</a> is the array of processes that are used to do the app’s regular business (such as handling web requests) as it runs. Separately, developers will often wish to do one-off administrative or maintenance tasks for the app, such as:</p>
+
+<ul>
+<li>Running database migrations (e.g. <code>manage.py migrate</code> in Django, <code>rake db:migrate</code> in Rails).</li>
+
+<li>Running a console (also known as a <a href="http://en.wikipedia.org/wiki/Read-eval-print_loop">REPL</a> shell) to run arbitrary code or inspect the app’s models against the live database. Most languages provide a REPL by running the interpreter without any arguments (e.g. <code>python</code> or <code>perl</code>) or in some cases have a separate command (e.g. <code>irb</code> for Ruby, <code>rails console</code> for Rails).</li>
+
+<li>Running one-time scripts committed into the app’s repo (e.g. <code>php scripts/fix_bad_records.php</code>).</li>
+</ul>
+
+<p>One-off admin processes should be run in an identical environment as the regular <a href="./processes">long-running processes</a> of the app. They run against a <a href="./build-release-run">release</a>, using the same <a href="./codebase">codebase</a> and <a href="./config">config</a> as any process run against that release. Admin code must ship with application code to avoid synchronization issues.</p>
+
+<p>The same <a href="./dependencies">dependency isolation</a> techniques should be used on all process types. For example, if the Ruby web process uses the command <code>bundle exec thin start</code>, then a database migration should use <code>bundle exec rake db:migrate</code>. Likewise, a Python program using Virtualenv should use the vendored <code>bin/python</code> for running both the Tornado webserver and any <code>manage.py</code> admin processes.</p>
+
+<p>Twelve-factor strongly favors languages which provide a REPL shell out of the box, and which make it easy to run one-off scripts. In a local deploy, developers invoke one-off admin processes by a direct shell command inside the app’s checkout directory. In a production deploy, developers can use ssh or other remote command execution mechanism provided by that deploy’s execution environment to run such a process.</p>
+
+  </article>
+</section>
+
+<section class="concrete">
+  <nav>
+    <div id="locales"><a href="/cs/admin-processes">Česky (cs)</a> | <a href="/de/admin-processes">Deutsch (de)</a> | <a href="/el/admin-processes">Ελληνικά (el)</a> | <span>English (en)</span> | <a href="/es/admin-processes">Español (es)</a> | <a href="/fa/admin-processes">فارسی (fa)</a> | <a href="/fr/admin-processes">Français (fr)</a> | <a href="/it/admin-processes">Italiano (it)</a> | <a href="/ja/admin-processes">日本語 (ja)</a> | <a href="/ko/admin-processes">한국어 (ko)</a> | <a href="/pl/admin-processes">Polski (pl)</a> | <a href="/pt_br/admin-processes">Português do Brasil (pt_br)</a> | <a href="/ru/admin-processes">Русский (ru)</a> | <a href="/sk/admin-processes">Slovensky (sk)</a> | <a href="/th/admin-processes">ภาษาไทย (th)</a> | <a href="/tr/admin-processes">Türkçe (tr)</a> | <a href="/uk/admin-processes">Українська (uk)</a> | <a href="/vi/admin-processes">Tiếng Việt (vi)</a> | <a href="/zh_cn/admin-processes">简体中文 (zh_cn)</a></div>
+    <div id="prev"><a href="./logs">&laquo; Previous</a></div>
+    <div id="next"></div>
+  </nav>
+</section>
+
+
+  <footer>
+    <p id="locales"><a href="/cs/admin-processes">Česky (cs)</a> | <a href="/de/admin-processes">Deutsch (de)</a> | <a href="/el/admin-processes">Ελληνικά (el)</a> | <span>English (en)</span> | <a href="/es/admin-processes">Español (es)</a> | <a href="/fa/admin-processes">فارسی (fa)</a> | <a href="/fr/admin-processes">Français (fr)</a> | <a href="/it/admin-processes">Italiano (it)</a> | <a href="/ja/admin-processes">日本語 (ja)</a> | <a href="/ko/admin-processes">한국어 (ko)</a> | <a href="/pl/admin-processes">Polski (pl)</a> | <a href="/pt_br/admin-processes">Português do Brasil (pt_br)</a> | <a href="/ru/admin-processes">Русский (ru)</a> | <a href="/sk/admin-processes">Slovensky (sk)</a> | <a href="/th/admin-processes">ภาษาไทย (th)</a> | <a href="/tr/admin-processes">Türkçe (tr)</a> | <a href="/uk/admin-processes">Українська (uk)</a> | <a href="/vi/admin-processes">Tiếng Việt (vi)</a> | <a href="/zh_cn/admin-processes">简体中文 (zh_cn)</a></p>
+    <p>Written by Adam Wiggins • Last updated 2017 • <a href="https://github.com/heroku/12factor">Sourcecode</a> • <a href="/12factor.epub">Download ePub Book</a></p>
+    <p>© Copyright 2026 Salesforce, Inc. All rights reserved. Various trademarks held by their respective owners. Salesforce Tower, 415 Mission Street, 3rd Floor, San Francisco, CA 94105, United States</p>
+    <p class="legal"><a href="https://www.salesforce.com/company/legal/">Legal</a> <a href="https://www.salesforce.com/company/legal/sfdc-website-terms-of-service/">Terms of Service</a> <a href="https://www.salesforce.com/company/privacy/">Privacy Information</a> <a href="https://www.salesforce.com/company/disclosure/">Responsible Disclosure</a> <a href="https://trust.salesforce.com/en/">Trust</a> <a href="https://www.salesforce.com/form/contact/contactme/?d=70130000000EeYa">Contact</a> <span class="cpra"><a rel="nofollow" href="https://www.salesforce.com/form/other/privacy-request/"><img src="/images/privacy.png" aria-label="Privacy Icon" title="Privacy Icon">Your Privacy Choices</a></span> <a class="optanon-toggle-display" rel="nofollow" href="#">Cookie Preferences</a></p>
+  </footer>
+</body>
+</html>

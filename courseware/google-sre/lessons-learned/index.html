@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-WVF23W3');
+    </script>
+    
+    
+    <meta charset="utf-8">
+    <meta content="initial-scale=1, minimum-scale=1, width=device-width" name="viewport"><title>Google SRE Lessons and Experiences from other industries</title>
+    <meta name="description" content="Explore core principles of Site Reliability Engineering at Google and reliability  management strategies that are evident across high reliability organizations.">
+
+    
+    <meta name="referrer" content="no-referrer" />
+    <link rel="canonical" href="https://sre.google/sre-book/lessons-learned/">
+      <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="icon" type="image/png" sizes="32x32" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="icon" type="image/png" sizes="16x16" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="shortcut icon" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+    
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Google+Sans:400|Roboto:400,400italic,500,500italic,700,700italic|Roboto+Mono:400,500,700|Material+Icons"><link href="/css/sre-book.min.css" rel="stylesheet">
+    <script src="/js/detect.min.js"></script>
+  </head>
+
+  <body>
+    
+    <noscript>
+      <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVF23W3"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    
+    
+    <main>
+      <div>
+  <div id="curtain" class="menu-closed"></div>
+  <div class="header clearfix">
+    <a id="burger-menu" class="expand"></a>
+    <h2 class="chapter-title">
+      Chapter 33 - Lessons Learned from Other Industries
+    </h2>
+  </div>
+  <div id="overlay-element" class="expands">
+    <div class="logo">
+      <a href="https://www.google.com">
+        <img src="/img/dynamic/sre-book/632142839b17938ba5b6f27f37695c51.webp" alt="Google">
+      </a>
+    </div>
+    <ol id="drop-down" class="dropdown-content"><li>
+        <a href="/sre-book/table-of-contents/" class="menu-buttons">Table of Contents</a>
+      </li>
+        <li>
+          <a href="/sre-book/foreword/" class="menu-buttons">
+            
+              Foreword
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/preface/" class="menu-buttons">
+            
+              Preface
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-I-introduction/" class="menu-buttons">
+            
+              Part I - Introduction
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/introduction/" class="menu-buttons">
+            
+              1. Introduction
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/production-environment/" class="menu-buttons">
+            
+              2. The Production Environment at Google, from the Viewpoint of an SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-II-principles/" class="menu-buttons">
+            
+              Part II - Principles
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/embracing-risk/" class="menu-buttons">
+            
+              3. Embracing Risk
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/service-level-objectives/" class="menu-buttons">
+            
+              4. Service Level Objectives
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/eliminating-toil/" class="menu-buttons">
+            
+              5. Eliminating Toil
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/monitoring-distributed-systems/" class="menu-buttons">
+            
+              6. Monitoring Distributed Systems
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/automation-at-google/" class="menu-buttons">
+            
+              7. The Evolution of Automation at Google
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/release-engineering/" class="menu-buttons">
+            
+              8. Release Engineering
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/simplicity/" class="menu-buttons">
+            
+              9. Simplicity
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-III-practices/" class="menu-buttons">
+            
+              Part III - Practices
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/practical-alerting/" class="menu-buttons">
+            
+              10. Practical Alerting
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/being-on-call/" class="menu-buttons">
+            
+              11. Being On-Call
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/effective-troubleshooting/" class="menu-buttons">
+            
+              12. Effective Troubleshooting
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/emergency-response/" class="menu-buttons">
+            
+              13. Emergency Response
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/managing-incidents/" class="menu-buttons">
+            
+              14. Managing Incidents
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/postmortem-culture/" class="menu-buttons">
+            
+              15. Postmortem Culture: Learning from Failure
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/tracking-outages/" class="menu-buttons">
+            
+              16. Tracking Outages
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/testing-reliability/" class="menu-buttons">
+            
+              17. Testing for Reliability
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/software-engineering-in-sre/" class="menu-buttons">
+            
+              18. Software Engineering in SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/load-balancing-frontend/" class="menu-buttons">
+            
+              19. Load Balancing at the Frontend
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/load-balancing-datacenter/" class="menu-buttons">
+            
+              20. Load Balancing in the Datacenter
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/handling-overload/" class="menu-buttons">
+            
+              21. Handling Overload
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/addressing-cascading-failures/" class="menu-buttons">
+            
+              22. Addressing Cascading Failures
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/managing-critical-state/" class="menu-buttons">
+            
+              23. Managing Critical State: Distributed Consensus for Reliability
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/distributed-periodic-scheduling/" class="menu-buttons">
+            
+              24. Distributed Periodic Scheduling with Cron
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/data-processing-pipelines/" class="menu-buttons">
+            
+              25. Data Processing Pipelines
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/data-integrity/" class="menu-buttons">
+            
+              26. Data Integrity: What You Read Is What You Wrote
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/reliable-product-launches/" class="menu-buttons">
+            
+              27. Reliable Product Launches at Scale
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-IV-management/" class="menu-buttons">
+            
+              Part IV - Management
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/accelerating-sre-on-call/" class="menu-buttons">
+            
+              28. Accelerating SREs to On-Call and Beyond
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/dealing-with-interrupts/" class="menu-buttons">
+            
+              29. Dealing with Interrupts
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/operational-overload/" class="menu-buttons">
+            
+              30. Embedding an SRE to Recover from Operational Overload
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/communication-and-collaboration/" class="menu-buttons">
+            
+              31. Communication and Collaboration in SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/evolving-sre-engagement-model/" class="menu-buttons">
+            
+              32. The Evolving SRE Engagement Model
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-V-conclusions/" class="menu-buttons">
+            
+              Part V - Conclusions
+            
+          </a>
+        </li>
+      
+        <li class="active">
+          <a href="/sre-book/lessons-learned/" class="menu-buttons">
+            
+              33. Lessons Learned from Other Industries
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/conclusion/" class="menu-buttons">
+            
+              34. Conclusion
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/availability-table/" class="menu-buttons">
+            
+              Appendix A. Availability Table
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/service-best-practices/" class="menu-buttons">
+            
+              Appendix B. A Collection of Best Practices for Production Services
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/incident-document/" class="menu-buttons">
+            
+              Appendix C. Example Incident State Document
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/example-postmortem/" class="menu-buttons">
+            
+              Appendix D. Example Postmortem
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/launch-checklist/" class="menu-buttons">
+            
+              Appendix E. Launch Coordination Checklist
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/production-meeting/" class="menu-buttons">
+            
+              Appendix F. Example Production Meeting Minutes
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/bibliography/" class="menu-buttons">
+            
+              Bibliography
+            
+          </a>
+        </li>
+      
+    </ol>
+  </div>
+</div>
+
+      
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+    
+    
+      
+    
+  
+
+  
+  
+    
+  
+
+  
+  
+    
+  
+
+  
+  
+  
+    
+  
+
+  
+  
+
+    
+    <div id="maia-main" role="main">
+      <div class="content" id="content">
+        
+          
+          
+          
+          <section data-type="chapter" id="chapter_other-reliability-efforts">
+  <h1 class="heading jumptargets">Lessons Learned from Other Industries</h1>
+  <p class="byline author">Written by Jennifer Petoff <br>Edited by Betsy Beyer</p>
+  <p>A deep dive into SRE culture and practices at Google naturally leads to the question of how other industries manage their businesses for reliability. Compiling this book on Google SRE created an opportunity to speak to a number of Google's engineers about their previous work experiences in a variety of other high-reliability fields in order to address the following comparative questions:</p>
+  <ul>
+    <li>Are the principles used in Site Reliability Engineering also important outside of Google, or do other industries tackle the requirements of high reliability in markedly different ways?</li>
+    <li>If other industries also adhere to SRE principles, how are the principles manifested?</li>
+    <li>What are the similarities and differences in the implementation of these principles across industries?</li>
+    <li>What factors drive similarities and differences in implementation?</li>
+    <li>What can Google and the tech industry learn from these comparisons?</li>
+  </ul>
+  <p>A number of principles fundamental to Site Reliability Engineering at Google are discussed throughout this text. To simplify our comparison of best practices in other industries, we distilled these concepts into four key themes:</p>
+  <ul>
+    <li>Preparedness and Disaster Testing</li>
+    <li>Postmortem Culture</li>
+  </ul>
+  <ul class="pagebreak-before">
+    <li>Automation and Reduced Operational Overhead</li>
+    <li>Structured and Rational Decision Making</li>
+  </ul>
+  <p>This chapter introduces the industries that we profiled and the industry veterans we interviewed. We define key SRE themes, discuss how these themes are implemented at Google, and give examples of how these principles reveal themselves in other industries for comparative purposes. We conclude with some insights and discussion on the patterns and anti-patterns we discovered.</p>
+  <section data-type="sect1" id="meet-our-industry-veterans-yDsLUp1">
+    <h2 class="heading jumptargets">Meet Our Industry Veterans</h2>
+    <p><strong>Peter Dahl</strong> is a Principal Engineer at Google. Previously, he worked
+ as a defense contractor on several high-reliability systems including many airborne and wheeled vehicle GPS and inertial guidance
+ systems. Consequences of a lapse in reliability in such systems include vehicle malfunction or loss, and the financial consequences
+ associated with that failure.</p>
+    <p><strong>Mike Doherty</strong> is a Site Reliability Engineer at Google. He worked as a lifeguard and lifeguard trainer for a decade in Canada. Reliability is absolutely essential by nature in this field, because lives are on the line every day.</p>
+    <p><strong>Erik Gross</strong> is currently a software engineer at Google. Before joining the company, he spent seven years designing algorithms and code for the lasers and systems used to perform refractive eye surgery (e.g., LASIK). This is a high-stakes, high-reliability field, in which many lessons relevant to reliability in the face of government regulations and human risk were learned as the technology received FDA approval, gradually improved, and finally became ubiquitous.</p>
+    <p><strong>Gus Hartmann</strong> and <strong>Kevin Greer</strong> have experience in the telecommunications industry, including maintaining the E911 emergency response system.<sup><a class="jumptarget" data-type="noteref" id="id-YAJuxIxhdU8D-marker" href="#id-YAJuxIxhdU8D">154</a></sup> Kevin is currently a software engineer on the Google Chrome team and Gus is a systems engineer for Google's Corporate Engineering team. User expectations of the telecom industry demand high reliability. Implications of a lapse of service range from user inconvenience due to a system outage to fatalities if E911 goes down.</p>
+    <p><strong>Ron Heiby</strong> is a Technical Program Manager for Site Reliability Engineering at Google. Ron has experience in development for cell phones, medical devices, and the automotive industry. In some cases he worked on interface components of these industries (for example, on a device to allow EKG readings<sup><a class="jumptarget" data-type="noteref" id="id-YAJueFGTdU8D-marker" href="#id-YAJueFGTdU8D">155</a></sup> in ambulances to be transmitted over the digital wireless phone network). In these industries, the impact of a reliability issue can range from harm to the business incurred by equipment recalls to indirectly impacting life and health (e.g., people not getting the medical attention they need if the EKG cannot communicate with the hospital).</p>
+    <p><strong>Adrian Hilton</strong> is a Launch Coordination Engineer at Google. Previously, he worked on UK and USA military aircraft, naval avionics and aircraft stores management systems, and UK railway signaling systems. Reliability is critical in this space because impact of incidents ranges from multimillion-dollar loss of equipment to injuries and fatalities.</p>
+    <p><strong>Eddie Kennedy</strong> is a project manager for the Global Customer Experience team at Google and a mechanical engineer by training. Eddie spent six years working as a Six Sigma Black Belt process engineer in a manufacturing facility that makes synthetic
+ diamonds. This industry is characterized by a relentless focus on safety, because the extremes of temperature and pressure demands of the process pose a high level of danger to workers on a daily basis.</p>
+    <p><strong>John Li</strong> is currently a Site Reliability Engineer at Google. John previously worked as a systems administrator and software developer at a proprietary trading company in the finance industry. Reliability issues in the financial sector are taken quite seriously because they can lead to serious fiscal consequences.</p>
+    <p><strong>Dan Sheridan</strong> is a Site Reliability Engineer at Google. Before joining the company, he worked as a safety consultant in the civil nuclear industry in the UK. Reliability is important in the nuclear industry because an incident can have serious repercussions: outages can incur millions a day in lost revenue, while risks to workers and those in the community are even more dire, dictating zero tolerance for failure. Nuclear infrastructure is designed with a series of failsafes that halt operations before an incident of any such magnitude is reached.</p>
+    <p><strong>Jeff Stevenson</strong> is currently a hardware operations manager at Google. He has past experience as a nuclear engineer in the US Navy on a submarine. Reliability stakes in the nuclear Navy are high—problems that arise in the case of incidents range from damaged equipment, to long-standing environmental impact, to potential loss of life.</p>
+    <p><strong>Matthew Toia</strong> is a Site Reliability Manager focused on storage systems. Prior to Google, he worked on software development and deployment of air traffic control software systems. Effects from incidents in this industry range from inconveniences to passengers and airlines (e.g., delayed flights, diverted planes) to potential loss of life in the event of a crash. Defense in depth is a key strategy to avoiding catastrophic <span class="keep-together">failures</span>.</p>
+    <p>Now that you've met our experts and gained a high-level understanding of why reliability is important in their respective former fields, we'll delve into the four key themes of reliability.</p>
+  </section>
+  <section data-type="sect1" id="preparedness-and-disaster-testing-V7s9Cro">
+    <h1 class="heading jumptargets">Preparedness and Disaster Testing</h1>
+    <p>"Hope is not a strategy." This rallying cry of the SRE team at Google sums up what we mean by preparedness and disaster testing. The SRE culture is forever vigilant and constantly questioning: What could go wrong? What action can we take to address those issues before they lead to an outage or data loss? Our annual Disaster and Recovery Testing (DiRT) drills seek to address these questions head-on <a data-type="xref" href="/sre-book/bibliography#Kri12">[Kri12]</a>. In DiRT exercises, SREs push production systems to the limit and inflict actual outages in order to:</p>
+    <ul>
+      <li>Ensure that systems react the way we think they will</li>
+      <li>Determine unexpected weaknesses</li>
+      <li>Figure out ways to make the systems more robust in order to prevent uncontrolled outages</li>
+    </ul>
+    <p>Several strategies for testing disaster readiness and ensuring preparedness in other industries emerged from our conversations. Strategies included the following:</p>
+    <ul>
+      <li>Relentless organizational focus on safety</li>
+      <li>Attention to detail</li>
+      <li>Swing capacity</li>
+      <li>Simulations and live drills</li>
+      <li>Training and certification</li>
+      <li>Obsessive focus on detailed requirements gathering and design</li>
+      <li>Defense in depth</li>
+    </ul>
+  <section data-type="sect2" id="relentless-organizational-focus-on-safety-OKsKTeCD2">
+    <h2 class="subheaders jumptargets">Relentless Organizational Focus on Safety</h2>
+    <p>This principle is particularly important in an industrial engineering context. According to Eddie Kennedy, who worked on a manufacturing floor where workers faced safety hazards, "every management meeting started with a discussion of safety." The manufacturing industry prepares itself for the unexpected by establishing highly defined processes that are strictly followed at every level of the organization. It is critical that all employees take safety seriously, and that workers feel empowered to speak up if and when anything seems amiss. In the case of nuclear power, military aircraft, and railway signaling industries, safety standards for software are well detailed (e.g., UK Defence Standard 00-56, IEC 61508, IEC513, US DO-178B/C, and DO-254) and levels of reliability for such systems are clearly identified (e.g., Safety Integrity Level (SIL) 1–4),<sup><a class="jumptarget" data-type="noteref" id="id-vkKuPSMFMTpC2Y-marker" href="#id-vkKuPSMFMTpC2Y">156</a></sup> with the aim of specifying acceptable approaches to delivering a product.</p>
+  </section>
+  <section data-type="sect2" id="attention-to-detail-XQslcdCY8">
+    <h2 class="subheaders jumptargets">Attention to Detail</h2>
+    <p>From his time spent in the US Navy, Jeff Stevenson recalls an acute awareness of how a lack of diligence in executing small tasks (for example, lube oil maintenance) could lead to major submarine failure. A very small oversight or mistake can have big effects. Systems are highly interconnected, so an accident in one area can impact multiple related components. The nuclear Navy
+ focuses on routine maintenance to ensure that small issues don't snowball.</p>
+  </section>
+  <section data-type="sect2" id="swing-capacity-jWsgi9CrP">
+    <h2 class="subheaders jumptargets">Swing Capacity</h2>
+    <p>System utilization in the telecom industry can be highly unpredictable. Absolute capacity can be strained by unforeseeable events such as natural disasters, as well as large, predictable events like the Olympics. According to Gus Hartmann, the industry deals with these incidents by deploying swing capacity in the form of a SOW (switch on wheels), a mobile telco office. This excess capacity can be rolled out in an emergency or in anticipation of a known event that is likely to overload the system. Capacity issues veer into the unexpected in matters unrelated to absolute capacity, as well. For example, when a celebrity's private phone number was leaked in 2005 and thousands of fans simultaneously attempted to call her, the telecom system exhibited symptoms similar to a DDoS or massive routing error.</p>
+  </section>
+  <section data-type="sect2" id="simulations-and-live-drills-2ksBuzCJb">
+    <h2 class="subheaders jumptargets">Simulations and Live Drills</h2>
+    <p>Google's Disaster Recovery tests have a lot in common with the simulations and live drills that are a key focus of many of the established industries we researched. The potential consequences of a system outage determine whether using a simulation or a live drill is appropriate. For example, Matthew Toia points out that the aviation industry can't perform a live test "in production" without putting equipment and passengers at risk. Instead, they employ extremely realistic simulators with live data feeds, in which the control rooms and equipment are modeled down to the tiniest details to ensure a realistic experience without putting real people at risk. Gus Hartmann reports that the telecom industry typically focuses on live drills centered on surviving hurricanes and other weather emergencies. Such modeling led to the creation of weatherproof facilities with generators inside the building capable of outlasting a storm.</p>
+    <p>The US nuclear Navy uses a mixture of "what if" thought exercises and live drills. According to Jeff Stevenson, the live drills involve "actually breaking real stuff but with control parameters. Live drills are carried out religiously, every week, two to three days per week."For the nuclear Navy, thought exercises are useful, but not sufficient to prepare for actual incidents. Responses must be practiced so they are not <span class="keep-together">forgotten</span>.</p>
+    <p>According to Mike Doherty, lifeguards face disaster testing exercises more akin to a "mystery shopper" experience. Typically, a facility manager works with a child or an incognito lifeguard in training to stage a mock drowning. These scenarios are conducted to be as realistic as possible so that lifeguards aren't able to differentiate between real and staged emergencies.</p>
+  </section>
+  <section data-type="sect2" id="training-and-certification-pWsdUpCMr">
+    <h2 class="subheaders jumptargets">Training and Certification</h2>
+    <p>Our interviews suggest that training and certification are particularly important when lives are at stake. For example, Mike Doherty described how lifeguards complete a rigorous training certification, in addition to a periodic recertification process. Courses include fitness components (e.g., a lifeguard must be able to hold someone heavier than themselves with shoulders out of the water), technical components like first aid and CPR, and operational elements (e.g., if a lifeguard enters the water, how do other team members respond?). Every facility also has site-specific training, because lifeguarding in a pool is markedly different from lifeguarding on a lakeside beach or on the ocean.</p>
+  </section>
+  <section data-type="sect2" id="focus-on-detailed-requirements-gathering-and-design-o8sMCyC9e">
+    <h2 class="subheaders jumptargets">Focus on Detailed Requirements Gathering and Design</h2>
+    <p>Some of the engineers we interviewed discussed the importance of detailed requirements gathering and design docs. This practice was particularly important when working with medical devices. In many of these cases, actual use or maintenance of the equipment doesn't fall within the purview of product designers. Thus, usage and maintenance requirements must be gathered from other sources.</p><p>For example, according to Erik Gross, laser eye surgery machines are designed to be as foolproof as possible. Thus, soliciting requirements from the surgeons who actually use these machines and the technicians responsible for maintaining them is particularly important. In another example, former defense contractor Peter Dahl described a very detailed design culture in which creating a new defense system commonly entailed an entire year of design, followed by just three weeks of writing the code to actualize the design. Both of these examples are markedly different from Google's launch and iterate culture, which promotes a much faster rate of change at a calculated risk. Other industries (e.g., the medical industry and the military, as previously discussed) have very different pressures, risk appetites, and requirements, and their processes are very much informed by these circumstances.</p>
+  </section>
+  <section data-type="sect2" id="defense-in-depth-and-breadth-g0svsxCD1">
+    <h2 class="subheaders jumptargets">Defense in Depth and Breadth</h2>
+    <p>In the nuclear power industry, defense in depth is a key element to preparedness <a data-type="xref" href="/sre-book/bibliography#IAEA12">[IAEA12]</a>. Nuclear reactors feature redundancy on all systems and implement a design methodology that mandates fallback systems behind primary systems in case of failure. The system is designed with multiple layers of protection, including a final physical barrier to radioactive release around the plant itself. Defense in depth is particularly important in the nuclear industry due to the zero tolerance for failures and incidents.</p>
+  </section>
+</section>
+<section data-type="sect1" id="postmortem-culture-rWsbsYg">
+  <h1 class="heading jumptargets">Postmortem Culture</h1>
+  <p>Corrective and preventative action (CAPA)<sup><a class="jumptarget" data-type="noteref" id="id-YAJuMtYFDs8D-marker" href="#id-YAJuMtYFDs8D">157</a></sup> is a well-known concept for improving reliability that focuses on the systematic investigation of root causes of identified issues or risks in order to prevent recurrence. This principle is embodied by SRE's strong culture of blameless postmortems. When something goes wrong (and given the scale, complexity, and rapid rate of change at Google, something inevitably <em>will</em> go wrong), it's important to evaluate all of the following:</p>
+  <ul>
+    <li>What happened</li>
+    <li>The effectiveness of the response</li>
+    <li>What we would do differently next time</li>
+    <li>What actions will be taken to make sure a particular incident doesn't happen again</li>
+  </ul>
+  <p>This exercise is undertaken without pointing fingers at any individual. Instead of assigning blame, it is far more important to
+figure out <em>what</em> went wrong, and how, as an organization, we will rally to ensure it doesn't happen again. Dwelling on <em>who</em> might have caused the outage is counterproductive. Postmortems are conducted after incidents and published across SRE teams so that all can benefit from the lessons learned.</p>
+  <p>Our interviews uncovered that many industries perform a version of the postmortem (although many do not use this specific moniker, for obvious reasons). The <em>motivation</em> behind these exercises appears to be the main differentiator among industry practices.</p>
+  <p>Many industries are heavily regulated and are held accountable by specific government authorities when something goes wrong. Such
+regulation is especially ingrained when the stakes of failure are high (e.g., lives are at stake). Relevant government agencies include the FCC (telecommunications), FAA (aviation), OSHA (the manufacturing and chemical industries), FDA (medical devices), and the various National Competent Authorities in the EU.<sup><a class="jumptarget" data-type="noteref" id="id-vkKuPSzTAsXz-marker" href="#id-vkKuPSzTAsXz">158</a></sup> The nuclear power and transportation industries are also heavily regulated.</p>
+  <p>Safety considerations are another motivating factor behind postmortems. In the manufacturing and chemical industries, the risk of
+injury or death is ever-present due to the nature of the conditions required to produce the final product (high temperature, pressure,
+toxicity, and corrosivity, to name a few). For example, Alcoa features a noteworthy safety culture. Former CEO Paul O'Neill required staff to notify him within 24 hours of any injury that lost a worker day. He even distributed his home phone number to workers on the factory floor so that they could personally alert him to safety concerns.<sup><a class="jumptarget" data-type="noteref" id="id-lM2uPSAcLsPk-marker" href="#id-lM2uPSAcLsPk">159</a></sup></p>
+  <p>The stakes are so high in the manufacturing and chemical industries that even "near misses"—when a given event could have caused serious harm, but did not—are carefully scrutinized. These scenarios function as a type of preemptive postmortem. According to VM Brasseur in a talk given at YAPC NA 2015, "There are multiple near misses in just about every disaster and business crisis, and typically they're ignored at the time they occur. Latent error, plus an enabling condition, equals things not working quite the way you
+planned" <a data-type="xref" href="/sre-book/bibliography#Bra15">[Bra15]</a>. Near misses are effectively disasters waiting to happen. For example,
+scenarios in which a worker doesn't follow the standard operating procedure, an employee jumps out of the way at the last second to
+avoid a splash, or a spill on the staircase isn't cleaned up, all represent near misses and opportunities to learn and improve. Next
+time, the employee and the company might not be so lucky. The United Kingdom's CHIRP (Confidential Reporting Programme for Aviation and
+Maritime) seeks to raise awareness about such incidents across the industry by providing a central reporting point where aviation and
+maritime personnel can report near misses confidentially. Reports and analyses of these near misses are then published in periodic
+newsletters.</p>
+  <p>Lifeguarding has a deeply embedded culture of post-incident analysis and action planning. Mike Doherty quips, "If a lifeguard's feet go in the water, there will be paperwork!" A detailed write-up is required after any incident at the pool or on the beach. In the case of serious incidents, the team collectively examines the incident end to end, discussing what went right and what went wrong. Operational changes are then made based on these findings, and training is often scheduled to help people build confidence around their ability to handle a similar incident in the future. In cases of particularly shocking or traumatic incidents, a counselor is brought on site to help staff cope with the psychological aftermath. The lifeguards may have been well prepared for what happened in practice, but might <em>feel</em> like they haven't done an adequate job. Similar to Google, lifeguarding embraces a culture of blameless incident analysis. Incidents are chaotic, and many factors contribute to any given incident. In this field, it's not helpful to place blame on a single individual.</p>
+</section>
+<section data-type="sect1" id="automating-away-repetitive-work-and-operational-overhead-wPsbHPD">
+  <h1 class="heading jumptargets">Automating Away Repetitive Work and Operational Overhead</h1>
+  <p>At their core, Google's Site Reliability Engineers are software engineers with a low tolerance for repetitive reactive work. It is strongly ingrained in our culture to avoid repeating an operation that doesn't add value to a service. If a task can be automated away, why would you run a system on repetitive work that is of low value? Automation lowers operational overhead and frees up time for our engineers to proactively assess and improve the services they support.</p>
+  <p>The industries that we surveyed were mixed in terms of if, how, and why they embraced automation. Certain industries trusted humans more than machines. During the tenure of our industry veteran, the US nuclear Navy eschewed automation in favor of a series of interlocks and administrative procedures. For example, according to Jeff Stevenson, operating a valve required an operator, a supervisor, and a crew member on the phone with the engineering watch officer tasked with monitoring the response to the action taken. These operations were very manual due to concern that an automated system might not spot a problem that a human would definitely
+notice. Operations on a submarine are ruled by a trusted human decision chain—a <em>series</em> of people, rather than one individual. The nuclear Navy was also concerned that automation and computers move so rapidly that they are all too capable of committing a large,
+irreparable mistake. When you are dealing with nuclear reactors, a slow and steady methodical approach is more important than accomplishing a task quickly.</p>
+  <p id="xref_other-reliability-efforts_knight-capital">According to John Li, the proprietary trading industry has become increasingly cautious in its application of automation in recent years. Experience has shown that incorrectly configured automation can inflict significant damage and incur a great deal of financial loss in a very short period of time. For example, in 2012 Knight Capital Group encountered a "software glitch" that led to a loss of $440M in just a few hours.<sup><a class="jumptarget" data-type="noteref" id="id-YAJuDS1tmH8D-marker" href="#id-YAJuDS1tmH8D">160</a></sup> Similarly, in 2010 the US stock market experienced a Flash Crash that was ultimately blamed on a rogue trader attempting to manipulate the market with automated means. While the market was quick to recover, the Flash Crash resulted in a loss on the magnitude of trillions of dollars in just <em>30 minutes</em>.<sup><a class="jumptarget" data-type="noteref" id="id-lM2uAIztJHPk-marker" href="#id-lM2uAIztJHPk">161</a></sup> Computers can execute tasks very quickly, and speed can be a negative
+if these tasks are configured incorrectly.</p>
+  <p>In contrast, some companies embrace automation precisely <em>because</em> computers act more quickly than people. According to Eddie Kennedy, efficiency and monetary savings are key in the manufacturing industry, and automation provides a means to accomplish tasks more efficiently and cost-effectively. Furthermore, automation is generally more reliable and repeatable than work conducted manually by humans, which means that it produces higher-quality standards and tighter tolerances. Dan Sheridan discussed automation as deployed in the UK nuclear industry. Here, a rule of thumb dictates that if a plant is required to respond to a given situation in less than 30 minutes, that response must be automated.</p>
+  <p>In Matt Toia's experience, the aviation industry applies automation selectively. For example, operational failover is performed
+automatically, but when it comes to certain other tasks, the industry trusts automation only when it's verified by a human. While the
+industry employs a good deal of automatic monitoring, actual air-traffic–control-system implementations must be manually inspected by
+humans.</p>
+  <p>According to Erik Gross, automation has been quite effective in reducing user error in laser eye surgery. Before LASIK surgery is performed, the doctor measures the patient using a refractive eye test. Originally, the doctor would type in the numbers and press a button, and the laser would go to work correcting the patient's vision. However, data entry errors could be a big issue. This process also entailed the possibility of mixing up patient data or jumbling numbers for the left and right eye.</p>
+  <p>Automation now greatly lessens the chance that humans make a mistake that impacts someone's vision. A computerized sanity check of manually entered data was the first major automated improvement: if a human operator inputs measurements outside an expected range, automation promptly and prominently flags this case as unusual. Other automated improvements followed this development: now the iris is photographed during the preliminary refractive eye test. When it's time to perform the surgery, the iris of the patient is automatically matched to the iris in the photo, thus eliminating the possibility of mixing up patient data. When this automated solution was implemented, an entire class of medical errors disappeared.</p>
+</section>
+<section data-type="sect1" id="structured-and-rational-decision-making-xqsKfBq">
+  <h1 class="heading jumptargets">Structured and Rational Decision Making</h1>
+  <p>At Google in general, and in Site Reliability Engineering in particular, data is critical. The team aspires to make decisions in a structured and rational way by ensuring that:</p>
+  <ul>
+    <li>The basis for the decision is agreed upon advance, rather than justified ex post facto</li>
+    <li>The inputs to the decision are clear</li>
+    <li>Any assumptions are explicitly stated</li>
+    <li>Data-driven decisions win over decisions based on feelings, hunches, or the opinion of the most senior employee in the room</li>
+  </ul>
+  <p>Google SRE operates under the baseline assumption that everyone on the team:</p>
+  <ul>
+    <li>Has the best interests of a service's users at heart</li>
+    <li>Can figure out how to proceed based on the data available</li>
+  </ul>
+  <p>Decisions should be informed rather than prescriptive, and are made without deference to personal opinions—even that of the most-senior person in the room, who Eric Schmidt and Jonathan Rosenberg dub the "HiPPO," for "Highest-Paid Person's Opinion" <a data-type="xref" href="/sre-book/bibliography#Sch14">[Sch14]</a>.</p>
+  <p>Decision making in different industries varies widely. We learned that some industries use an approach of <em>if it ain't broke, don't fix it…ever</em>. Industries featuring systems whose design entailed much thought and effort are often characterized by a
+reluctance to change the underlying technology. For example, the telecom industry still uses long-distance switches that were implemented in the 1980s. Why do they rely on technology developed a few decades ago? These switches "are pretty much bulletproof and
+massively redundant," according to Gus Hartmann. As reported by Dan Sheridan, the nuclear industry is similarly slow to change. All
+decisions are underpinned by the thought: <em>if it works now, don't change it</em>.</p>
+  <p>Many industries heavily focus on playbooks and procedures rather than open-ended problem solving. Every humanly conceivable scenario is captured in a checklist or in "the binder." When something goes wrong, this resource is the authoritative source for how to react. This prescriptive approach works for industries that evolve and develop relatively slowly, because the scenarios of what could go wrong are not constantly evolving due to system updates or changes. This approach is also common in industries in which the skill level of the workers may be limited, and the best way to make sure that people will respond appropriately in an emergency is to provide a simple, clear set of instructions.</p>
+  <p>Other industries also take a clear, data-driven approach to decision making. In Eddie Kennedy's experience, research and manufacturing environments are characterized by a rigorous experimentation culture that relies heavily on formulating and testing
+hypotheses. These industries regularly conduct controlled experiments to make sure that a given change yields the expected result at a
+statistically significant level and that nothing unexpected occurs. Changes are only implemented when data yielded by the experiment supports the decision.</p>
+  <p>Finally, some industries, like proprietary trading, divide decision making to better manage risk. According to John Li, this
+industry features an enforcement team separate from the traders to ensure that undue risks aren't taken in pursuit of achieving a
+profit. The enforcement team is responsible for monitoring events on the floor and halting trading if events spin out of hand. If a system abnormality occurs, the enforcement team's first response is to shut down the system. As put by John Li, "If we aren't trading, we aren't losing money. We aren't making money either, but at least we aren't losing money." Only the enforcement team can bring the system back up, despite how excruciating a delay might seem to traders who are missing a potentially profitable opportunity.</p>
+</section>
+<section data-type="sect1" id="conclusions-PasOS7A">
+  <h1 class="heading jumptargets">Conclusions</h1>
+  <p>Many of the principles that are core to Site Reliability Engineering at Google are evident across a wide range of industries. The lessons already learned by well-established industries likely inspired some of the practices in use at Google today.</p>
+  <p>A main takeaway of our cross-industry survey was that in many parts of its software business, Google has a higher appetite for velocity than players in most other industries. The ability to move or change quickly must be weighed against the differing implications of a failure. In the nuclear, aviation, or medical industries, for example, people could be injured or even die in the event of an outage or failure. When the stakes are high, a conservative approach to achieving high reliability is warranted.</p>
+  <p>At Google, we constantly walk a tightrope between user expectations for high reliability versus a laser-sharp focus on rapid change and innovation. While Google is incredibly serious about reliability, we must adapt our approaches to our high rate of change. As discussed in earlier chapters, many of our software businesses such as Search make conscious decisions as to how reliable "reliable enough" really is.</p>
+  <p class="pagebreak-before">Google has that flexibility in most of our software products and services, which operate in an environment in which lives are not directly at risk if something goes wrong. Therefore, we're able to use tools such as error budgets (<a data-type="xref" href="/sre-book/embracing-risk#xref_risk-management_unreliability-budgets">Motivation for Error Budgets</a>) as a means to "fund" a culture of innovation and calculated risk taking. In essence, Google has adapted known reliability principles that were in many cases developed and honed in other industries to create its own unique reliability culture, one that addresses a complicated equation that balances scale, complexity, and velocity with high reliability.</p>
+</section>
+<div class="footnotes" data-type="footnotes">
+  <p data-type="footnote" id="id-YAJuxIxhdU8D"><sup><a class="jumptargets" href="#id-YAJuxIxhdU8D-marker">154</a></sup>E911 (Enhanced 911): Emergency response line in the US that leverages location data.</p><p data-type="footnote" id="id-YAJueFGTdU8D"><sup><a class="jumptargets" href="#id-YAJueFGTdU8D-marker">155</a></sup>Electrocardiogram  readings: <a href="https://en.wikipedia.org/wiki/Electrocardiography" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Electrocardiography</em></a>.</p><p data-type="footnote" id="id-vkKuPSMFMTpC2Y"><sup><a class="jumptargets" href="#id-vkKuPSMFMTpC2Y-marker">156</a></sup><a href="https://en.wikipedia.org/wiki/Safety_integrity_level" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Safety_integrity_level</em></a></p><p data-type="footnote" id="id-YAJuMtYFDs8D"><sup><a class="jumptargets" href="#id-YAJuMtYFDs8D-marker">157</a></sup><a href="https://en.wikipedia.org/wiki/Corrective_and_preventive_action" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Corrective_and_preventive_action</em></a></p><p data-type="footnote" id="id-vkKuPSzTAsXz"><sup><a class="jumptargets" href="#id-vkKuPSzTAsXz-marker">158</a></sup><a href="https://en.wikipedia.org/wiki/Competent_authority" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Competent_authority</em></a></p><p data-type="footnote" id="id-lM2uPSAcLsPk"><sup><a class="jumptargets" href="#id-lM2uPSAcLsPk-marker">159</a></sup><a href="https://ehstoday.com/safety/nsc-2013-oneill-exemplifies-safety-leadership" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://ehstoday.com/safety/nsc-2013-oneill-exemplifies-safety-leadership</em></a>.</p><p data-type="footnote" id="id-YAJuDS1tmH8D"><sup><a class="jumptargets" href="#id-YAJuDS1tmH8D-marker">160</a></sup>See "FACTS, Section B" for the discussion of Knight and Power Peg software in <a data-type="xref" href="/sre-book/bibliography#Sec13">[Sec13]</a>.</p><p data-type="footnote" id="id-lM2uAIztJHPk"><sup><a class="jumptargets" href="#id-lM2uAIztJHPk-marker">161</a></sup>"Regulators blame computer algorithm for stock market 'flash crash'," Computerworld, <a href="https://www.computerworld.com/article/2516076/financial-it/regulators-blame-computer-algorithm-for-stock-market—flash-crash-.html" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://www.computerworld.com/article/2516076/financial-it/regulators-blame-computer-algorithm-for-stock-market—flash-crash-.html</em></a>.</p>
+</div>
+</section>
+        
+      </div>
+    </div>
+
+    
+    <div class="footer">
+      <div class="maia-aux">
+        <div class="previous">
+          
+            
+            
+            
+            
+              
+            
+
+            
+            <a href="/sre-book/part-V-conclusions/">
+              <p class="footer-caption">Previous</p>
+              <p class="chapter-link">
+                
+                  Part V - Conclusions
+                
+              </p>
+            </a>
+            
+          
+        </div>
+        <div class="next">
+          
+            
+            
+            
+            
+              
+            
+
+            
+            <a href="/sre-book/conclusion/">
+              <p class="footer-caption">Next</p>
+              <p class="chapter-link">
+                
+                  Chapter 34 - Conclusion
+                
+              </p>
+            </a>
+            
+          
+        </div>
+
+        
+          
+            
+              <p class="footer-link">Copyright © 2017 Google, Inc. Published by O'Reilly Media, Inc. Licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-ND 4.0</a></p>
+            
+          
+        
+      </div>
+    </div>
+
+  
+
+      
+    </main>
+    
+    
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular-animate.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular-touch.min.js"></script><script src="/js/sre-book.min.js"></script><div style="display: none;"><svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <svg id="chevron-left" viewBox="0 0 24 24"><path d="M16.41 5.41L15 4l-8 8 8 8 1.41-1.41L9.83 12"></path></svg>
+    <svg id="chevron-right" viewBox="0 0 24 24"><path d="M7.59 18.59L9 20l8-8-8-8-1.41 1.41L14.17 12"></path></svg>
+    <svg id="expand-less" viewBox="0 0 24 24"><path d="M18.59 16.41L20 15l-8-8-8 8 1.41 1.41L12 9.83"></path></svg>
+    <svg id="expand-more" viewBox="0 0 24 24"><path d="M5.41 7.59L4 9l8 8 8-8-1.41-1.41L12 14.17"></path></svg>
+    <svg id="arrow-back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+    <svg id="arrow-forward" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"></path></svg>
+    <svg id="arrow-upward" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"></path></svg>
+    <svg id="arrow-downward" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"></path></svg>
+    <svg id="arrow-left" viewBox="0 0 24 24"><path d="M14 7l-5 5 5 5V7z"></path></svg>
+    <svg id="arrow-right" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5v10z"></path></svg>
+    <svg id="arrow-drop-up" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5H7z"></path></svg>
+    <svg id="arrow-drop-down" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"></path></svg>
+    <svg id="help" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"></path></svg>
+    <svg id="menu" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+    <svg id="more-vert" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+    <svg id="drive-pdf" viewBox="0 0 24 24"><path d="M7 11.5h1v-1H7v1zM19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5c0 .83-.67 1.5-1.5 1.5H7v2H5.5V9H8c.83 0 1.5.67 1.5 1.5v1zm10-1H17v1h1.5V13H17v2h-1.5V9h4v1.5zm-5 3c0 .83-.67 1.5-1.5 1.5h-2.5V9H13c.83 0 1.5.67 1.5 1.5v3zm-2.5 0h1v-3h-1v3z"></path></svg>
+    <svg id="file-download" viewBox="0 0 24 24"><path d="M4 15h2v3h12v-3h2v3c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2m11.59-8.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5 5-5-1.41-1.41z"></path></svg>
+    <svg id="open-in-new" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path></svg>
+    <svg id="phone" viewBox="0 0 24 24"><path d="M16.01 14.46l-2.62 2.62a16.141 16.141 0 0 1-6.5-6.5l2.62-2.62a.98.98 0 0 0 .27-.9L9.13 3.8c-.09-.46-.5-.8-.98-.8H4c-.56 0-1.03.47-1 1.03a17.92 17.92 0 0 0 2.43 8.01 18.08 18.08 0 0 0 6.5 6.5 17.92 17.92 0 0 0 8.01 2.43c.56.03 1.03-.44 1.03-1v-4.15c0-.48-.34-.89-.8-.98l-3.26-.65a.99.99 0 0 0-.9.27z"></path></svg>
+    <svg id="email" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-.8 2L12 10.8 4.8 6h14.4zM4 18V7.87l8 5.33 8-5.33V18H4z"></path></svg>
+    <svg id="instagram" viewBox="0 0 24 24"><path d="M12,0 C15.3,0 15.7,0 17,0 C18.3,0.1 19.1,0.3 19.9,0.6 C20.7,0.9 21.3,1.3 22,2 C22.7,2.7 23.1,3.4 23.3,4.2 C23.6,5 23.8,5.8 23.9,7.1 C24,8.3 24,8.7 24,12 C24,15.3 24,15.7 23.9,16.9 C23.8,18.2 23.6,19 23.3,19.8 C23,20.6 22.6,21.2 21.9,21.9 C21.3,22.6 20.6,23 19.8,23.3 C19,23.6 18.2,23.8 16.9,23.9 C15.7,24 15.3,24 12,24 C8.7,24 8.3,24 7,24 C5.7,23.9 4.9,23.7 4.1,23.4 C3.3,23.1 2.7,22.7 2,22 C1.3,21.3 0.9,20.6 0.7,19.8 C0.4,19 0.2,18.2 0.1,16.9 C0,15.7 0,15.3 0,12 C0,8.7 0,8.3 0.1,7.1 C0.1,5.8 0.3,4.9 0.6,4.1 C0.9,3.4 1.3,2.7 2,2 C2.7,1.3 3.4,0.9 4.1,0.6 C4.9,0.3 5.8,0.1 7.1,0.1 C8.3,0 8.7,0 12,0 Z M12,2.2 C8.8,2.2 8.4,2.2 7.2,2.2 C6,2.3 5.3,2.5 4.9,2.6 C4.4,2.9 4,3.1 3.5,3.5 C3.1,3.9 2.8,4.3 2.6,4.9 C2.5,5.3 2.3,6 2.3,7.2 C2.2,8.4 2.2,8.8 2.2,12 C2.2,15.2 2.2,15.5 2.3,16.8 C2.3,17.9 2.5,18.6 2.7,19 C2.9,19.6 3.2,20 3.6,20.4 C4,20.8 4.4,21.1 5,21.3 C5.4,21.5 6,21.6 7.2,21.7 C8.4,21.8 8.8,21.8 12,21.8 C15.2,21.8 15.5,21.8 16.8,21.7 C17.9,21.7 18.6,21.5 19,21.3 C19.6,21.1 20,20.8 20.4,20.4 C20.8,20 21.1,19.6 21.3,19 C21.5,18.6 21.6,18 21.7,16.8 C21.8,15.6 21.8,15.2 21.8,12 C21.8,8.8 21.8,8.5 21.7,7.2 C21.7,6.1 21.5,5.4 21.3,5 C21.1,4.4 20.8,4 20.4,3.6 C20,3.2 19.6,2.9 19,2.7 C18.6,2.5 18,2.4 16.8,2.3 C15.6,2.2 15.2,2.2 12,2.2 Z M12,5.8 C15.4,5.8 18.2,8.6 18.2,12 C18.2,15.4 15.4,18.2 12,18.2 C8.6,18.2 5.8,15.4 5.8,12 C5.8,8.6 8.6,5.8 12,5.8 Z M12,16 C14.2,16 16,14.2 16,12 C16,9.8 14.2,8 12,8 C9.8,8 8,9.8 8,12 C8,14.2 9.8,16 12,16 Z M18.4,7 C17.6268014,7 17,6.37319865 17,5.6 C17,4.82680135 17.6268014,4.2 18.4,4.2 C19.1731986,4.2 19.8,4.82680135 19.8,5.6 C19.8,6.37319865 19.1731986,7 18.4,7 Z"></path></svg>
+    <svg id="link" viewBox="0 0 24 24"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2z"></path><path d="M8 11h8v2H8z"></path></svg>
+    <svg id="post-blogger" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4 7v1c0 .55.45 1 1 1s1 .45 1 1v3c0 1.66-1.34 3-3 3H9c-1.66 0-3-1.34-3-3V8c0-1.66 1.34-3 3-3h4c1.66 0 3 1.34 3 3v1zm-6.05 1h2.6c.55 0 1-.45 1-1s-.45-1-1-1h-2.6c-.55 0-1 .45-1 1s.45 1 1 1zM14 13H9.95c-.55 0-1 .45-1 1s.45 1 1 1H14c.55 0 1-.45 1-1s-.45-1-1-1z"></path></svg>
+    <svg id="post-facebook" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 2v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v7h-3v-7h-2v-3h2V7.5C13 5.57 14.57 4 16.5 4H19z"></path></svg>
+    <svg id="post-linkedin" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 19H5v-9h3v9zM6.5 8.31c-1 0-1.81-.81-1.81-1.81S5.5 4.69 6.5 4.69s1.81.81 1.81 1.81S7.5 8.31 6.5 8.31zM19 19h-3v-5.3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V19h-3v-9h3v1.2c.52-.84 1.59-1.4 2.5-1.4 1.93 0 3.5 1.57 3.5 3.5V19z"></path></svg>
+    <svg id="share" viewBox="0 0 24 24"><path d="M18 16c-.79 0-1.5.31-2.03.81L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.53.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.48.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.05 4.12c-.05.22-.09.45-.09.69 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3zm0-12c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"></path></svg>
+    <svg id="twitter" viewBox="0 0 24 24"><path d="M7.5,21.8c9.1,0,14-7.5,14-14c0-0.2,0-0.4,0-0.6c1-0.7,1.8-1.6,2.5-2.5c-0.9,0.4-1.8,0.7-2.8,0.8c1-0.6,1.8-1.6,2.2-2.7 c-1,0.6-2,1-3.1,1.2c-0.9-1-2.2-1.6-3.6-1.6c-2.7,0-4.9,2.2-4.9,4.9c0,0.4,0,0.8,0.1,1.1C7.7,8.1,4.1,6.1,1.7,3.1 C1.2,3.9,1,4.7,1,5.6c0,1.7,0.9,3.2,2.2,4.1C2.4,9.7,1.6,9.5,1,9.1c0,0,0,0,0,0.1c0,2.4,1.7,4.4,4,4.8c-0.4,0.1-0.8,0.2-1.3,0.2 c-0.3,0-0.6,0-0.9-0.1c0.6,2,2.4,3.4,4.6,3.4c-1.7,1.3-3.8,2.1-6.1,2.1c-0.4,0-0.8,0-1.2-0.1C2.2,20.9,4.8,21.8,7.5,21.8"></path></svg>
+    <svg id="video-youtube" viewBox="0 0 24 24"><path d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="video-youtube-white" viewBox="0 0 24 24"><path fill="#fff" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="video-youtube-black" viewBox="0 0 24 24"><path fill="#000" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path><polygon fill="#fff" points="9.6,15.5 9.6,8.5 16,12.1 "></polygon></svg>
+    <svg id="video-youtube-red" viewBox="0 0 24 24"><path fill="#f00" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path><polygon fill="#fff" points="9.6,15.5 9.6,8.5 16,12.1 "></polygon></svg>
+    <svg id="video-youtube-white" viewBox="0 0 24 24"><path fill="#fff" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"></path></svg>
+    <svg id="expand-all" viewBox="0 0 24 24"><path d="M16.59 9.41L18 8l-6-6-6 6 1.41 1.41L12 4.83l4.59 4.58zM12 19.17l-4.59-4.58L6 16l6 6 6-6-1.41-1.41L12 19.17z"></path></svg>
+    <svg id="play-circle-filled" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path></svg>
+    <svg id="search" viewBox="0 0 24 24"><path d="M20.49 19l-5.73-5.73C15.53 12.2 16 10.91 16 9.5A6.5 6.5 0 1 0 9.5 16c1.41 0 2.7-.47 3.77-1.24L19 20.49 20.49 19zM5 9.5C5 7.01 7.01 5 9.5 5S14 7.01 14 9.5 11.99 14 9.5 14 5 11.99 5 9.5z"></path></svg>
+    <svg id="google-color-logo" viewBox="0 0 74 24"><path fill="#4285F4" d="M9.24 8.19v2.46h5.88c-.18 1.38-.64 2.39-1.34 3.1-.86.86-2.2 1.8-4.54 1.8-3.62 0-6.45-2.92-6.45-6.54s2.83-6.54 6.45-6.54c1.95 0 3.38.77 4.43 1.76L15.4 2.5C13.94 1.08 11.98 0 9.24 0 4.28 0 .11 4.04.11 9s4.17 9 9.13 9c2.68 0 4.7-.88 6.28-2.52 1.62-1.62 2.13-3.91 2.13-5.75 0-.57-.04-1.1-.13-1.54H9.24z"></path><path fill="#EA4335" d="M25 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52z"></path><path fill="#4285F4" d="M53.58 7.49h-.09c-.57-.68-1.67-1.3-3.06-1.3C47.53 6.19 45 8.72 45 12c0 3.26 2.53 5.81 5.43 5.81 1.39 0 2.49-.62 3.06-1.32h.09v.81c0 2.22-1.19 3.41-3.1 3.41-1.56 0-2.53-1.12-2.93-2.07l-2.22.92c.64 1.54 2.33 3.43 5.15 3.43 2.99 0 5.52-1.76 5.52-6.05V6.49h-2.42v1zm-2.93 8.03c-1.76 0-3.1-1.5-3.1-3.52 0-2.05 1.34-3.52 3.1-3.52 1.74 0 3.1 1.5 3.1 3.54.01 2.03-1.36 3.5-3.1 3.5z"></path><path fill="#FBBC05" d="M38 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52z"></path><path fill="#34A853" d="M58 .24h2.51v17.57H58z"></path><path fill="#EA4335" d="M68.26 15.52c-1.3 0-2.22-.59-2.82-1.76l7.77-3.21-.26-.66c-.48-1.3-1.96-3.7-4.97-3.7-2.99 0-5.48 2.35-5.48 5.81 0 3.26 2.46 5.81 5.76 5.81 2.66 0 4.2-1.63 4.84-2.57l-1.98-1.32c-.66.96-1.56 1.6-2.86 1.6zm-.18-7.15c1.03 0 1.91.53 2.2 1.28l-5.25 2.17c0-2.44 1.73-3.45 3.05-3.45z"></path></svg>
+    <svg id="google-solid-logo" viewBox="0 0 74 24"><path d="M9.24 8.19v2.46h5.88c-.18 1.38-.64 2.39-1.34 3.1-.86.86-2.2 1.8-4.54 1.8-3.62 0-6.45-2.92-6.45-6.54s2.83-6.54 6.45-6.54c1.95 0 3.38.77 4.43 1.76L15.4 2.5C13.94 1.08 11.98 0 9.24 0 4.28 0 .11 4.04.11 9s4.17 9 9.13 9c2.68 0 4.7-.88 6.28-2.52 1.62-1.62 2.13-3.91 2.13-5.75 0-.57-.04-1.1-.13-1.54H9.24zm15.76-2c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52zm28.58-8.03h-.09c-.57-.68-1.67-1.3-3.06-1.3C47.53 6.19 45 8.72 45 12c0 3.26 2.53 5.81 5.43 5.81 1.39 0 2.49-.62 3.06-1.32h.09v.81c0 2.22-1.19 3.41-3.1 3.41-1.56 0-2.53-1.12-2.93-2.07l-2.22.92c.64 1.54 2.33 3.43 5.15 3.43 2.99 0 5.52-1.76 5.52-6.05V6.49h-2.42v1zm-2.93 8.03c-1.76 0-3.1-1.5-3.1-3.52 0-2.05 1.34-3.52 3.1-3.52 1.74 0 3.1 1.5 3.1 3.54.01 2.03-1.36 3.5-3.1 3.5zM38 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52zM58 .24h2.51v17.57H58zm10.26 15.28c-1.3 0-2.22-.59-2.82-1.76l7.77-3.21-.26-.66c-.48-1.3-1.96-3.7-4.97-3.7-2.99 0-5.48 2.35-5.48 5.81 0 3.26 2.46 5.81 5.76 5.81 2.66 0 4.2-1.63 4.84-2.57l-1.98-1.32c-.66.96-1.56 1.6-2.86 1.6zm-.18-7.15c1.03 0 1.91.53 2.2 1.28l-5.25 2.17c0-2.44 1.73-3.45 3.05-3.45z"></path></svg>
+    <svg id="pdf" viewBox="0 0 24 24">
+      <g id="Resources" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SRE-Resources" transform="translate(-588.000000, -1354.000000)" fill-rule="nonzero">
+          <g id="Group-5" transform="translate(189.000000, 1096.000000)">
+            <g id="Group-9" transform="translate(32.000000, 258.000000)">
+              <g id="x-WebAssets-/-Card-Icons-/-PDF" transform="translate(367.000000, 0.000000)">
+                <g>
+                  <rect id="Rectangle-5-Copy" fill-opacity="0" fill="#FFFFFF" x="0" y="0" width="24" height="24"></rect>
+                  <path d="M12,14 L13.3333334,14 L13.3333334,10 L12,10 L12,14 Z M15.3333333,14 C15.3333333,15.1066666 14.44,16 13.3333334,16 L10,16 L10,8 L13.3333334,8 C14.44,8 15.3333333,8.89333337 15.3333333,10 L15.3333333,14 Z M22,10 L18.6666666,10 L18.6666666,11.3333333 L20.6666666,11.3333333 L20.6666666,13.3333334 L18.6666666,13.3333334 L18.6666666,16 L16.6666666,16 L16.6666666,8 L22,8 L22,10 Z M8.66666666,11.3333333 C8.66666666,12.44 7.77333333,13.3333334 6.66666667,13.3333334 L5.33333333,13.3333334 L5.33333333,16 L3.33333333,16 L3.33333333,8 L6.66666667,8 C7.77333333,8 8.66666666,8.89333337 8.66666666,10 L8.66666666,11.3333333 Z M2.66666667,0 C1.19333333,0 0,1.19333333 0,2.66666667 L0,21.3333333 C0,22.8066667 1.19333333,24 2.66666667,24 L21.3333333,24 C22.8066667,24 24,22.8066667 24,21.3333333 L24,2.66666667 C24,1.19333333 22.8066667,0 21.3333333,0 L2.66666667,0 Z M5.33333333,11.3333333 L6.66666667,11.3333333 L6.66666667,10 L5.33333333,10 L5.33333333,11.3333333 Z" id="icon-PDF/one-pager" fill="#1A73E8"></path>
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <svg id="slides_icon" viewBox="0 0 32 32">
+      <g id="Resources" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SRE-Resources" transform="translate(-221.000000, -1128.000000)" fill="#FFB800" fill-rule="nonzero">
+          <g id="Group-5" transform="translate(189.000000, 1096.000000)">
+            <path d="M60.442468,32 L35.5397443,32 C33.5831017,32 32,33.6 32,35.5555556 L32,60.4444444 C32,62.4 33.5831017,64 35.5397443,64 L60.442468,64 C62.3991106,64 64,62.4 64,60.4444444 L64,35.5555556 C64,33.6 62.3991106,32 60.442468,32 Z M60.442468,55.1111111 L35.5397443,55.1111111 L35.5397443,40.8888889 L60.442468,40.8888889 L60.442468,55.1111111 Z" id="Shape"></path>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <svg id="video_icon" viewBox="0 0 24 24" fill="#1d72e8"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    <svg id="rss-feed" xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 0 24 24" width="32px" fill="#1a73e8"><path d="M0 0h24v24H0V0z" fill="none"/><circle cx="6.18" cy="17.82" r="2.18"/><path d="M5.59 10.23c-.84-.14-1.59.55-1.59 1.4 0 .71.53 1.28 1.23 1.4 2.92.51 5.22 2.82 5.74 5.74.12.7.69 1.23 1.4 1.23.85 0 1.54-.75 1.41-1.59-.68-4.2-3.99-7.51-8.19-8.18zm-.03-5.71C4.73 4.43 4 5.1 4 5.93c0 .73.55 1.33 1.27 1.4 6.01.6 10.79 5.38 11.39 11.39.07.73.67 1.28 1.4 1.28.84 0 1.5-.73 1.42-1.56-.73-7.34-6.57-13.19-13.92-13.92z"/></svg>
+    <svg id="podcast" fill="none" height="32" viewBox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg"><path d="m14 12c0 .74-.4 1.38-1 1.72v8.28h-2v-8.28c-.6-.35-1-.98-1-1.72 0-1.1.9-2 2-2s2 .9 2 2zm-2-6c-3.31 0-6 2.69-6 6 0 1.74.75 3.31 1.94 4.4l1.42-1.42c-.83-.73-1.36-1.79-1.36-2.98 0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.19-.53 2.25-1.36 2.98l1.42 1.42c1.19-1.09 1.94-2.66 1.94-4.4 0-3.31-2.69-6-6-6zm0-4c-5.52 0-10 4.48-10 10 0 2.85 1.2 5.41 3.11 7.24l1.42-1.42c-1.55-1.46-2.53-3.53-2.53-5.82 0-4.41 3.59-8 8-8s8 3.59 8 8c0 2.29-.98 4.36-2.53 5.82l1.42 1.42c1.91-1.83 3.11-4.39 3.11-7.24 0-5.52-4.48-10-10-10z" fill="#1a73e8"></path></svg>
+    <svg id="video-yt" width="64px" height="47px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 47" fill="none">
+      <path d="M62.5778 7.29166C61.92 4.43333 59.744 2.16667 56.8889 1.45833C52 0 32 0 32.7111 0C32 0 12 0 7.11111 1.45833C4.256 2.16667 2.08 4.43333 1.42222 7.29166C0 12.5 0 23.3333 0 23.3333C0 23.3333 0 34.1667 1.42222 39.375C2.08 42.2333 4.256 44.5 7.11111 45.2083C12 46.6667 32 46.6667 32.7111 46.6667C32 46.6667 52 46.6667 56.8889 45.2083C59.744 44.5 61.92 42.2333 62.5778 39.375C64 34.1667 64 23.3333 64 23.3333C64 23.3333 64 12.5 62.5778 7.29166Z" fill="#FF0000"/>
+      <path d="M24 32V13.3333L41.3333 23.3846L24 32Z" fill="white"/>
+    </svg>
+    <svg id="article" xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+      <path d="M23.0833 56.75H46V51.75H23.0833V56.75ZM23.0833 42.5H56.9167V37.5H23.0833V42.5ZM23.0833 28.25H56.9167V23.25H23.0833V28.25ZM15 70C13.6667 70 12.5 69.5 11.5 68.5C10.5 67.5 10 66.3333 10 65V15C10 13.6667 10.5 12.5 11.5 11.5C12.5 10.5 13.6667 10 15 10H65C66.3333 10 67.5 10.5 68.5 11.5C69.5 12.5 70 13.6667 70 15V65C70 66.3333 69.5 67.5 68.5 68.5C67.5 69.5 66.3333 70 65 70H15ZM15 65H65V15H15V65Z" fill="white"/>
+    </svg>
+    <svg id="filter-tick" xmlns="http://www.w3.org/2000/svg" width="18" height="14" viewBox="0 0 18 14" fill="none">
+      <path d="M5.59 11.1698L1.42 6.99984L0 8.40984L5.59 13.9998L17.59 1.99984L16.18 0.589844L5.59 11.1698Z" fill="#1A73E8"/>
+    </svg>
+    <svg id="developer_mode_icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="#041E49"><path d="M344-296 160-480l184-184 42 44-140 140 140 140-42 44Zm-144 30h60v76h440v-76h60v166q0 24-18 42t-42 18H260q-24 0-42-18t-18-42v-166Zm60-440h-60v-154q0-24 18-42t42-18h440q24 0 42 18t18 42v154h-60v-64H260v64Zm0 576v30h440v-30H260Zm0-700h440v-30H260v30Zm356 534-42-44 140-140-140-140 42-44 184 184-184 184ZM260-830v-30 30Zm0 700v30-30Z"/></svg>
+    <svg id="play" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="m17 13h16v23h-16z" fill="#202124"/><g fill="#fff"><path d="m0 0h48v48h-48z" fill-opacity=".01"/><path clip-rule="evenodd" d="m24 4c-11.04 0-20 8.96-20 20s8.96 20 20 20 20-8.96 20-20-8.96-20-20-20zm-4 29v-18l12 9z" fill-rule="evenodd"/></g></svg>
+    <svg id="watch-video" fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="m8 .5c-4.14 0-7.5 3.36-7.5 7.5s3.36 7.5 7.5 7.5 7.5-3.36 7.5-7.5-3.36-7.5-7.5-7.5zm-1.5 10.875v-6.75l4.5 3.375z" fill="#1a73e8" fill-rule="evenodd"/></svg>
+    <svg id="modal-play" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="m17 13h16v23h-16z" fill="#202124"/><g fill="#fff"><path d="m0 0h48v48h-48z" fill-opacity=".01"/><path clip-rule="evenodd" d="m24 4c-11.04 0-20 8.96-20 20s8.96 20 20 20 20-8.96 20-20-8.96-20-20-20zm-4 29v-18l12 9z" fill-rule="evenodd"/></g></svg>
+    <svg id="modal-pause" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="m20 38h-8v-28h8zm8 0v-28h8v28z" fill="#fff" fill-rule="evenodd"/></svg>
+    <svg id="circle-1" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#4285F4"/><text x="14" y="20" font-size="14px" text-anchor="middle" fill="#FFFF">1</text></svg>
+    <svg id="circle-2" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#F9AB00"/><text x="14" y="20" text-anchor="middle" fill="#FFFF">2</text></svg>
+    <svg id="circle-3" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#34A853"/><text x="14" y="20" text-anchor="middle" fill="#FFFF">3</text></svg>
+    <svg id="twitter-X" height="24" viewBox="0 0 23 20" width="24" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="m11.902344 8.464844 7.445312-8.464844h-1.765625l-6.464843 7.347656-5.160157-7.347656h-5.957031l7.808594 11.113281-7.808594 8.875h1.765625l6.824219-7.761719 5.453125 7.761719h5.957031zm-2.417969 2.746094-.789063-1.105469-6.296874-8.804688h2.710937l5.082031 7.105469.789063 1.105469 6.605469 9.238281h-2.710938zm0 0" fill="#000"/></svg>
+    <svg id="read-more-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M15 9L13.9425 7.9425L9.75 12.1275V3H8.25V12.1275L4.065 7.935L3 9L9 15L15 9Z" fill="white"/></svg>
+    <svg id="open-in-new-white" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" style=""><path fill-rule="evenodd" clip-rule="evenodd" d="M12.25 12.25H1.75V1.75H7V0.25H1.75C0.9175 0.25 0.25 0.925 0.25 1.75V12.25C0.25 13.075 0.9175 13.75 1.75 13.75H12.25C13.075 13.75 13.75 13.075 13.75 12.25V7H12.25V12.25ZM8.5 0.25V1.75H11.1925L3.82 9.1225L4.8775 10.18L12.25 2.8075V5.5H13.75V0.25H8.5Z" fill="white"/></svg>
+    <svg id="load-more-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M15 9L13.9425 7.9425L9.75 12.1275V3H8.25V12.1275L4.065 7.935L3 9L9 15L15 9Z" fill="#1A73E8"/>
+    </svg>
+    <svg id="show-less-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M3 9L4.0575 10.0575L8.25 5.8725V15H9.75V5.8725L13.935 10.065L15 9L9 3L3 9Z" fill="#1A73E8"/>
+    </svg>
+
+  </defs>
+</svg></div>
+  </body>
+</html>

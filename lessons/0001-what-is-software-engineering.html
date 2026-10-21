@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 课 · 软件工程不是把代码写出来</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 0 · 地图与工作台 · 第 1 课</p>
+  <h1>软件工程不是把代码写出来</h1>
+  <p class="lede">同一段代码，可以是「跑一下就行」的脚本，也可以是「坏了要赔钱」的系统。区别不在代码，在它要活多久、被多少人碰、错了谁付代价。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 25–35 分钟</span>
+  <span><b>前置</b> 无</span>
+  <span><b>产出</b> 一张「三问卡」</span>
+  <span><b>主读物</b> <a href="https://abseil.io/resources/swe-book/html/ch01.html">SE at Google 第 1 章</a></span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>用「时间、规模、代价」判断一段代码是编程问题还是工程问题。</li>
+    <li>说清 AI 降低的是哪一种复杂度、没有降低的是哪一种。</li>
+    <li>说清为什么个人开发者在 AI 时代更需要软件工程，而不只是团队和架构师。</li>
+    <li>把这三个问题用到自己手上的一个项目上，判断它该配多重的流程。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>一个脚本的三年</h2>
+  <p>2023 年，你写了一个 40 行的脚本：把部门周报从 Excel 里抽出来，拼成一张汇总表。跑一次两秒钟。你把它丢进共享盘，没写 README，也没人管。</p>
+  <p>2026 年，它还在跑。财务每月用一次，市场每周用一次，实习生改过两次路径。上个月 Excel 升级，脚本崩了。没人知道为什么——包括你，因为你也忘了当时为什么那么写。</p>
+  <p><strong>代码一行没变。</strong>变的是三件事：它活了多久、多少人在用它、坏掉时谁付代价。</p>
+  <p>这三件事，就是编程和软件工程的分界线。</p>
+</section>
+
+<section>
+  <h2>同一个词，两种工作</h2>
+  <p>Google 的 Titus Winters 给过一个定义，我觉得是这门课最值得先记住的一句：</p>
+  <blockquote>
+    <p>Software engineering is programming integrated over time.<br>软件工程，是编程在时间上的积分。</p>
+  </blockquote>
+  <p>编程是把行为写出来：给定输入，产生输出。软件工程是在<strong>时间、规模、代价</strong>之下，让这个行为一直成立。</p>
+  <p>他还给了一个很好用的判据：</p>
+  <blockquote>
+    <p>It's programming if “clever” is a compliment, but it's software engineering if “clever” is an accusation.<br>在一次性脚本里，「写得巧」是夸奖；在要活五年的系统里，「写得巧」是指控。</p>
+  </blockquote>
+  <p>因为「巧」通常意味着依赖了没写进契约的行为。短命代码无所谓；长命代码里，这些依赖会变成某天突然断掉的线。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>维度</th><th>编程问题</th><th>工程问题</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">时间</td><td>跑完就结束</td><td>要应对依赖、环境、需求的变化</td></tr>
+        <tr><td class="what">规模</td><td>一个人写、一个人用</td><td>多人维护、多人依赖</td></tr>
+        <tr><td class="what">代价</td><td>错了重跑</td><td>错了有人赔钱、丢数据、担责任</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p>注意：<strong>不是</strong>按代码行数、语言、有没有用框架来分。一个 50 行的工资脚本可以是工程问题；一个 5000 行的周末 demo 仍然只是编程问题。</p>
+  </div>
+</section>
+
+<section>
+  <h2>AI 降低了哪一种难度</h2>
+  <p>1986 年，Fred Brooks 把软件开发的困难分成两类：</p>
+  <ul>
+    <li><strong>essential complexity（本质复杂度）</strong>：把问题想清楚——要什么、约束是什么、行为如何组合、谁接受什么后果。</li>
+    <li><strong>accidental complexity（偶然复杂度）</strong>：工具、语言、环境带来的麻烦——语法、样板代码、查 API、配环境。</li>
+  </ul>
+  <p>AI 把偶然复杂度压得很低。样板代码、语法错误、重复改写、查文档，这些它做得比人快。</p>
+  <p>但本质复杂度没有消失。你让 agent 写得更快，如果方向错了，只是<strong>更快地错</strong>。所以这门课的重点不是「怎么让 AI 多写代码」，而是「怎么在让它写之前，把问题想清楚」。</p>
+  <p>后面三十三节课，本质上都在做同一件事：把本质复杂度提前解决掉，好让 AI 的快用在正确的地方。</p>
+</section>
+
+<section>
+  <h2>为什么个人开发者更需要它</h2>
+  <p>过去，软件工程常被当成团队和架构师的事。一个人写脚本、做小工具，靠手快和感觉也能应付，因为代码短、用户少、坏了重跑，三个问题都偏轻。</p>
+  <p>AI 改变了这个平衡。一个人现在能产出过去一个团队才能写完的代码，但判断、验证、设计和交接的负担并没有被分摊，反而集中到了这一个人身上。你让 agent 写得越快，越需要有人回答：这一步做对了吗？这个模块该不该拆？这个行为有没有被测试锁住？三个月后接手的人（很可能还是你）看得懂吗？</p>
+  <p>这些问题不是公司流程的装饰，而是软件工程的核心。AI 把「写」的成本降下来了，却把「判断」的成本抬了上来。个人开发者如果没有这套判断力，就会用更快的速度生产自己验证不了、维护不了的代码。</p>
+  <p>所以这门课把软件工程当作主线，把 AI 和技能包当作实践方式。我们不是学一套公司里的流程，而是给自己一套在高速产出时仍然能判断对错的方法。</p>
+</section>
+
+<section>
+  <h2>三个问题，决定你该上多重的装备</h2>
+  <p>遇到任何一段代码或一个任务，先问这三句：</p>
+  <ol class="steps">
+    <li><strong>它要活多久？</strong>小时、月、年，还是十年？</li>
+    <li><strong>多少人碰它、依赖它？</strong>只有你、一个团队，还是外部用户？</li>
+    <li><strong>坏了谁付代价？</strong>没人、你自己、客户，还是合规与法律责任？</li>
+  </ol>
+  <p>三个都偏「短、少、轻」，按编程问题处理，别上重装备。任何一个偏「长、多、重」，就进入工程问题，需要计划、测试、文档、审查。</p>
+  <p>这张判断规则已经做成一张可打印的卡片：<a href="../reference/0001-three-questions.html">三问卡</a>。</p>
+</section>
+
+<section>
+  <h2>三个常见误判</h2>
+  <p>三问卡好用，但围绕「工程」这个词有三种最常见的误读，先点破，再去做下面的练习。</p>
+  <ul>
+    <li><strong>把形式当工程：「用了框架、写了设计模式，就是工程。」</strong>不一定——形式和问题不匹配，只是更贵的偶然复杂度。</li>
+    <li><strong>把整洁当标准：「代码丑就是工程没做好。」</strong>一次性脚本可以丑；工程判断先看寿命和代价，再看整洁。</li>
+    <li><strong>把工程当流程：「工程就意味着重流程。」</strong>不是——工程是配比：短脚本配轻流程，长系统配重流程。给脚本上 TDD（测试驱动开发），和给银行系统上 vibe coding（氛围编程），是同一种错。</li>
+  </ul>
+  <p>三种误判的共同点，是把「工程」绑死在某个表面特征上。三问卡防的正是这个：先拆开寿命、规模、代价，再谈形式。</p>
+</section>
+
+<section>
+  <h2>练习：六个场景，你来判</h2>
+  <p>先自己选，再点开「看判断」。两个选项字数一样，没有格式提示。</p>
+
+  <div class="quiz">
+    <div class="quiz-item">
+      <p class="quiz-q">1. 一次性把 300 个 PDF 转成文本，跑完就删。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>编程问题。</b>寿命以小时计，一个人用，错了重跑。可以写得丑，不需要测试。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">2. 每月给全公司 2000 人算工资的脚本。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>工程问题。</b>寿命长、多人依赖、错了有人少拿钱。哪怕只有 100 行，也需要测试和审查。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">3. 周末 hackathon（编程马拉松）的 demo，周一就扔。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>编程问题。</b>寿命三天，观众只有评委，错了笑一笑。这时候上测试和架构是浪费。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">4. 被 12 个内部服务依赖的日志格式化库。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>工程问题。</b>规模大，改一次影响 12 个团队；需要接口承诺、版本策略和回归测试。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">5. 你个人用的笔记同步小工具，只在一台机器上跑。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>编程问题（当前）。</b>但边界会移动：如果它开始同步你的唯一副本，坏了会丢数据，第三个维度就变重了，值得加一个测试。</p>
+      </details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">6. 客户签了五年维护合同的桌面工具。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看判断</summary>
+        <p class="answer"><b>工程问题。</b>时间、规模（客户加支持团队）、代价（合同责任）三项都重。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>软件工程 = 编程 × 时间 × 规模 × 代价。</li>
+    <li>先问寿命和代价，再决定上多少规范。</li>
+    <li>AI 降低偶然复杂度，不降低本质复杂度。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>主读物：</strong>Titus Winters, <a href="https://abseil.io/resources/swe-book/html/ch01.html">“What Is Software Engineering?”</a>，<em>Software Engineering at Google</em> 第 1 章。重点读 <em>Time and Change</em> 与 <em>Trade-offs and Costs</em> 两节。</p>
+  <p><strong>延伸：</strong>Fred Brooks, “No Silver Bullet”（1986）。本地已存 PDF：<a href="../courseware/brooks/no-silver-bullet.pdf">courseware/brooks/no-silver-bullet.pdf</a>。原文也收录在 <em>The Mythical Man-Month</em> 1995 纪念版；先抓住 essential / accidental 这一对区分即可。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong><a href="../lessons/0002-what-software-engineering-covers.html">第 2 课「软件工程到底包含什么」</a>。你会看到软件工程不只是写代码，而是一组彼此牵制的活动；看清全貌之后，我们再决定这门课怎么走。</p>
+  <p>有任何不清楚的，直接问我。我是你的老师，不是这本书的朗读器。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0001-three-questions.html">三问卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

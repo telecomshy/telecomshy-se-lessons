@@ -1,0 +1,434 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>General Information &amp; FAQ</title>
+
+<script>
+// duplicate reusable references block
+window.onHandoutWillRender = function() {
+  var refs = $('#references').remove().text();
+  $('.markdown, .markdown div').prepend(refs);
+}
+</script>
+
+
+<link href="../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../general/icons/6031.ico"><link rel="apple-touch-icon" href="../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li><a href="#general_information_faq">General Information &amp; FAQ</a></li><li><a href="#objectives">Objectives</a></li><li><a href="#classes_readings_and_nanoquizzes">Classes, readings, and nanoquizzes</a></li><li><a href="#problem_sets_iteration_and_slack_days">Problem sets, iteration, and slack days</a></li><li><a href="#projects_and_quizzes">Projects and quizzes</a></li><li><a href="#collaboration_and_public_sharing">Collaboration and public sharing</a></li><li><a href="#grading">Grading</a></li><li><a href="#sharing_your_knowledge">Sharing your knowledge</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="general_information_faq"><a class="jump" href="#general_information_faq"></a>General Information &amp; FAQ</h1><div data-outline="general_information_faq">
+
+
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><div class="well faq"><h3 id="how_will_spring_2021_online_6031_work"><a class="jump" href="#how_will_spring_2021_online_6031_work"></a>How will Spring 2021 online 6.031 work?</h3><div data-outline="how_will_spring_2021_online_6031_work">
+
+<p>6.031 will continue to have <a href="#classes_readings_and_nanoquizzes">required class meetings, including nanoquizzes and small-group exercises</a>, at the scheduled Mon-Wed-Fri 11am-12:30pm EDT/EST time.
+There will be an accommodation for students living in distant incompatible time zones.
+Classes and assignments will require a computer set up with 6.031 tools; a tablet may be useful but is not required.
+Classes will not be recorded.
+There will be <a href="#problem_sets_iteration_and_slack_days">five problem sets</a>, <a href="#projects_and_quizzes">two quizzes, and a two-week final project</a>.</p>
+
+<p id="@staff_working_hard"><a class="jump" href="#@staff_working_hard"></a>The staff are working hard to make 6.031 classes and office hours positive, collaborative, and engaging.
+We’re also going to try new tools to support those goals, so we ask for your flexibility, patience, and feedback as we improve.</p>
+
+</div><h3 id="who-to-ask"><a class="jump" href="#who-to-ask"></a>How can I get help in 6.031? Who should I ask?</h3><div data-outline="who-to-ask">
+
+<ol>
+<li><p id="@before_you_ask"><a class="jump" href="#@before_you_ask"></a>Before you ask: <strong>search</strong> the <a href="http://web.mit.edu/6.031/www/sp21/">6.031 course page</a>, the <a href="http://docs.oracle.com/en/java/javase/15/docs/api/">Java API docs</a>, <a href="https://piazza.com/class#spring2021/6031">Piazza</a>, or the web.</p>
+
+<p id="@we-ve_tried_make"><a class="jump" href="#@we-ve_tried_make"></a>We’ve tried to make the course documents as comprehensive as possible.
+Several FAQ questions below describe how to ask for help with specific problems.</p></li>
+<li><p id="@most_questions_post"><a class="jump" href="#@most_questions_post"></a>For most questions: <strong>post on <a href="https://piazza.com/class#spring2021/6031">Piazza</a></strong>.
+<a href="https://piazza.com/class/kk4mess82ue71a?cid=6">How to use Piazza in 6.031</a> has tips on how to do it and what to expect.</p>
+
+<p id="@questions_about_java"><a class="jump" href="#@questions_about_java"></a>For questions about Java Tutor exercises, use <a href="#java-tutor-report-a-problem">Report a Problem</a> in the Tutor.</p>
+
+<p id="@do_not_post"><a class="jump" href="#@do_not_post"></a><strong>Do not post code on Piazza.</strong>
+Code cannot be shared publicly, and debugging over Piazza is not feasible.</p></li>
+<li><p id="@visit_lab_hours"><a class="jump" href="#@visit_lab_hours"></a>Visit <a href="../calendar">lab hours</a> and talk to a LA or TA, or visit instructor <a href="../calendar">office hours</a>.</p></li>
+<li><p id="@if_you_need"><a class="jump" href="#@if_you_need"></a>If you need more help than the staff can provide, <a href="http://hkn.scripts.mit.edu/tutoring">HKN Tutoring</a> provides free one-on-one tutoring for hundreds of Course 6 students each semester.</p></li>
+</ol>
+
+</div><h3 id="no-email"><a class="jump" href="#no-email"></a>Should I email instructors, TAs, or other staff?</h3><div data-outline="no-email">
+
+<p>No.
+Please post <a href="#piazza-private">privately</a> on <a href="https://piazza.com/class#spring2021/6031">Piazza</a>, except if you have a <a href="#problem-with-my-grade">grading problem</a>.</p>
+
+</div><h3 id="piazza-private"><a class="jump" href="#piazza-private"></a>How do I post privately on Piazza? Should I restrict my private Piazza post to just certain staff?</h3><div data-outline="piazza-private">
+
+<p>Please make private Piazza posts by selecting <strong>Post to: instructors</strong> and entering “<strong>Instructors</strong>” to make the post visible to all staff.
+(Piazza uses “Instructors” to refer to all staff members: TAs, LAs, as well as the two instructors of the course.)
+Sending to all staff ensures that the right staff member will be able to see your post, and also that your post won’t fall through the cracks.</p>
+
+<p id="@do_not_direct"><a class="jump" href="#@do_not_direct"></a>Do not direct your post only to a few staff members by name, because Piazza does not specially notify them.
+Your post will be buried among many Piazza questions for your intended recipients, and will be completely invisible to all other staff (particularly to the staff who are making sure questions get answered), so your question may get a delayed answer or no answer at all.
+To avoid this, <strong>always include “Instructors” in your recipients</strong>.</p>
+
+</div><h3 id="java-tutor-report-a-problem"><a class="jump" href="#java-tutor-report-a-problem"></a>How do I report a Java Tutor exercise that seems buggy?</h3><div data-outline="java-tutor-report-a-problem">
+
+<p>Use “Report a Problem” in the bottom corner of the exercise.
+It’s easier than putting a screenshot on Piazza, and the tutor automatically includes extra information in your bug report that helps the staff zero in on what might have gone wrong.</p>
+
+</div><h3 id="hyperlinking"><a class="jump" href="#hyperlinking"></a>How do I get a specific hyperlink to something I want to ask a question about?</h3><div data-outline="hyperlinking">
+
+<p>When you ask a question, please include a URL pointing to what you’re asking about, as specifically as possible.
+It makes it easier to write your question and easier for the staff to understand what you’re asking.
+Here’s how to get a useful hyperlink for various places in the 6.031 web:</p>
+
+<ul>
+<li><p id="@course_website_including"><a class="jump" href="#@course_website_including"></a><strong>Course website</strong> (including readings, reading exercises, problem set handouts, course policy).
+Every paragraph on the course website is linkable.
+Move your mouse cursor into the left margin until an octothorpe <code>#</code> link appears next to what you want to refer to.
+Click on that <code>#</code>, and your browser’s address bar now has the URL you want.</p></li>
+<li><p id="@didit_omnivore_caesar"><a class="jump" href="#@didit_omnivore_caesar"></a><strong>Didit, Omnivore, Caesar, GitHub, Constellation</strong>.
+Links to your pages on these systems are visible to the course staff, so if you have a question about something you see on one of these systems, please include the URL of the page where you’re seeing it.
+The staff should be able to see it too.</p></li>
+<li><p id="@problem_set_specs"><a class="jump" href="#@problem_set_specs"></a><strong>Problem set specs.</strong> 
+If you have a question about a method or interface spec, point to its Javadoc API page (for example, here is <a href="../psets/ps0/doc/turtle/TurtleSoup.html#drawSquare(turtle.Turtle,int)"><code>drawSquare()</code></a> from ps0).
+You can find links to the Javadoc API pages in the problem set handout.</p></li>
+<li><p id="@eclipse_java_tutor"><a class="jump" href="#@eclipse_java_tutor"></a><strong>Eclipse, Java Tutor, Git</strong>.
+These tools don’t have hyperlinks, unfortunately.
+Report Java Tutor problems <a href="#java-tutor-report-a-problem">as described above</a> rather than using Piazza.
+For Eclipse and Git, try to copy-and-paste the text of error messages into your Piazza question, rather than using a screenshot.</p></li>
+</ul></div></div>
+
+<h2 id="objectives"><a class="jump" href="#objectives"></a>Objectives</h2><div data-outline="objectives">
+
+<p id="@prime_objective_6-031"><a class="jump" href="#@prime_objective_6-031"></a>The prime objective of 6.031 is learning how to write code that is:</p>
+
+<ul id="@safe_bugs_sfb">
+<li><a class="jump" href="#@safe_bugs_sfb"></a>safe from bugs (SFB),</li>
+<li>easy to understand (ETU), and </li>
+<li>ready for change (RFC).</li>
+</ul>
+
+<p id="@every_idea_skill"><a class="jump" href="#@every_idea_skill"></a>Every idea and skill in the course is calibrated against those goals.
+Specific objectives include:</p>
+
+<ul>
+<li><p id="@understanding_key_software"><a class="jump" href="#@understanding_key_software"></a>an understanding of key software engineering ideas, including interfaces, representation independence, specifications, invariants, abstract data types, design patterns, and unit testing</p></li>
+<li><p id="@ability_apply_these"><a class="jump" href="#@ability_apply_these"></a>the ability to apply these ideas to design, implement, and test a small- to medium-scale software system (up to a few thousand lines of code, multiple modules), by:</p>
+
+<ul><li>defining abstract data types</li>
+<li>writing specifications for operations</li>
+<li>choosing concrete representations and defining abstraction functions and representation invariants</li>
+<li>writing a comprehensive suite of unit tests</li>
+<li>creating regular expressions and grammars for parsing input</li>
+<li>creating client-server programs that adhere to a given protocol</li>
+<li>designing a concurrent program using concurrent language features and library types <br>
+&nbsp;</li></ul></li>
+<li><p id="@understanding_general_programming-language"><a class="jump" href="#@understanding_general_programming-language"></a>an understanding of general programming-language concepts such as static typing, exceptions, access control, interfaces, and equality, and ability to use Java as a particular example language with those concepts</p></li>
+<li><p id="@ability_use_modern"><a class="jump" href="#@ability_use_modern"></a>the ability to use modern programming tools (e.g. Eclipse, Git, JUnit) and modern programming technologies (e.g. I/O, regular expressions, network sockets, threads, GUIs)</p></li>
+<li><p id="@experience_working_project"><a class="jump" href="#@experience_working_project"></a>experience working in a project team</p></li>
+</ul>
+
+<div class="well faq"><h3 id="prereq"><a class="jump" href="#prereq"></a>Is it possible to take 6.031 without the 6.009 prerequisite?</h3><div data-outline="prereq">
+
+<p>No.
+6.009 is a required prerequisite, and exceptions are made only in extraordinary circumstances.</p>
+
+</div><h3 id="listener"><a class="jump" href="#listener"></a>Can I take 6.031 as a listener if I don’t have the prerequisite?</h3><div data-outline="listener">
+
+<p>Yes.
+Listeners are more than welcome to join us in class, and have access to all the course materials, including problem sets.
+Listeners don’t participate in peer code reviews, don’t get manual grading by TAs, and don’t participate in the group project.</p>
+
+</div><h3 id="late-add"><a class="jump" href="#late-add"></a>Is it possible to join the class after the first day?</h3><div data-outline="late-add">
+
+<p>No.
+Exceptions are made only in extraordinary circumstances.</p>
+
+</div><h3 id="success"><a class="jump" href="#success"></a>Is 6.031 a hard class? Can I succeed in 6.031?</h3><div data-outline="success">
+
+<p>We believe everybody entering 6.031 with the prerequisites has the potential to succeed.
+As with all learning, if the concepts and skills in 6.031 are new to you, mastering them will require hard work.</p>
+
+<p id="@6-031_requires_basic"><a class="jump" href="#@6-031_requires_basic"></a>6.031 requires basic programming fluency provided by 6.0001 and 6.009.
+If you have less previous programming experience, you may need to work harder in 6.031.
+For many students with less experience, learning Java is the biggest challenge, so consider taking another class (<em>e.g.</em> <a href="http://student.mit.edu/catalog/m6a.html#6.178">6.178</a> during IAP) or studying on your own (<em>e.g.</em> <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-092-introduction-to-programming-in-java-january-iap-2010/index.htm">6.092 on OCW</a>, <a href="https://www.codecademy.com/learn/learn-java">Codecademy Java</a>) before taking 6.031.</p></div></div>
+
+</div><h2 id="classes_readings_and_nanoquizzes"><a class="jump" href="#classes_readings_and_nanoquizzes"></a>Classes, readings, and nanoquizzes</h2><div data-outline="classes_readings_and_nanoquizzes">
+
+<p id="@class_meetings_there"><a class="jump" href="#@class_meetings_there"></a><strong>Class meetings.</strong>
+There are three 90-minute class meetings each week on Monday, Wednesday, and Friday.
+You are expected to attend all class meetings and to participate actively in exercises and discussions.</p>
+
+<p id="@laptops_required_classes"><a class="jump" href="#@laptops_required_classes"></a><strong>Laptops required.</strong>
+Classes will include 
+ programming exercises that require a laptop set up with the course tools.
+If you don’t have your own laptop and you need to borrow one, IS&amp;T has a <a href="https://ist.mit.edu/loaner-equipment">laptop loaner program</a> that will lend you one.
+We encourage you to take advantage of the remote learning <a href="https://ist.mit.edu/loaner-equipment">iPad loaner program</a> as well.</p>
+
+<p id="@readings_most_classes"><a class="jump" href="#@readings_most_classes"></a><strong>Readings.</strong>
+Most classes will have a reading that you must read before coming to class, with online exercises that you should do by 10:00pm US Eastern time the night before the class.
+The online exercises are designed to be practice for the in-class nanoquizzes, but are not graded for correctness, only for effort.
+There is no course textbook.</p>
+
+<p id="@nanoquizzes_every_class"><a class="jump" href="#@nanoquizzes_every_class"></a><strong>Nanoquizzes.</strong>
+Every class meeting will begin with a short quiz on the required reading for the class, plus recent class meetings.
+Nanoquizzes are closed-book and closed-notes, with a 3-minute time limit. 
+The nanoquiz is part of the grade for each class, along with reading exercises, in-class programming exercises, clicker questions, and other activities.</p>
+
+<p id="@lowest_5_classwork"><a class="jump" href="#@lowest_5_classwork"></a>The lowest 5 classwork grades are automatically dropped, so you are automatically excused from up to five classes.
+You can also make up missed or low classwork grades.
+More info: <strong><a href="classwork-grading.html">details of classwork grading and makeup</a></strong>.</p>
+
+<div class="well faq"><h3 id="structure"><a class="jump" href="#structure"></a>Why is 6.031 structured the way it is?</h3><div data-outline="structure">
+
+<p><em>Practice and feedback</em> are key to learning, and 6.031 is structured to provide as many opportunities for practice and feedback as possible.
+That means we don’t want to spend class time on lectures, we want to spend it on exercises to practice the concepts and skills of building software.</p>
+
+<p id="@citations_wieman_et"><a class="jump" href="#@citations_wieman_et"></a>Citations:
+<a href="http://www.cwsei.ubc.ca/resources/files/CourseTransformationGuide_CWSEI_CU-SEI.pdf">Wieman et al., <em>Course Transformation Guide</em></a>
+·
+<a href="http://www.sciencemag.org/content/332/6031/862.full">Deslauriers et al., <em>Improved Learning in a Large-Enrollment Physics Class</em></a></p>
+
+</div><h3 id="attendance-required"><a class="jump" href="#attendance-required"></a>Why is attendance in class required?</h3><div data-outline="attendance-required">
+
+<p>Class meetings are all about <em>practice and feedback</em>.
+The individual, pair, and small group questions, exercises, and coding problems we work on in class, and the discussions and feedback led by instructors, are a required component of 6.031.</p>
+
+<p id="@class_like_swim-judo-math"><a class="jump" href="#@class_like_swim-judo-math"></a>Class is like swim/judo/math team practice: you don’t get good unless you show up, and practicing with others is a necessary complement to practicing alone.</p>
+
+</div><h3 id="absence"><a class="jump" href="#absence"></a>I was or will be absent from class for one of the following, what can I do?</h3><div data-outline="absence">
+
+<ul id="@travel_brief_sickness">
+<li><a class="jump" href="#@travel_brief_sickness"></a>Travel</li>
+<li>Brief sickness or medical problem</li>
+<li>Temporary technical problem</li>
+</ul>
+
+<p id="@you_automatically_excused"><a class="jump" href="#@you_automatically_excused"></a>You are automatically excused from up to five classes.
+The grade for the missed nanoquiz and in-class work will be recorded as 0, but the lowest 5 classwork grades are dropped.
+You can also make up classes for partial credit by following the procedure for <a href="classwork-grading.html#class_makeup">makeups</a>.</p>
+
+</div><h3 id="extended-absence"><a class="jump" href="#extended-absence"></a>I was or will be absent from class for an extended (multi-day) period for a medical reason, mental health reason, or religious holiday, what can I do?</h3><div data-outline="extended-absence">
+
+<p>If you haven’t already 
+ contacted <a href="https://studentlife.mit.edu/s3">S<sup>3</sup></a>, talk to them to get help with all of your classes, not just 6.031.
+Then email the 6.031 instructors to explain the situation, and cc: your S<sup>3</sup> dean for support.
+In some situations, you will be able to make up the classes you missed for full credit.</p>
+
+</div><h3 id="readings-before-class"><a class="jump" href="#readings-before-class"></a>Why do I need to read the readings and complete the reading exercises the night before coming to class?</h3><div data-outline="readings-before-class">
+
+<p>Reading the material before class prepares you to spend class time <em>practicing</em> the concepts and skills you’re learning.
+Reading in advance gives you time to think and ask questions, and repeated exposure to material spaced out over time improves learning.</p>
+
+<p id="@see_spacing_effect"><a class="jump" href="#@see_spacing_effect"></a>See: <a href="https://en.wikipedia.org/wiki/Spacing_effect">Spacing effect</a></p>
+
+</div><h3 id="nanoquizzes-before-practice"><a class="jump" href="#nanoquizzes-before-practice"></a>Why does the class have nanoquizzes on topics before we practice them in class?</h3><div data-outline="nanoquizzes-before-practice">
+
+<p>Nanoquizzes assess whether you did the reading and practiced with the reading exercises before coming to class, and they provide feedback to you on your comprehension.
+Nanoquizzes are themselves part of the practice we do in class: recalling information from the readings benefits learning more than just re-reading or re-hearing it.</p>
+
+<p id="@see_testing_effect"><a class="jump" href="#@see_testing_effect"></a>See: <a href="https://en.wikipedia.org/wiki/Testing_effect">Testing effect</a></p>
+
+</div><h3 id="past-nanoquizzes"><a class="jump" href="#past-nanoquizzes"></a>Are past nanoquizzes available?</h3><div data-outline="past-nanoquizzes">
+
+<p>No.
+However, reading exercises are often based on (or copied from) past nanoquiz questions.</p></div></div>
+
+</div><h2 id="problem_sets_iteration_and_slack_days"><a class="jump" href="#problem_sets_iteration_and_slack_days"></a>Problem sets, iteration, and slack days</h2><div data-outline="problem_sets_iteration_and_slack_days">
+
+<p id="@problem_sets_consolidate"><a class="jump" href="#@problem_sets_consolidate"></a><strong>Problem sets.</strong>
+To consolidate your understanding of the ideas from class, you will do five problem sets, PS0 to PS4, involving both design and implementation work.
+Problem sets will be done individually.
+More info: <strong><a href="collaboration.html#individual_work">collaboration on problem sets</a></strong>.</p>
+
+<p id="@code_review_part"><a class="jump" href="#@code_review_part"></a><strong>Code review.</strong>
+As part of each problem set, there will be a code-reviewing period when other students and staff will give you feedback about the code you submitted, using a web-based system.
+You will be expected to participate in this process by reviewing some of your classmates’ code.
+More details about objectives and guidelines for the code reviewing process: <strong><a href="code-review.html">code reviewing</a></strong>.</p>
+
+<p id="@iteration_each_problem"><a class="jump" href="#@iteration_each_problem"></a><strong>Iteration.</strong>
+Each problem set will have two submissions, alpha and beta.
+The alpha submission will be graded and will be subject to code review.
+The beta submission is due a few days after you receive feedback on alpha.
+You will be expected to iterate on your design and implementation, fix any failed test cases, and revise your code based on code review feedback.</p>
+
+<p id="@beta_submission_must"><a class="jump" href="#@beta_submission_must"></a><strong>The beta submission must address all the code reviews</strong> received by the alpha submission.
+More details here: <a href="code-review.html#beta">how should I address my code reviews?</a></p>
+
+<p id="@since_beta_submission"><a class="jump" href="#@since_beta_submission"></a>Since the beta submission happens after code review for the problem set, it’s understood that you’ve looked at other students’ written solutions, and been inspired by other ways to solve the problems.
+You must be exceedingly scrupulous, therefore, in not using those written solutions during your revision.
+Both your original code and your revised code must be your own.
+Looking at other students’ answers to the problem set while you are revising your solution will be considered a violation of the <a href="collaboration.html#individual_work">collaboration policy</a>.</p>
+
+<p id="@slack_days_give"><a class="jump" href="#@slack_days_give"></a><strong>Slack days.</strong>
+To give you some flexibility for periods of heavy workload, minor illness, absence from campus, and other unusual circumstances, you may request limited extensions on problem set deadlines, called slack days.
+Each slack day is a 24-hour extension on the deadline.
+You have a budget of <strong>10 slack days</strong> for the entire semester, which you may apply to any combination of problem sets, on either the alpha deadline or beta deadline or both.
+You can use <strong>at most 2 slack days</strong> for a given deadline.
+After your deadline has passed, whatever has been pushed to your repository on github.mit.edu is what we will use for grading.</p>
+
+<p id="@you_must_request"><a class="jump" href="#@you_must_request"></a>You must request your extension before the problem set is due, by logging into the <a href="https://caesar.mit.edu/">Caesar code-reviewing system</a> and clicking on Request Extension.
+The system keeps track of your slack days and informs you how many you have left.</p>
+
+<p id="@slack_days_atomic"><a class="jump" href="#@slack_days_atomic"></a>Slack days are atomic; you can’t chop them up into slack hours or minutes.
+If you choose to use a slack day because you’re struggling with an assignment, <strong>go to bed and sleep</strong>, and get help in the morning.
+Seriously, that’s why the smallest unit is a day.</p>
+
+<p id="@slack_days_apply"><a class="jump" href="#@slack_days_apply"></a>Slack days apply only to individual problem sets, not to team projects.</p>
+
+<p id="@if_you_used"><a class="jump" href="#@if_you_used"></a>If you have used up your slack days or exceeded the 2-day limit for a single deadline, you will need an instructor’s permission and support from an <a href="https://studentlife.mit.edu/s3">S<sup>3</sup></a> dean for more extension, and your circumstances will have to be extreme to justify the special request.</p>
+
+<div class="well faq"><h3 id="changing-slack"><a class="jump" href="#changing-slack"></a>Can I change my slack day request after I’ve made it?</h3><div data-outline="changing-slack">
+
+<p>You can increase your slack request before your current deadline passes, by visiting Caesar and clicking Change Extension.
+You can decrease your slack request only if your new deadline would still be in the future.
+See also: <a href="#missed-deadline">I forgot to push my work or make a slack day request…</a></p>
+
+</div><h3 id="no-slack-left"><a class="jump" href="#no-slack-left"></a>I need an extension but I used up my slack days, what can I do?</h3><div data-outline="no-slack-left">
+
+<p>As described above, only extreme circumstances will justify a request for extensions beyond the usual slack days.</p>
+
+<p id="@if_you_haven-t"><a class="jump" href="#@if_you_haven-t"></a>If you haven’t already 
+ contacted <a href="https://studentlife.mit.edu/s3">S<sup>3</sup></a>, talk to them to get help with all of your classes, not just 6.031.
+Then email the 6.031 instructors to explain the situation, and cc: your S<sup>3</sup> dean for support.</p>
+
+</div><h3 id="missed-deadline"><a class="jump" href="#missed-deadline"></a>I forgot to push my work or make a slack day request before the deadline, what can I do?</h3><div data-outline="missed-deadline">
+
+<ol id="@push_your_work">
+<li><a class="jump" href="#@push_your_work"></a>Push your work immediately to maximize the likelihood it can be considered.</li>
+<li>Post <a href="#piazza-private">privately</a> on <a href="https://piazza.com/class#spring2021/6031">Piazza</a> and explain the circumstances.</li>
+</ol>
+
+</div><h3 id="forgot-to-code-review"><a class="jump" href="#forgot-to-code-review"></a>I forgot to do code review or missed the code review deadline, what can I do?</h3><div data-outline="forgot-to-code-review">
+
+<p>You cannot make up missed code reviews.
+You can recover code-review-participation credit by doing excellent code reviews on future problem sets.</p>
+
+</div><h3 id="autograde-mistake"><a class="jump" href="#autograde-mistake"></a>I failed many auto-grader tests because of a small mistake, can my problem set be re-graded?</h3><div data-outline="autograde-mistake">
+
+<p>Correctness is one of the central ideas of 6.031, and it’s your responsibility.
+On later problem sets in the course, you will have more and more design freedom, which means we can test your individual components less and less: we can only test the required specifications.
+You must use your own careful design and thorough testing to achieve correctness.</p>
+
+<p id="@sort_issue_one"><a class="jump" href="#@sort_issue_one"></a>This sort of issue is one of the reasons we have iterative submissions: your beta submission is the opportunity to fix problems with your alpha and recover partial credit.</p>
+
+</div><h3 id="autograde-wrong"><a class="jump" href="#autograde-wrong"></a>I don’t think my problem set was auto-graded fairly or correctly, what can I do?</h3><div data-outline="autograde-wrong">
+
+<p>If your submission did not compile and pass the public tests on <a href="https://didit.mit.edu/6.031/sp21/">Didit</a>, we are not likely to reconsider the grade.
+It’s your responsibility to ensure that your submission passes those tests.</p>
+
+<ol id="@investigate_problem_visiting">
+<li><a class="jump" href="#@investigate_problem_visiting"></a>Investigate the problem by visiting <a href="../calendar">lab hours</a>, since debugging on Piazza is infeasible.</li>
+<li>If there was an issue, post <a href="#piazza-private">privately</a> on <a href="https://piazza.com/class#spring2021/6031">Piazza</a> and explain the circumstances.</li>
+<li>Visit instructor <a href="../calendar">office hours</a>.</li>
+</ol>
+
+</div><h3 id="pset-overall-grades"><a class="jump" href="#pset-overall-grades"></a>How is the overall grade for a problem set determined?</h3><div data-outline="pset-overall-grades">
+
+<p>The overall grade for a problem set will be weighted as roughly half from alpha and roughly half from beta, but it may vary from one problem set to another.</p>
+
+<p id="@grades_both_iterations"><a class="jump" href="#@grades_both_iterations"></a>Grades on both iterations will be determined both by automated tests and by graders reading the code.
+One part of the beta grade is fixing your code in response to code reviews.</p>
+
+<p id="@grading_breakdown_vary"><a class="jump" href="#@grading_breakdown_vary"></a>The grading breakdown will vary from problem set to problem set (for example, depending on how much can be autograded and how much requires human eyes), and the relative weights of components of automated and manual grading can change from alpha to beta.
+Each problem set’s breakdown will be announced when grades are released.</p>
+
+</div><h3 id="pset-grades-released"><a class="jump" href="#pset-grades-released"></a>When will grades be released for a problem set?</h3><div data-outline="pset-grades-released">
+
+<p>Grade reports for a problem set are released as quickly as possible, but it depends on the speed of manual grading.
+We grade as fast as we can.
+Even before beta grades are released on a previous problem set, you can use the alpha feedback to improve your work on the next problem set.</p>
+
+</div><h3 id="slack-on-psets-only"><a class="jump" href="#slack-on-psets-only"></a>Can I use slack days on assignments other than problem sets?</h3><div data-outline="slack-on-psets-only">
+
+<p>No.</p></div></div>
+
+</div><h2 id="projects_and_quizzes"><a class="jump" href="#projects_and_quizzes"></a>Projects and quizzes</h2><div data-outline="projects_and_quizzes">
+
+<p id="@project_you_complete"><a class="jump" href="#@project_you_complete"></a><strong>Project.</strong>
+You will complete a group software development project at the end of the semester, in a team of three students.
+Every team member is required to participate roughly equally in every activity (design, implementation, test, documentation), and we may ask for an accounting of what each team member did.
+A single grade will be assigned to all members of the team.</p>
+
+<p id="@project_teams_before"><a class="jump" href="#@project_teams_before"></a><strong>Project teams.</strong>
+Before the project, you will be able to request one or two teammates you would like to work with.
+If you don’t already know other students in 6.031 this semester, we hope that working together on in-class exercises will give you the opportunity to find potential project partners.</p>
+
+<p id="@team_meetings_during"><a class="jump" href="#@team_meetings_during"></a><strong>Team meetings.</strong>
+During the project, you and your project team will meet with your TA to discuss the work.
+Your TA will assign a grade based in part on these meetings.
+Team meetings will usually be scheduled during class times that will be reserved for this purpose.</p>
+
+<p id="@quizzes_there_be"><a class="jump" href="#@quizzes_there_be"></a><strong>Quizzes.</strong>
+There will be two quizzes.
+Quiz 1 is shown on the <a href="../calendar">course calendar</a>, and Quiz 2 will be held during the final exam period, so its date and time will be shown on the <a href="https://finalexams.mit.edu">final exam schedule</a>.</p>
+
+<p id="@each_quiz_be"><a class="jump" href="#@each_quiz_be"></a>Each quiz will be comprehensive, drawing on any topics covered up to that point in the course, so e.g. Quiz 2 may include topics that were already covered on Quiz 1.</p>
+
+<p id="@both_quizzes_hour"><a class="jump" href="#@both_quizzes_hour"></a>Both quizzes are an hour long.</p>
+
+<div class="well faq"><h3 id="quizzes-closed-book"><a class="jump" href="#quizzes-closed-book"></a>Are quizzes closed-book?</h3><div data-outline="quizzes-closed-book">
+
+<p>The comprehensive quizzes are open-book: you may access any 6.031 or other resources, but you may not communicate with anyone except the course staff.</p>
+
+</div><h3 id="past-quizzes"><a class="jump" href="#past-quizzes"></a>Are past quizzes available?</h3><div data-outline="past-quizzes">
+
+<p>Yes, in the archive of <a href="../quizzes/archive/">past quizzes</a>.</p></div></div>
+
+</div><h2 id="collaboration_and_public_sharing"><a class="jump" href="#collaboration_and_public_sharing"></a>Collaboration and public sharing</h2><div data-outline="collaboration_and_public_sharing">
+
+<p id="@topic_own_page"><a class="jump" href="#@topic_own_page"></a>This topic has its own page: <a href="collaboration.html"><strong>collaboration and public sharing</strong></a>.</p>
+
+</div><h2 id="grading"><a class="jump" href="#grading"></a>Grading</h2><div data-outline="grading">
+
+<p id="@relative_contributions_various"><a class="jump" href="#@relative_contributions_various"></a>The relative contributions of the various elements to your grade are:</p>
+
+<ul id="@quizzes_24_quiz">
+<li><a class="jump" href="#@quizzes_24_quiz"></a><strong>Quizzes: 24%.</strong>
+Quiz 1 is worth 12%, and Quiz 2 (scheduled during the final exam period) is worth 12%.</li>
+<li><strong>Problem sets: 54%.</strong>
+PS0 is worth 6%, and PS1-PS4 are each worth 12%.</li>
+<li><strong>Code review: 6%.</strong>
+Judged by regular participation in code review and providing substantive, useful comments.</li>
+<li><strong>Project: 5%.</strong></li>
+<li><strong>Classwork: 11%.</strong>
+Reflects your continuous participation in the course.
+Determined by effort on before-class reading exercises, grade on nanoquizzes, and effort on in-class exercises.</li>
+</ul>
+
+<p id="@letter_grades_determined"><a class="jump" href="#@letter_grades_determined"></a>Letter grades are determined at the end of the semester.
+The default cutoffs are: a final average of 90 and above is an A, 80 and above is a B, 70 and above is a C.
+These boundaries may be adjusted downwards if necessary because of the difficulty of the assignments or quizzes, but the boundaries will never be adjusted upwards, so a final average of 90 is guaranteed to be an A.
+The boundary adjustment is done heuristically, and there are no grade quotas, no grade targets, and no centering of the class on a particular grade boundary.</p>
+
+<p id="@every_student_considered"><a class="jump" href="#@every_student_considered"></a>Every student is considered individually in the final grading meeting, judging from their entire performance in the course.
+A single bad mark in an otherwise consistent record will often be discounted.</p>
+
+<div class="well faq"><h3 id="grading-cutoffs"><a class="jump" href="#grading-cutoffs"></a>What are the grade cutoffs this semester? What letter grade do I have?</h3><div data-outline="grading-cutoffs">
+
+<p>Letter grade cutoffs are determined only in the final grading meeting, and they are assigned only after individual consideration as described above.</p>
+
+</div><h3 id="problem-with-my-grade"><a class="jump" href="#problem-with-my-grade"></a>I have a problem with my grade on a problem set or quiz or other 6.031 assignment, what should I do?</h3><div data-outline="problem-with-my-grade">
+
+<p>If the problem is an <strong>objective</strong> grader error, like adding points incorrectly or overlooking something that was clear in your answer, then you can make a private post on Piazza to ask for the correction.
+Direct your post to “Instructors” to make sure your question is visible to all staff, but mention the specific grader (if shown in the grade report; it isn’t always).
+Include a hyperlink to the grade report you are asking about.</p>
+
+<p id="@other_grading_issues"><a class="jump" href="#@other_grading_issues"></a>For other grading issues, this is a rare case in 6.031 where we ask you <strong>not to post on Piazza</strong>, and not to email or ask a TA.
+6.031 TAs are not empowered to have discussions about grades, and Piazza is reserved for learning and problem solving.
+The point of this rule is so that TAs can focus on helping people learn, rather than being grade arbiters.</p>
+
+<p id="@instead_please_bring"><a class="jump" href="#@instead_please_bring"></a>Instead, please bring your grading questions <strong>to an instructor’s office hours</strong>, which are shown on the <a href="../calendar">course calendar</a>.</p></div></div>
+
+</div><h2 id="sharing_your_knowledge"><a class="jump" href="#sharing_your_knowledge"></a>Sharing your knowledge</h2><div data-outline="sharing_your_knowledge">
+
+<div class="well faq"><h3 id="help-others"><a class="jump" href="#help-others"></a>How can I help other people in 6.031?</h3><div data-outline="help-others">
+
+<p>If you’re doing well in 6.031, you can become a paid tutor for a classmate, even while you’re still taking the class.
+HKN Tutoring provides one-on-one tutoring for hundreds of Course 6 students each semester and is another resource for students looking for extra help.
+Tutors are paid $15/hour and have the opportunity to significantly help a fellow Course 6 student.</p>
+
+<p id="@sign_up_tutor"><a class="jump" href="#@sign_up_tutor"></a><a href="http://hkn.scripts.mit.edu/tutoring"><strong>Sign up as a tutor</strong></a> or contact <a href="mailto:hkn-tutoring@mit.edu"><code>hkn-tutoring@mit.edu</code></a> with questions.</p>
+
+<p id="@after_you-ve_finished"><a class="jump" href="#@after_you-ve_finished"></a>After you’ve finished 6.031 and done well, please think about applying to work as an LA.
+Becoming an LA first is the best path to joining the staff later as an undergraduate or MEng TA. </p></div></div></div></div>
+
+</div></main>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="general-index"></script></body><!--
+Handout delivered Fri Jun 04 2021 13:49:43 GMT+0000 (Greenwich Mean Time)
+--></html>

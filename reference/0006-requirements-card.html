@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求工程参考卡 · 来源、验收标准与非功能需求</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 6 课</p>
+  <h1>需求工程参考卡</h1>
+  <p class="lede">决定是「你要什么」，需求是「系统必须表现出什么、才算做到」。这一课把决定组织成可验收的需求清单：先分类，再写验收，别漏非功能。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>需求工程在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements（需求）</td><td>第 5 课做 elicitation（把决定逼出来）；第 6 课做 analysis + specification + validation（把决定写成可验收的需求并检验）。</td></tr>
+      <tr><td class="skill">紧接其后</td><td>第 4 课给了词；第 5 课定了「做什么」；第 6 课写成需求；第 7 课挑哪个决定值得记成 ADR。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三个核心概念</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>词</th><th>是什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">决定 vs 需求</td><td>决定是「你要什么」（偏好/方向）；需求是「系统必须表现出什么、才算做到」（可检验的承诺）。决定可以是「快一点」，需求必须回答「多快算快」。</td></tr>
+      <tr><td class="what">functional（功能性）</td><td>系统要表现出可观察的行为：要执行的政策和流程。</td></tr>
+      <tr><td class="what">non-functional（非功能性）</td><td>约束「做得多好、用什么跑」：技术约束（platform/语言/浏览器）+ 服务质量约束（性能/安全/可伸缩），最容易漏、最晚被发现。</td></tr>
+      <tr><td class="what">acceptance criteria（验收标准）</td><td>把需求写成「给定…当…那么…」（Given/When/Then），让它可被客观判定。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>完美技术过滤器（SWEBOK p47）</h2>
+<div class="card-rule">
+  <p><strong>假设有一台「无限快、无限内存、零成本、永不故障」的电脑，仍然必须说出来的要求，是功能需求；其余「对机器/技术的挑三拣四」——多快、多大、多可靠、用什么跑——都是非功能需求。</strong></p>
+</div>
+<p>用途：一眼把一条需求归到功能还是非功能，不用背分类表。</p>
+
+<h2>需求的品格（SWEBOK / SE-EDU 检查清单）</h2>
+<ul>
+  <li>单条：unambiguous（无歧义）、testable（可验证）、clear（清晰）、correct（正确）、feasible（可行）、necessary（必要）、implementation-free（不绑定实现）。</li>
+  <li>整体：consistent（一致）、complete（完整）、non-redundant（不重复）。</li>
+</ul>
+<p>拿一条需求逐一过一遍，过不了的（比如「输出两到三句」没有判据）就是「还没想清」，该补验收或退回第 5 课。</p>
+
+<h2>验收标准怎么写（Given/When/Then）</h2>
+<pre><code>Given（给定）：前提，例如「一篇含引文的 Document」
+When（当）：  触发动作，例如「用户运行总结命令」
+Then（那么）： 预期结果，例如「输出两到三句，且每句能追溯到引文」</code></pre>
+<p><strong>验收标准里不许出现不可测的形容词</strong>（快、稳、方便、好用）——它们不是判据。要有数字：多少毫秒、多少并发、多少条。</p>
+
+<h2>非功能需求：最容易漏的那一节</h2>
+<ul>
+  <li>功能需求有人点名要；非功能需求几乎没人主动说出口，要靠你补。</li>
+  <li>把非功能也写成 user story 让「谁」承担：例如「作为性急的用户，我希望能在一千并发下仍有正常响应时间」——非功能必须有受益者，才能有数字。</li>
+  <li>单人 + 沙盒项目一般就两三个词条：性能（响应/并发）、可靠性（出错恢复）、兼容性（环境）。每一条尽量带数字。</li>
+</ul>
+
+<h2>分类三问（快速判一条需求）</h2>
+<ol class="steps">
+  <li>这还要在「无限快的电脑」上说出来吗？→ 要：功能；不要：非功能。</li>
+  <li>这条有 Given/When/Then 吗？没有 → 缺验收标准。</li>
+  <li>这条是「命令叫什么、参数是什么」吗？→ 是：接口细节，不是需求，放第 7 课以后再定。</li>
+</ol>
+
+<h2>AI + Matt 怎么落地</h2>
+<p>本课无独立技能，回指两件已有工具：第 5 课 <code>grilling</code> 的产物当输入（每个决定的来源），第 4 课 <code>domain-modeling</code> 的 <code>GLOSSARY.md</code> 保证术语一致。</p>
+<p>AI 帮你：把决定清单降级成需求草稿（翻译成 Given/When/Then 初稿）；当检查员（拿品格清单逐条挑不可测/歧义/冲突）。</p>
+<p><strong>AI 不能替你（你必须拍板）：</strong>功能/非功能的归类；验收标准里的数字（多少毫秒/并发/用户）——那是业务能接受的程度，不是可查的事实。非功能需求尤其危险：agent 会倾向不写，或写一个「看起来合理」的数。</p>
+<p><strong>怎么判断生效：</strong>每条功能需求都能从逼问记录找到来源；每条都有 Given/When/Then；至少一条非功能需求带数字；「要不要这功能」不在需求清单里。</p>
+
+<h2>三个常见误区</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把决定当需求</td><td>说了「一致」就以为写完了，其实只定了方向。</td><td>需求是承诺，承诺要有判据：每条都要能写 Given/When/Then。</td></tr>
+      <tr><td class="what">只写功能、漏非功能</td><td>功能满满，性能/安全/兼容一字不提。</td><td>主动开一节非功能，每条带数字。</td></tr>
+      <tr><td class="what">让 agent 替你拍数字</td><td>AI 给了个「合理」的数，但不是你的判断。</td><td>数字由你签；agent 只当检查员和初稿工。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>写完怎么验</h2>
+<pre><code>读我这份需求清单，再读
+C:\Users\admin\.agents\skills\grilling\SKILL.md（回看决定来源），
+以及 SE-EDU《Specifying Requirements》和 SWEBOK 第 1 章的需求品格。
+
+逐条检查：
+1. 每条需求能不能从逼问记录找到来源？没有来源的是哪冒出来的？
+2. 每条功能需求有没有 Given/When/Then？验收标准里有没有不可测的词（快、稳、方便）？
+3. 非功能是否单独成节并带数字？有没有漏性能或安全？
+4. 有没有把接口细节（命令名/参数）误写成需求？
+5. 需求之间是否冲突/重复？整体是否完整、一致？
+6. 是否沿用 GLOSSARY.md 的术语，还是另造了新词？
+
+逐条指出问题并引用原句。最后给三个结论：
+哪些合格 / 哪些缺验收或数字 / 哪一条其实还没想清、该回第 5 课。</code></pre>
+
+<div class="note">
+  <p><strong>数字是你签的字。</strong>验收标准里每个数字，都是业务上能接受的程度，由你拍板，不是 agent 帮你猜的。它帮你读初稿、当检查员都行，验收标准定成什么样，一定是你负责。</p>
+  <p><strong>第 4 课的词表在起作用。</strong>需求里用的 Document / 引文，若和第 4 课 <code>GLOSSARY.md</code> 对不上，先在词表里理清，再写需求。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章，p43–66（需求定义、functional / non-functional 分类、perfect technology filter、需求品格、BDD 验收标准）；SE-EDU《Specifying Requirements》（conditions of satisfaction、user story 加非功能需求）；CMU 17-313《07-specs》（spec 是契约）。</p>
+  <p><strong>实践工具：</strong>本课无独立技能；以第 5 课 <code>grilling</code> 产物为输入、第 4 课 <code>domain-modeling</code> 的 <code>GLOSSARY.md</code> 校验术语。它们是落地方式，不是理论出处。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0006-requirements.html">第 6 课：需求工程：来源、验收标准与非功能需求</a> · <a href="course-map.html">课程地图</a> · <a href="0005-grilling-card.html">第 5 课：grilling 逼问记录卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,1167 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Reading 10: Abstract Data Types</title>
+
+
+<style>
+.adts-in-java-table th, .adts-in-java-table td {
+  vertical-align: top;
+  padding: 0 10px 0;
+}
+.adts-in-java-table tr:last-child td {
+  padding-bottom: 10px;
+}
+.adts-in-java-table p {
+  margin: 0px;
+}
+.adts-in-java-table .new-row td {
+  padding-top: 10px;
+}
+.adts-in-java-table .new-row td:first-child {
+  white-space: nowrap;
+}
+</style>
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#reading_10_abstract_data_types">Reading 10: Abstract Data Types</a></li><li><a href="#introduction">Introduction</a></li><li><a href="#what_abstraction_means">What abstraction means</a></li><li><a href="#classifying_types_and_operations">Classifying types and operations</a></li><li><a href="#an_abstract_type_is_defined_by_its_operations">An abstract type is defined by its operations</a></li><li><a href="#designing_an_abstract_type">Designing an abstract type</a></li><li><a href="#representation_independence">Representation independence</a></li><li><a href="#realizing_adt_concepts_in_java">Realizing ADT concepts in Java</a></li><li><a href="#testing_an_abstract_data_type">Testing an abstract data type</a></li><li><a href="#summary">Summary</a></li><li><a href="#more_practice">More practice</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="reading_10_abstract_data_types"><a class="jump" href="#reading_10_abstract_data_types"></a>Reading 10: Abstract Data Types</h1><div data-outline="reading_10_abstract_data_types">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><h4 id="@software_6-031"><a class="jump" href="#@software_6-031"></a>Software in 6.031</h4>
+
+<table class="table table-striped no-markdown" id="@safe_bugseasy_understandready">
+<tbody><tr><th width="33%"><a class="jump" href="#@safe_bugseasy_understandready"></a>Safe from bugs</th><th>Easy to understand</th><th>Ready for change</th></tr>
+<tr><td>
+  Correct today and correct in the unknown future.
+</td><td>
+  Communicating clearly with future programmers, including future you.
+</td><td>
+  Designed to accommodate change without rewriting.
+</td></tr>
+</tbody></table>
+
+<h4 id="@objectives"><a class="jump" href="#@objectives"></a>Objectives</h4>
+
+<p id="@today-s_class_introduces"><a class="jump" href="#@today-s_class_introduces"></a>Today’s class introduces two ideas:</p>
+
+<ul id="@abstract_data_types_representation_independence">
+<li><a class="jump" href="#@abstract_data_types_representation_independence"></a>Abstract data types</li>
+<li>Representation independence</li>
+</ul>
+
+<h2 id="introduction"><a class="jump" href="#introduction"></a>Introduction</h2><div data-outline="introduction">
+
+<p id="@reading_look_powerful"><a class="jump" href="#@reading_look_powerful"></a>In this reading, we look at a powerful idea: abstract data types.
+This idea enables us to separate how we use a data structure in a program from the particular form of the data structure itself. </p>
+
+<p id="@abstract_data_types_address_particularly_dangerous"><a class="jump" href="#@abstract_data_types_address_particularly_dangerous"></a>Abstract data types address a particularly dangerous problem: clients making assumptions about the type’s internal representation. We’ll see why this is dangerous and how it can be avoided. We’ll also discuss the classification of operations, and some principles of good design for abstract data types.</p>
+
+<h3 id="access_control_in_java"><a class="jump" href="#access_control_in_java"></a>Access control in Java</h3><div data-outline="access_control_in_java">
+
+<div class="handout-solo alert alert-warning"><p id="@you_should_already"><a class="jump" href="#@you_should_already"></a>You should already have read: <strong><a href="http://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html" class="alert-link">Controlling Access to Members of a Class</a></strong> in the Java Tutorials.</p></div>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-introduction"><iframe class="exercises-status" src="https://6031.mit.edu/handx/sp21-java/status.php"></iframe><h4 class="text-danger">reading exercises</h4><p id="@following_questions_use"><a class="jump" href="#@following_questions_use"></a>The following questions use the code below.  Study it first, then answer the questions.</p>
+
+<pre id="@class_wallet_private"><a class="jump" href="#@class_wallet_private"></a><code class="language-java hljs">    <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wallet</span> </span>{
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> amount;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">loanTo</span><span class="hljs-params">(Wallet that)</span> </span>{
+            <span class="hljs-comment">// put all of this wallet's money into that wallet</span>
+<span class="hljs-comment">/*A*/</span>       that.amount += <span class="hljs-keyword">this</span>.amount;
+<span class="hljs-comment">/*B*/</span>       amount = <span class="hljs-number">0</span>;
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>{
+<span class="hljs-comment">/*C*/</span>       Wallet w = <span class="hljs-keyword">new</span> Wallet();
+<span class="hljs-comment">/*D*/</span>       w.amount = <span class="hljs-number">100</span>;
+<span class="hljs-comment">/*E*/</span>       w.loanTo(w);
+        }
+    }
+
+    <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>{
+        <span class="hljs-keyword">private</span> Wallet w;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getNetWorth</span><span class="hljs-params">()</span> </span>{
+<span class="hljs-comment">/*F*/</span>       <span class="hljs-keyword">return</span> w.amount;
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isBroke</span><span class="hljs-params">()</span> </span>{
+<span class="hljs-comment">/*G*/</span>       <span class="hljs-keyword">return</span> Wallet.amount == <span class="hljs-number">0</span>;
+        }
+    }</code></pre>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-snapshot" data-target="#ex-introduction-snapshot" data-toggle="collapse"><a class="jump" href="#@ex-introduction-snapshot"></a><span class="panel-title">Snapshot</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-snapshot" data-outline="snapshot" data-ex-id="access_control_in_java/snapshot" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<div class="panel panel-default panel-figure pull-right pull-margin no-markdown">
+<div class="panel-body text-center">
+<img src="figures/wallet.svg" class="pull-right" width="400">
+</div></div>
+
+<p id="@suppose_program_paused"><a class="jump" href="#@suppose_program_paused"></a>Suppose the program has paused after running the line marked <code>/*A*/</code> but before reaching <code>/*B*/</code>.
+A partial snapshot diagram of its internal state is shown at the right, with numbered gray boxes as placeholders for you to fill in.
+What should each of those boxes be?</p>
+
+<p>1</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<p>2</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 34%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<p>3</p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<p>4</p>
+
+<div class="form-group exercise-part" data-outline="d"><div class="textfield exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_a" data-target="#ex-introduction-access_control_a" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_a"></a><span class="panel-title">Access control A</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_a" data-outline="access_control_a" data-ex-id="access_control_in_java/access_control_a" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading">Which of the following statements are true about the line marked <code>/*A*/</code>?</label>
+
+<pre id="@that-amount_this-amount"><a class="jump" href="#@that-amount_this-amount"></a><code class="language-java hljs">that.amount += <span class="hljs-keyword">this</span>.amount;</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The reference to this.amount is allowed by Java."><label for="md_converted_choice_1_0"><input type="checkbox" id="md_converted_choice_1_0">The reference to <code>this.amount</code> is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to this.amount would be prevented by Java because it uses this to access a private field."><label for="md_converted_choice_1_1"><input type="checkbox" id="md_converted_choice_1_1">The reference to <code>this.amount</code> would be prevented by Java because it uses <code>this</code> to access a private field.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to that.amount is allowed by Java."><label for="md_converted_choice_1_2"><input type="checkbox" id="md_converted_choice_1_2">The reference to <code>that.amount</code> is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to that.amount would be prevented by Java because that.amount is a private field in a different object."><label for="md_converted_choice_1_3"><input type="checkbox" id="md_converted_choice_1_3">The reference to <code>that.amount</code> would be prevented by Java because <code>that.amount</code> is a private field in a different object.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to that.amount would be prevented by Java because it writes to a private field."><label for="md_converted_choice_1_4"><input type="checkbox" id="md_converted_choice_1_4">The reference to <code>that.amount</code> would be prevented by Java because it writes to a private field.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_1_5"><input type="checkbox" id="md_converted_choice_1_5">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_1_6"><input type="checkbox" id="md_converted_choice_1_6">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_b" data-target="#ex-introduction-access_control_b" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_b"></a><span class="panel-title">Access control B</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_b" data-outline="access_control_b" data-ex-id="access_control_in_java/access_control_b" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading">Which of the following statements are true about the line marked <code>/*B*/</code>?</label>
+
+<pre id="@amount_0"><a class="jump" href="#@amount_0"></a><code class="language-java hljs">amount = <span class="hljs-number">0</span>;</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The reference to amount is allowed by Java."><label for="md_converted_choice_2_0"><input type="checkbox" id="md_converted_choice_2_0">The reference to <code>amount</code> is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to amount would be prevented by Java because it doesn’t mention this."><label for="md_converted_choice_2_1"><input type="checkbox" id="md_converted_choice_2_1">The reference to <code>amount</code> would be prevented by Java because it doesn’t mention <code>this</code>.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_2_2"><input type="checkbox" id="md_converted_choice_2_2">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_2_3"><input type="checkbox" id="md_converted_choice_2_3">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_c" data-target="#ex-introduction-access_control_c" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_c"></a><span class="panel-title">Access control C</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_c" data-outline="access_control_c" data-ex-id="access_control_in_java/access_control_c" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_line_marked_c"><a class="jump" href="#@which_following_statements_true_about_line_marked_c"></a>Which of the following statements are true about the line marked <code>/*C*/</code>?</label>
+
+<pre id="@wallet_w_new"><a class="jump" href="#@wallet_w_new"></a><code class="language-java hljs">Wallet w = <span class="hljs-keyword">new</span> Wallet();</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The call to the Wallet() constructor is allowed by Java."><label for="md_converted_choice_3_0"><input type="checkbox" id="md_converted_choice_3_0">The call to the <code>Wallet()</code> constructor is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The call to the Wallet() constructor would be prevented by Java because there is no public Wallet() constructor declared."><label for="md_converted_choice_3_1"><input type="checkbox" id="md_converted_choice_3_1">The call to the <code>Wallet()</code> constructor would be prevented by Java because there is no public <code>Wallet()</code> constructor declared.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_3_2"><input type="checkbox" id="md_converted_choice_3_2">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_3_3"><input type="checkbox" id="md_converted_choice_3_3">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_d" data-target="#ex-introduction-access_control_d" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_d"></a><span class="panel-title">Access control D</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_d" data-outline="access_control_d" data-ex-id="access_control_in_java/access_control_d" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_line_marked_d"><a class="jump" href="#@which_following_statements_true_about_line_marked_d"></a>Which of the following statements are true about the line marked <code>/*D*/</code>?</label>
+
+<pre id="@w-amount_100"><a class="jump" href="#@w-amount_100"></a><code class="language-java hljs">w.amount = <span class="hljs-number">100</span>;</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The access to w.amount is allowed by Java."><label for="md_converted_choice_4_0"><input type="checkbox" id="md_converted_choice_4_0">The access to <code>w.amount</code> is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The access to w.amount would be prevented by Java because amount is private and main is not an instance method."><label for="md_converted_choice_4_1"><input type="checkbox" id="md_converted_choice_4_1">The access to <code>w.amount</code> would be prevented by Java because <code>amount</code> is private and <code>main</code> is not an instance method.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_4_2"><input type="checkbox" id="md_converted_choice_4_2">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_4_3"><input type="checkbox" id="md_converted_choice_4_3">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_e" data-target="#ex-introduction-access_control_e" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_e"></a><span class="panel-title">Access control E</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_e" data-outline="access_control_e" data-ex-id="access_control_in_java/access_control_e" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_line_marked_e"><a class="jump" href="#@which_following_statements_true_about_line_marked_e"></a>Which of the following statements are true about the line marked <code>/*E*/</code>?</label>
+
+<pre id="@w-loanto-w"><a class="jump" href="#@w-loanto-w"></a><code class="language-java hljs">w.loanTo(w);</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The call to loanTo() is allowed by Java."><label for="md_converted_choice_5_0"><input type="checkbox" id="md_converted_choice_5_0">The call to <code>loanTo()</code> is allowed by Java.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The call to loanTo() would be prevented by Java because this and that will be aliases to the same object."><label for="md_converted_choice_5_1"><input type="checkbox" id="md_converted_choice_5_1">The call to <code>loanTo()</code> would be prevented by Java because <code>this</code> and <code>that</code> will be aliases to the same object.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_5_2"><input type="checkbox" id="md_converted_choice_5_2">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_5_3"><input type="checkbox" id="md_converted_choice_5_3">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="After this line, the Wallet object pointed to by w will have amount 0."><label for="md_converted_choice_5_4"><input type="checkbox" id="md_converted_choice_5_4">After this line, the <code>Wallet</code> object pointed to by <code>w</code> will have amount 0.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="After this line, the Wallet object pointed to by w will have amount 100."><label for="md_converted_choice_5_5"><input type="checkbox" id="md_converted_choice_5_5">After this line, the <code>Wallet</code> object pointed to by <code>w</code> will have amount 100.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="After this line, the Wallet object pointed to by w will have amount 200."><label for="md_converted_choice_5_6"><input type="checkbox" id="md_converted_choice_5_6">After this line, the <code>Wallet</code> object pointed to by <code>w</code> will have amount 200.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_f" data-target="#ex-introduction-access_control_f" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_f"></a><span class="panel-title">Access control F</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_f" data-outline="access_control_f" data-ex-id="access_control_in_java/access_control_f" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_line_marked_f"><a class="jump" href="#@which_following_statements_true_about_line_marked_f"></a>Which of the following statements are true about the line marked <code>/*F*/</code>?</label>
+
+<pre id="@return_w-amount"><a class="jump" href="#@return_w-amount"></a><code class="language-java hljs"><span class="hljs-keyword">return</span> w.amount;</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The reference to w.amount is allowed by Java because both w and amount are private variables."><label for="md_converted_choice_6_0"><input type="checkbox" id="md_converted_choice_6_0">The reference to <code>w.amount</code> is allowed by Java because both <code>w</code> and <code>amount</code> are private variables.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to w.amount is allowed by Java because amount is a primitive type, even though it’s private."><label for="md_converted_choice_6_1"><input type="checkbox" id="md_converted_choice_6_1">The reference to <code>w.amount</code> is allowed by Java because <code>amount</code> is a primitive type, even though it’s private.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to w.amount would be prevented by Java because amount is a private field in a different class."><label for="md_converted_choice_6_2"><input type="checkbox" id="md_converted_choice_6_2">The reference to <code>w.amount</code> would be prevented by Java because <code>amount</code> is a private field in a different class.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_6_3"><input type="checkbox" id="md_converted_choice_6_3">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_6_4"><input type="checkbox" id="md_converted_choice_6_4">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-introduction-access_control_g" data-target="#ex-introduction-access_control_g" data-toggle="collapse"><a class="jump" href="#@ex-introduction-access_control_g"></a><span class="panel-title">Access control G</span></div><div class="panel-collapse collapse exercise-panel" id="ex-introduction-access_control_g" data-outline="access_control_g" data-ex-id="access_control_in_java/access_control_g" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_line_marked_g"><a class="jump" href="#@which_following_statements_true_about_line_marked_g"></a>Which of the following statements are true about the line marked <code>/*G*/</code>?</label>
+
+<pre id="@return_wallet-amount_0"><a class="jump" href="#@return_wallet-amount_0"></a><code class="language-java hljs"><span class="hljs-keyword">return</span> Wallet.amount == <span class="hljs-number">0</span>;</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="The reference to Wallet.amount is allowed by Java because Wallet has permission to access its own private field amount."><label for="md_converted_choice_7_0"><input type="checkbox" id="md_converted_choice_7_0">The reference to <code>Wallet.amount</code> is allowed by Java because <code>Wallet</code> has permission to access its own private field <code>amount</code>.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to Wallet.amount is allowed by Java because amount is a static variable."><label for="md_converted_choice_7_1"><input type="checkbox" id="md_converted_choice_7_1">The reference to <code>Wallet.amount</code> is allowed by Java because <code>amount</code> is a static variable.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to Wallet.amount would be prevented by Java because amount is a private field."><label for="md_converted_choice_7_2"><input type="checkbox" id="md_converted_choice_7_2">The reference to <code>Wallet.amount</code> would be prevented by Java because <code>amount</code> is a private field.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="The reference to Wallet.amount would be prevented by Java because amount is an instance variable."><label for="md_converted_choice_7_3"><input type="checkbox" id="md_converted_choice_7_3">The reference to <code>Wallet.amount</code> would be prevented by Java because <code>amount</code> is an instance variable.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a static error."><label for="md_converted_choice_7_4"><input type="checkbox" id="md_converted_choice_7_4">… resulting in a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="… resulting in a dynamic error."><label for="md_converted_choice_7_5"><input type="checkbox" id="md_converted_choice_7_5">… resulting in a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="what_abstraction_means"><a class="jump" href="#what_abstraction_means"></a>What abstraction means</h2><div data-outline="what_abstraction_means">
+
+<p id="@abstract_data_types_instance_general_principle"><a class="jump" href="#@abstract_data_types_instance_general_principle"></a>Abstract data types are an instance of a general principle in software engineering, which goes by many names with slightly different shades of meaning.  Here are some of the names that are used for this idea:</p>
+
+<ul id="@abstraction_omitting_hiding">
+<li><a class="jump" href="#@abstraction_omitting_hiding"></a><strong><mark data-structure-text="abstraction" id="^abstraction">Abstraction</mark>.</strong>
+Omitting or hiding low-level details with a simpler, higher-level idea.</li>
+<li><strong><mark data-structure-text="modularity" id="^modularity">Modularity</mark>.</strong>
+Dividing a system into components or modules, each of which can be designed, implemented, tested, reasoned about, and reused separately from the rest of the system.</li>
+<li><strong><mark data-structure-text="encapsulation" id="^encapsulation">Encapsulation</mark>.</strong>
+Building a wall around a module so that the module is responsible for its own internal behavior, and bugs in other parts of the system can’t damage its integrity. </li>
+<li><strong><mark data-structure-text="information hiding" id="^information_hiding">Information hiding</mark>.</strong>
+Hiding details of a module’s implementation from the rest of the system, so that those details can be changed later without changing the rest of the system.</li>
+<li><strong><mark data-structure-text="separation of concern" id="^separation_of_concern">Separation of concerns</mark>.</strong>
+Making a feature (or “concern”) the responsibility of a single module, rather than spreading it across multiple modules. </li>
+</ul>
+
+<p id="@software_engineer_you"><a class="jump" href="#@software_engineer_you"></a>As a software engineer, you should know these terms, because you will run into them frequently.
+The fundamental purpose of all of these ideas is to help achieve the three important properties that we care about in 6.031: safety from bugs, ease of understanding, and readiness for change.</p>
+
+<p id="@fact_already_encountered"><a class="jump" href="#@fact_already_encountered"></a>We have in fact already encountered some of these ideas in previous classes, in the context of writing <em>methods</em> that take inputs and produce outputs:</p>
+
+<ul id="@abstraction_spec_abstraction">
+<li><a class="jump" href="#@abstraction_spec_abstraction"></a>Abstraction: A spec is an abstraction in that the client only has to understand its preconditions and postconditions to use it, not the full internal behavior of the implementation. </li>
+<li>Modularity: Unit testing and specs help make methods into modules.</li>
+<li>Encapsulation: The local variables of a method are encapsulated, since only the method itself can use or modify them.
+Contrast with global variables, which are quite the opposite, or local variables pointing to mutable objects that have aliases, which also threaten encapsulation. </li>
+<li>Information hiding: A spec uses information-hiding to leave the implementer some freedom in how the method is implemented.</li>
+<li>Separation of concerns: A good method spec is <a href="../07-designing-specs/#the_specification_should_be_coherent">coherent</a>, meaning it is responsible for just one concern.</li>
+</ul>
+
+<p id="@starting_today-s_class"><a class="jump" href="#@starting_today-s_class"></a>Starting with today’s class, we’re going to move beyond abstractions for methods, and look at abstractions for <em>data</em> as well.
+But we’ll see that methods will still play a crucial role in how we describe data abstraction.</p>
+
+<h3 id="user-defined_types"><a class="jump" href="#user-defined_types"></a>User-defined types</h3><div data-outline="user-defined_types">
+
+<p id="@early_days_computing"><a class="jump" href="#@early_days_computing"></a>In the early days of computing, a programming language came with built-in types (such as integers, booleans, strings, etc.) and built-in functions, e.g., for input and output.
+Users could define their own functions: that’s how large programs were built.</p>
+
+<p id="@major_advance_software"><a class="jump" href="#@major_advance_software"></a>A major advance in software development was the idea of abstract types: that one could design a programming language to allow user-defined types, too.
+This idea came out of the work of many researchers, notably Dahl, who invented the Simula language; 
+Hoare, who developed many of the techniques we now use to reason about abstract types; and Parnas, who coined the term information hiding and first articulated the idea of organizing program modules around the secrets they encapsulated.</p>
+
+<p id="@here_mit_barbara"><a class="jump" href="#@here_mit_barbara"></a>Here at MIT, Barbara Liskov and John Guttag did seminal work in the specification of abstract types, and in programming language support for them – and developed the original 6.170, the predecessor to 6.005, predecessor to 6.031.
+Barbara Liskov earned the Turing Award, computer science’s equivalent of the Nobel Prize, for her work on abstract types.</p>
+
+<p id="@key_idea_data"><a class="jump" href="#@key_idea_data"></a>The key idea of data abstraction is that a type is characterized by the operations you can perform on it.
+A number is something you can add and multiply; a string is something you can concatenate and take substrings of; a boolean is something you can negate, and so on.
+In a sense, users could already define their own types in early programming languages: you could create a record type date, for example, with integer fields for day, month, and year.
+But what made abstract types new and different was the focus on operations: the user of the type would not need to worry about how its values were actually stored, in the same way that a programmer can ignore how the compiler actually stores integers.
+All that matters is the operations.</p>
+
+<p id="@java_many_modern"><a class="jump" href="#@java_many_modern"></a>In Java, as in many modern programming languages, the separation between built-in types and user-defined types is a bit blurry.
+The classes in <code>java.lang</code>, such as <code>Integer</code> and <code>Boolean</code>, are built-in in the sense that the Java language specification requires them to exist and behave in a certain way, but they are defined using the same class/object abstraction as user-defined types.
+But Java complicates the issue by having primitive types that are <em>not</em> objects.
+The set of these types, such as <code>int</code> and <code>boolean</code>, cannot be extended by the user.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-what_abstraction_means"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-what_abstraction_means-abstract_data_types" data-target="#ex-what_abstraction_means-abstract_data_types" data-toggle="collapse"><a class="jump" href="#@ex-what_abstraction_means-abstract_data_types"></a><span class="panel-title">Abstract data types</span></div><div class="panel-collapse collapse exercise-panel" id="ex-what_abstraction_means-abstract_data_types" data-outline="abstract_data_types" data-ex-id="user-defined_types/abstract_data_types" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@consider_abstract_data"><a class="jump" href="#@consider_abstract_data"></a>Consider an abstract data type <code>Bool</code>.
+The type has the following operations:</p>
+
+<p id="@true_bool_false"><a class="jump" href="#@true_bool_false"></a><strong>true</strong> : Bool <br>
+<strong>false</strong> : Bool</p>
+
+<p id="@bool_bool_bool"><a class="jump" href="#@bool_bool_bool"></a><strong>and</strong> : Bool × Bool → Bool <br>
+<strong>or</strong> : Bool × Bool → Bool <br>
+<strong>not</strong> : Bool → Bool</p>
+
+<p id="@first_two_operations"><a class="jump" href="#@first_two_operations"></a>… where the first two operations construct the two values of the type, and the last three operations have the usual meanings of logical <em>and</em>, logical <em>or</em>, and logical <em>not</em> on those values.</p>
+
+<p id="@which_following_possible"><a class="jump" href="#@which_following_possible"></a>Which of the following are possible ways that <code>Bool</code> might be implemented, and still be able to satisfy the specs of the operations?
+Choose all that apply.</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="As a single bit, where 1 means true and 0 means false."><label for="md_converted_choice_8_0"><input type="checkbox" id="md_converted_choice_8_0">As a single bit, where 1 means true and 0 means false.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="As an int value where 5 means true and 8 means false."><label for="md_converted_choice_8_1"><input type="checkbox" id="md_converted_choice_8_1">As an <code>int</code> value where 5 means true and 8 means false.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="As a reference to a String object where &quot;false&quot; means true and &quot;true&quot; means false."><label for="md_converted_choice_8_2"><input type="checkbox" id="md_converted_choice_8_2">As a reference to a <code>String</code> object where <code>"false"</code> means true and <code>"true"</code> means false.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="As a long value where all possible values mean true."><label for="md_converted_choice_8_3"><input type="checkbox" id="md_converted_choice_8_3">As a <code>long</code> value where all possible values mean true.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="As an int value > 1 where prime numbers mean true and composite numbers mean false. "><label for="md_converted_choice_8_4"><input type="checkbox" id="md_converted_choice_8_4">As an <code>int</code> value &gt; 1 where prime numbers mean true and composite numbers mean false. </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="classifying_types_and_operations"><a class="jump" href="#classifying_types_and_operations"></a>Classifying types and operations</h2><div data-outline="classifying_types_and_operations">
+
+<p id="@types_whether_built-in"><a class="jump" href="#@types_whether_built-in"></a>Types, whether built-in or user-defined, can be classified as <strong>mutable</strong> or <strong>immutable</strong>.
+The objects of a mutable type can be changed: that is, they provide operations which when executed cause the results of other operations on the same object to give different results.
+So <code>Date</code> is mutable, because you can call <code>setMonth</code> and observe the change with the <code>getMonth</code> operation.
+But <code>String</code> is immutable, because its operations create new <code>String</code> objects rather than changing existing ones.
+Sometimes a type will be provided in two forms, a mutable and an immutable form.
+<code>StringBuilder</code>, for example, is a mutable version of <code>String</code> (although the two are certainly not the same Java type, and are not interchangeable).</p>
+
+<p id="@operations_abstract_type"><a class="jump" href="#@operations_abstract_type"></a>The operations of an abstract type are classified as follows:</p>
+
+<ul id="@creators_create_new">
+<li><a class="jump" href="#@creators_create_new"></a><mark data-mark-text="creator" data-structure-text="creator" id="^creator"><strong>Creators</strong></mark> create new objects of the type.
+A creator may take values of other types as arguments, but not an object of the type being constructed.</li>
+<li><mark data-mark-text="producer" data-structure-text="producer" id="^producer"><strong>Producers</strong></mark> also create new objects of the type, but require one or more existing objects of the type as input.
+The <code>concat</code> method of <code>String</code>, for example, is a producer: it takes two strings and produces a new string representing their concatenation.</li>
+<li><mark data-mark-text="observer" data-structure-text="observer" id="^observer"><strong>Observers</strong></mark> take objects of the abstract type and return objects of a different type.
+The <code>size</code> method of <code>List</code>, for example, returns an <code>int</code>.</li>
+<li><mark data-mark-text="mutator" data-structure-text="mutator" id="^mutator"><strong>Mutators</strong></mark> change objects.
+The <code>add</code> method of <code>List</code>, for example, mutates a list by adding an element to the end.</li>
+</ul>
+
+<p id="@can_summarize_these"><a class="jump" href="#@can_summarize_these"></a>We can summarize these distinctions schematically like this (explanation to follow):</p>
+
+<ul id="@creator_t_t">
+<li><a class="jump" href="#@creator_t_t"></a>creator : t* → T</li>
+<li>producer : T+, t* → T</li>
+<li>observer : T+, t* → t</li>
+<li>mutator : T+, t* → void | t | T</li>
+</ul>
+
+<p id="@these_show_informally"><a class="jump" href="#@these_show_informally"></a>These show informally the shape of the signatures of operations in the various classes.
+Each <em>T</em> is the abstract type itself; each <em>t</em> is some other type.
+The <code>+</code> marker indicates that the type may occur one or more times in that part of the signature, and the <code>*</code> marker indicates that it occurs zero or more times.
+The <code>|</code> indicates or.
+For example, a producer may take two values of the abstract type <em>T</em>, like <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#concat(java.lang.String)"><code>String.concat()</code></a> does:</p>
+
+<ul id="@concat_string_string">
+<li><a class="jump" href="#@concat_string_string"></a>concat : String × String → String</li>
+</ul>
+
+<p id="@some_observers_take"><a class="jump" href="#@some_observers_take"></a>Some observers take zero arguments of other types <em>t</em>, such as:</p>
+
+<ul id="@size_list_int">
+<li><a class="jump" href="#@size_list_int"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#size()">size</a> : List → int</li>
+</ul>
+
+<p id="@others_take_several"><a class="jump" href="#@others_take_several"></a>… and others take several:</p>
+
+<ul id="@regionmatches_string_boolean">
+<li><a class="jump" href="#@regionmatches_string_boolean"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#regionMatches(boolean,int,java.lang.String,int,int)">regionMatches</a> : String × boolean × int × String × int × int → boolean</li>
+</ul>
+
+<div id="factory_method"><p id="@creator_operation_often"><a class="jump" href="#@creator_operation_often"></a>A creator operation is often implemented as a <em>constructor</em>, like <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/ArrayList.html#<init>()"><code>new ArrayList()</code></a>.
+But a creator can simply be a static method instead, like <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#of(E...)"><code>List.of()</code></a>.
+A creator implemented as a static method is often called a <strong><mark data-structure-text="factory method" id="^factory_method">factory method</mark></strong>.
+The various <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#valueOf(boolean)"><code>String.valueOf</code></a> methods in Java are other examples of creators implemented as factory methods.</p></div>
+
+<p id="@mutators_often_signaled"><a class="jump" href="#@mutators_often_signaled"></a>Mutators are often signaled by a <code>void</code> return type.  A method that returns void <em>must</em> be called for some kind of side-effect, since it doesn’t otherwise return anything.  But not all mutators return void.  For example, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Set.html#add(E)"><code>Set.add()</code></a> returns a boolean that indicates whether the set was actually changed.  In Java’s graphical user interface toolkit, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.desktop/java/awt/Container.html#add(java.awt.Component)"><code>Component.add()</code></a> returns the object itself, so that multiple <code>add()</code> calls can be <a href="http://en.wikipedia.org/wiki/Method_chaining">chained together</a>.  </p>
+
+<h3 id="abstract_data_type_examples"><a class="jump" href="#abstract_data_type_examples"></a>Abstract data type examples</h3><div data-outline="abstract_data_type_examples">
+
+<p id="@here_some_examples"><a class="jump" href="#@here_some_examples"></a>Here are some examples of abstract data types, along with some of their operations, grouped by kind.</p>
+
+<p id="@int_java-s_primitive"><a class="jump" href="#@int_java-s_primitive"></a><strong><code>int</code></strong> is Java’s primitive integer type.
+<code>int</code> is immutable, so it has no mutators.</p>
+
+<ul id="@creators_numeric_literals">
+<li><a class="jump" href="#@creators_numeric_literals"></a>creators: the numeric literals <code>0</code>, <code>1</code>, <code>2</code>, …</li>
+<li>producers: arithmetic operators <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code></li>
+<li>observers: comparison operators <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code> </li>
+<li>mutators: none (it’s immutable)</li>
+</ul>
+
+<p id="@list_java-s_list"><a class="jump" href="#@list_java-s_list"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html"><strong><code>List</code></strong></a> is Java’s list type.
+<code>List</code> is mutable.
+<code>List</code> is also an interface, which means that other classes provide the actual implementation of the data type.
+These classes include <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/ArrayList.html"><code>ArrayList</code></a> and <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/LinkedList.html"><code>LinkedList</code></a>.</p>
+
+<ul id="@creators_arraylist_linkedlist">
+<li><a class="jump" href="#@creators_arraylist_linkedlist"></a>creators: <code>ArrayList</code> and <code>LinkedList</code> constructors, <code>List.of</code></li>
+<li>producers: <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#unmodifiableList(java.util.List)"><code>Collections.unmodifiableList</code></a></li>
+<li>observers: <code>size</code>, <code>get</code></li>
+<li>mutators: <code>add</code>, <code>remove</code>, <code>addAll</code>, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#sort(java.util.List)"><code>Collections.sort</code></a></li>
+</ul>
+
+<p id="@string_java-s_string"><a class="jump" href="#@string_java-s_string"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html"><strong><code>String</code></strong></a> is Java’s string type.
+<code>String</code> is immutable.</p>
+
+<ul id="@creators_string_constructors">
+<li><a class="jump" href="#@creators_string_constructors"></a>creators: <code>String</code> constructors, <code>valueOf</code> static methods</li>
+<li>producers: <code>concat</code>, <code>substring</code>, <code>toUpperCase</code></li>
+<li>observers: <code>length</code>, <code>charAt</code></li>
+<li>mutators: none (it’s immutable)</li>
+</ul>
+
+<p id="@classification_gives_some"><a class="jump" href="#@classification_gives_some"></a>This classification gives some useful terminology, but it’s not perfect.
+In complicated data types, there may be an operation that is both a producer and a mutator, for example.
+We will refer to such a method as <em>both</em> a producer and a mutator, but some people would prefer to just call it a mutator, reserving the term producer only for operations that do no mutation.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-classifying_types_and_operations"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-classifying_types_and_operations-operations" data-target="#ex-classifying_types_and_operations-operations" data-toggle="collapse"><a class="jump" href="#@ex-classifying_types_and_operations-operations"></a><span class="panel-title">Operations</span></div><div class="panel-collapse collapse exercise-panel" id="ex-classifying_types_and_operations-operations" data-outline="operations" data-ex-id="abstract_data_type_examples/operations" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@each_methods_below"><a class="jump" href="#@each_methods_below"></a>Each of the methods below is an operation on an abstract data type from the Java library.
+Click on the link to look at its documentation.  Think about the operation’s type signature.  Then classify the operation.</p>
+
+<p id="@hints_pay_attention"><a class="jump" href="#@hints_pay_attention"></a>Hints: pay attention to whether the type itself appears as a parameter or return value.  And remember that instance methods (lacking the <code>static</code> keyword) have an implicit parameter.</p>
+
+<table style="width: 100%"><tbody><tr><td style="width: 25%; vertical-align: top"><p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Integer.html#valueOf(java.lang.String)" target="javadoc"></a></p><p id="@integer-valueof"><a class="jump" href="#@integer-valueof"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Integer.html#valueOf(java.lang.String)" target="javadoc"><code>Integer.valueOf()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/math/BigInteger.html#mod(java.math.BigInteger)" target="javadoc"></a></p><p id="@biginteger-mod"><a class="jump" href="#@biginteger-mod"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/math/BigInteger.html#mod(java.math.BigInteger)" target="javadoc"><code>BigInteger.mod()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#addAll(java.util.Collection)" target="javadoc"></a></p><p id="@list-addall"><a class="jump" href="#@list-addall"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#addAll(java.util.Collection)" target="javadoc"><code>List.addAll()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#toUpperCase()" target="javadoc"></a></p><p id="@string-touppercase"><a class="jump" href="#@string-touppercase"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#toUpperCase()" target="javadoc"><code>String.toUpperCase()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="d"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Set.html#contains(java.lang.Object)" target="javadoc"></a></p><p id="@set-contains"><a class="jump" href="#@set-contains"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Set.html#contains(java.lang.Object)" target="javadoc"><code>Set.contains()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="e"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Map.html#keySet()" target="javadoc"></a></p><p id="@map-keyset"><a class="jump" href="#@map-keyset"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Map.html#keySet()" target="javadoc"><code>Map.keySet()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="f"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>&nbsp; <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/io/BufferedReader.html#readLine()" target="javadoc"></a></p><p id="@bufferedreader-readline"><a class="jump" href="#@bufferedreader-readline"></a><a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/io/BufferedReader.html#readLine()" target="javadoc"><code>BufferedReader.readLine()</code></a></p><p></p>
+
+<div class="form-group exercise-part" data-outline="g"><div class="dropdown exercise-choice" data-outline="; creator; producer; consumer; observer; mutator; destructor"><select class="form-control"><option selected="selected"></option><option>creator</option>,<option>producer</option>,<option>consumer</option>,<option>observer</option>,<option>mutator</option>,<option>destructor</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div></td>
+
+
+
+
+<td style="width:75%; height:100%; vertical-align: top; padding-left: 5px; padding-right: 5px;"><iframe name="javadoc" src="data:text/html,<style>body { font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; }</style>Click a method name to see its Javadoc here." style="overflow: scroll; resize: vertical; border: 1px solid #ccc; width: 100%; height: 600px"></iframe></td></tr></tbody></table><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="an_abstract_type_is_defined_by_its_operations"><a class="jump" href="#an_abstract_type_is_defined_by_its_operations"></a>An abstract type is defined by its operations</h2><div data-outline="an_abstract_type_is_defined_by_its_operations">
+
+<div class="panel panel-default panel-figure pull-right no-markdown">
+<div class="panel-body text-center">
+<img src="figures/adt-firewall.svg" class="pull-right" width="400">
+</div></div>
+
+<p id="@essential_idea_here"><a class="jump" href="#@essential_idea_here"></a>The essential idea here is that <strong>an abstract data type is defined by its operations.</strong>
+The set of operations for a type <em>T</em>, along with their specifications, fully characterize what we mean by <em>T</em>.</p>
+
+<p id="@so_example_talk"><a class="jump" href="#@so_example_talk"></a>So, for example, when we talk about the <code>List</code> type, what we mean is not a linked list or an array or any other specific data structure for representing a list.</p>
+
+<p id="@instead_list_type"><a class="jump" href="#@instead_list_type"></a>Instead, the <code>List</code> type is a set of opaque values — the possible objects that can have <code>List</code> type — that satisfy the specifications of all the operations of <code>List</code>: <code>get()</code>, <code>size()</code>, etc.
+The values of an abstract type are <em>opaque</em> in the sense that a client can’t examine the data stored inside them, except as permitted by operations.</p>
+
+<p id="@expanding_our_metaphor"><a class="jump" href="#@expanding_our_metaphor"></a>Expanding our metaphor of a <a href="../06-specifications/#why_specifications">specification firewall</a>, you might picture values of an abstract type as hard shells, hiding not just the implementation of an individual function, but of a set of related functions (the operations of the type) and the data they share (the private fields stored inside values of the type).</p>
+
+<p id="@operations_type_constitute"><a class="jump" href="#@operations_type_constitute"></a>The operations of the type constitute its <mark data-mark-text="data abstraction" data-structure-text="data abstraction" id="^data_abstraction"><strong>abstraction</strong></mark>.
+This is the public part, visible to clients who use the type.</p>
+
+<p id="@fields_class_implements"><a class="jump" href="#@fields_class_implements"></a>The fields of the class that implements the type, as well as related classes that help implement a complex data structure, constitute a particular <mark data-structure-text="representation" id="^representation"><strong>representation</strong></mark>.
+This part is private, visible only to the implementer of the type.</p>
+
+<div class="clearfix"></div>
+
+</div><h2 id="designing_an_abstract_type"><a class="jump" href="#designing_an_abstract_type"></a>Designing an abstract type</h2><div data-outline="designing_an_abstract_type">
+
+<p>Designing an abstract type involves choosing good operations and determining how they should behave.
+Here are a few rules of thumb.</p>
+
+<p id="@better_few_simple"><a class="jump" href="#@better_few_simple"></a>It’s better to have <strong>a few, simple operations</strong> that can be combined in powerful ways, rather than lots of complex operations.</p>
+
+<p id="@each_operation_should"><a class="jump" href="#@each_operation_should"></a>Each operation should have a well-defined purpose, and should have a <strong>coherent</strong> behavior rather than a multitude of special cases.
+We probably shouldn’t add a <code>sum</code> operation to <code>List</code>, for example.
+It might help clients who work with lists of integers, but what about lists of strings? Or nested lists? All these special cases would make <code>sum</code> a hard operation to understand and use.</p>
+
+<p id="@set_operations_should"><a class="jump" href="#@set_operations_should"></a>The set of operations should be <strong>adequate</strong> in the sense that there must be enough to do the kinds of computations clients are likely to want to do.
+A good test is to check that every property of an object of the type can be extracted.
+For example, if there were no <code>get</code> operation, we would not be able to find out what the elements of a list are.
+Basic information should not be inordinately difficult to obtain.
+For example, the <code>size</code> method is not strictly necessary for <code>List</code>, because we could apply <code>get</code> on increasing indices until we get a failure, but this is inefficient and inconvenient.</p>
+
+<p id="@type_may_be"><a class="jump" href="#@type_may_be"></a>The type may be generic: a list or a set, or a graph, for example.
+Or it may be domain-specific: a street map, an employee database, a phone book, etc.
+But <strong>it should not mix generic and domain-specific features.</strong>
+A <code>Deck</code> type intended to represent a sequence of playing cards shouldn’t have a generic <code>add</code> method that accepts arbitrary objects like integers or strings.
+Conversely, it wouldn’t make sense to put a domain-specific method like <code>dealCards</code> into the generic type <code>List</code>.</p>
+
+</div><h2 id="representation_independence"><a class="jump" href="#representation_independence"></a>Representation independence</h2><div data-outline="representation_independence">
+
+<p id="@critically_good_abstract"><a class="jump" href="#@critically_good_abstract"></a>Critically, a good abstract data type should be <mark data-mark-text="representation independence" data-structure-text="representation independence" id="^representation_independence"><strong>representation independent</strong></mark>.
+This means that the use of an abstract type is independent of its representation (the actual data structure or data fields used to implement it), so that changes in representation have no effect on code outside the abstract type itself.
+For example, the operations offered by <code>List</code> are independent of whether the list is represented as a linked list or as an array.</p>
+
+<p id="@implementer_you_only"><a class="jump" href="#@implementer_you_only"></a>As an implementer, you will only be able to safely change the representation of an ADT if its operations are fully specified with preconditions and postconditions, so that clients know what to depend on, and you know what you can safely change.</p>
+
+<h3 id="example_different_representations_for_strings"><a class="jump" href="#example_different_representations_for_strings"></a>Example: different representations for strings</h3><div data-outline="example_different_representations_for_strings">
+
+<p id="@look_simple_abstract"><a class="jump" href="#@look_simple_abstract"></a>Let’s look at a simple abstract data type to see what representation independence means and why it’s useful.
+The <code>MyString</code> type below has far fewer operations than the real Java <code>String</code>, and their specs are a little different, but it’s still illustrative.  Here are the specs for the ADT:</p>
+
+<pre id="@mystring_represents_immutable"><a class="jump" href="#@mystring_represents_immutable"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** MyString represents an immutable sequence of characters. */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyString</span> </span>{ 
+
+    <span class="hljs-comment">//////////////////// Example of a creator operation ///////////////</span>
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@param</span> b a boolean value
+     * <span class="hljs-doctag">@return</span> string representation of b, either "true" or "false"
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> MyString <span class="hljs-title">valueOf</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> b)</span> </span>{ ... }
+
+    <span class="hljs-comment">//////////////////// Examples of observer operations ///////////////</span>
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> number of characters in this string
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span> </span>{ ... }
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@param</span> i character position (requires 0 &lt;= i &lt; string length)
+     * <span class="hljs-doctag">@return</span> character at position i
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">char</span> <span class="hljs-title">charAt</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span> </span>{ ... }
+
+    <span class="hljs-comment">//////////////////// Example of a producer operation ///////////////    </span>
+    <span class="hljs-comment handout-javadoc-comment">/** 
+     * Get the substring between start (inclusive) and end (exclusive).
+     * <span class="hljs-doctag">@param</span> start starting index
+     * <span class="hljs-doctag">@param</span> end ending index.  Requires 0 &lt;= start &lt;= end &lt;= string length.
+     * <span class="hljs-doctag">@return</span> string consisting of charAt(start)...charAt(end-1)
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> MyString <span class="hljs-title">substring</span><span class="hljs-params">(<span class="hljs-keyword">int</span> start, <span class="hljs-keyword">int</span> end)</span> </span>{ ... }
+
+    <span class="hljs-comment">/////// no mutator operations (why not?)</span>
+}</code></pre>
+
+<p id="@these_public_operations"><a class="jump" href="#@these_public_operations"></a>These public operations and their specifications are the only information that a <em>client</em> of this data type is allowed to know.
+But <em>implementing</em> the data type requires a representation.
+For now, let’s look at a simple representation for <code>MyString</code>: just an array of characters, exactly the length of the string, with no extra room at the end.
+Here’s how that internal representation would be declared, as an instance variable within the class:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-keyword">private</span> <span class="hljs-keyword">char</span>[] a;</code></pre>
+
+<p id="@choice_representation_operations"><a class="jump" href="#@choice_representation_operations"></a>With that choice of representation, the operations would be implemented in a straightforward way:</p>
+
+<pre id="@public_static_mystring_valueof-boolean_b_mystring_s_new_mystring_s-a_b_new_char_t_r_u_e_new_char_f_l_s_e_return"><a class="jump" href="#@public_static_mystring_valueof-boolean_b_mystring_s_new_mystring_s-a_b_new_char_t_r_u_e_new_char_f_l_s_e_return"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> MyString <span class="hljs-title">valueOf</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> b)</span> </span>{
+    MyString s = <span class="hljs-keyword">new</span> MyString();
+    s.a = b ? <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'t'</span>, <span class="hljs-string">'r'</span>, <span class="hljs-string">'u'</span>, <span class="hljs-string">'e'</span> } 
+            : <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'f'</span>, <span class="hljs-string">'a'</span>, <span class="hljs-string">'l'</span>, <span class="hljs-string">'s'</span>, <span class="hljs-string">'e'</span> };
+    <span class="hljs-keyword">return</span> s;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">return</span> a.length;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">char</span> <span class="hljs-title">charAt</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span> </span>{
+    <span class="hljs-keyword">return</span> a[i];
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> MyString <span class="hljs-title">substring</span><span class="hljs-params">(<span class="hljs-keyword">int</span> start, <span class="hljs-keyword">int</span> end)</span> </span>{
+    MyString that = <span class="hljs-keyword">new</span> MyString();
+    that.a = <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[end - start];
+    System.arraycopy(<span class="hljs-keyword">this</span>.a, start, that.a, <span class="hljs-number">0</span>, end - start);
+    <span class="hljs-keyword">return</span> that;
+}</code></pre>
+
+<p id="@syntax_valueof_called"><a class="jump" href="#@syntax_valueof_called"></a>(The <code>?:</code> syntax in <code>valueOf</code> is called the <a href="https://en.wikipedia.org/wiki/%3F:">ternary conditional operator</a> and it’s a shorthand if-else statement.
+See <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/op2.html"><em>The Conditional Operators</em> on this page of the Java Tutorials</a>.)</p>
+
+<p id="@question_ponder_why"><a class="jump" href="#@question_ponder_why"></a>Question to ponder: Why don’t <code>charAt</code> and <code>substring</code> have to check whether their parameters are within the valid range?  What do you think will happen if the client calls these implementations with illegal inputs?</p>
+
+<p id="@here-s_snapshot_diagram"><a class="jump" href="#@here-s_snapshot_diagram"></a>Here’s a snapshot diagram showing what this representation looks like for a couple of typical client operations:</p>
+
+<div class="panel panel-default panel-figure pull-right no-markdown">
+<div class="panel-body text-center">
+<img src="figures/mystring1.svg" class="pull-right" width="300">
+</div></div>
+
+<pre><code class="language-java hljs">MyString s = MyString.valueOf(<span class="hljs-keyword">true</span>);
+MyString t = s.substring(<span class="hljs-number">1</span>,<span class="hljs-number">3</span>);</code></pre>
+
+<span class="clearfix"></span>
+
+<p id="@one_problem_implementation"><a class="jump" href="#@one_problem_implementation"></a>One problem with this implementation is that it’s passing up an opportunity for performance improvement.
+Because this data type is immutable, the <code>substring</code> operation doesn’t really have to copy characters out into a fresh array.
+It could just point to the original <code>MyString</code> object’s character array and keep track of the start and end that the new substring object represents.
+In some versions of Java, the built-in <code>String</code> implementation does exactly this.</p>
+
+<p id="@implement_optimization_could"><a class="jump" href="#@implement_optimization_could"></a>To implement this optimization, we could change the internal representation of this class to:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-keyword">private</span> <span class="hljs-keyword">char</span>[] a;
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> start;
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> end;</code></pre>
+
+<p id="@new_representation_operations"><a class="jump" href="#@new_representation_operations"></a>With this new representation, the operations are now implemented like this:</p>
+
+<pre id="@public_static_mystring_valueof-boolean_b_mystring_s_new_mystring_s-a_b_new_char_t_r_u_e_new_char_f_l_s_e_s-start"><a class="jump" href="#@public_static_mystring_valueof-boolean_b_mystring_s_new_mystring_s-a_b_new_char_t_r_u_e_new_char_f_l_s_e_s-start"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> MyString <span class="hljs-title">valueOf</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> b)</span> </span>{
+    MyString s = <span class="hljs-keyword">new</span> MyString();
+    s.a = b ? <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'t'</span>, <span class="hljs-string">'r'</span>, <span class="hljs-string">'u'</span>, <span class="hljs-string">'e'</span> } 
+            : <span class="hljs-keyword">new</span> <span class="hljs-keyword">char</span>[] { <span class="hljs-string">'f'</span>, <span class="hljs-string">'a'</span>, <span class="hljs-string">'l'</span>, <span class="hljs-string">'s'</span>, <span class="hljs-string">'e'</span> };
+    s.start = <span class="hljs-number">0</span>;
+    s.end = s.a.length;
+    <span class="hljs-keyword">return</span> s;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">return</span> end - start;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">char</span> <span class="hljs-title">charAt</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span> </span>{
+  <span class="hljs-keyword">return</span> a[start + i];
+}
+
+<span class="hljs-function"><span class="hljs-keyword">public</span> MyString <span class="hljs-title">substring</span><span class="hljs-params">(<span class="hljs-keyword">int</span> start, <span class="hljs-keyword">int</span> end)</span> </span>{
+    MyString that = <span class="hljs-keyword">new</span> MyString();
+    that.a = <span class="hljs-keyword">this</span>.a;
+    that.start = <span class="hljs-keyword">this</span>.start + start;
+    that.end = <span class="hljs-keyword">this</span>.start + end;
+    <span class="hljs-keyword">return</span> that;
+}</code></pre>
+
+<p id="@now_same_client"><a class="jump" href="#@now_same_client"></a>Now the same client code produces a very different internal structure:</p>
+
+<div class="panel panel-default panel-figure pull-right no-markdown">
+<div class="panel-body text-center">
+<img src="figures/mystring2.svg" class="pull-right" width="300">
+</div></div>
+
+<pre><code class="language-java hljs">MyString s = MyString.valueOf(<span class="hljs-keyword">true</span>);
+MyString t = s.substring(<span class="hljs-number">1</span>,<span class="hljs-number">3</span>);</code></pre>
+
+<p id="@because_mystring-s_existing"><a class="jump" href="#@because_mystring-s_existing"></a>Because <code>MyString</code>’s existing clients depend only on the specs of its public methods, not on its private fields, we can make this change without having to inspect and change all that client code.  That’s the power of representation independence.</p>
+
+<span class="clearfix"></span>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-representation_independence"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-representation_independence-representation_1" data-target="#ex-representation_independence-representation_1" data-toggle="collapse"><a class="jump" href="#@ex-representation_independence-representation_1"></a><span class="panel-title">Representation 1</span></div><div class="panel-collapse collapse exercise-panel" id="ex-representation_independence-representation_1" data-outline="representation_1" data-ex-id="example_different_representations_for_strings/representation_1" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@consider_following_abstract"><a class="jump" href="#@consider_following_abstract"></a>Consider the following abstract data type.</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a household together.
+ * A family always has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family, sorted from oldest to youngest, with no duplicates.</span>
+    <span class="hljs-keyword">public</span> List&lt;Person&gt; people;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all the members of the family, with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> people;
+    }
+}</code></pre>
+
+<p id="@here_client_abstract"><a class="jump" href="#@here_client_abstract"></a>Here is a client of this abstract data type:</p>
+
+<pre id="@void_client1-family_f"><a class="jump" href="#@void_client1-family_f"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">client1</span><span class="hljs-params">(Family f)</span> </span>{
+    <span class="hljs-comment">// get youngest person in the family</span>
+    Person baby = f.people.get(f.people.size()-<span class="hljs-number">1</span>);
+    ...
+}</code></pre>
+
+<p id="@assume_all_code"><a class="jump" href="#@assume_all_code"></a>Assume all this code works correctly (both <code>Family</code> and <code>client1</code>) and passes all its tests.</p>
+
+<p id="@now_family-s_representation"><a class="jump" href="#@now_family-s_representation"></a>Now <code>Family</code>’s representation is changed from a <code>List</code> to <code>Set</code>, as shown:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a household together.
+ * A family always has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family</span>
+    <span class="hljs-keyword">public</span> Set&lt;Person&gt; people;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all the members of the family, with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ArrayList&lt;&gt;(people);
+    }
+}</code></pre>
+
+<p id="@assume_family_compiles"><a class="jump" href="#@assume_family_compiles"></a>Assume that <code>Family</code> compiles correctly after the change.  </p>
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_client1"><a class="jump" href="#@which_following_statements_true_about_client1"></a>Which of the following statements are true about <code>client1</code> after <code>Family</code> is changed?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="client1 is independent of Family’s representation, so it keeps working correctly."><label for="md_converted_choice_9_0"><input type="radio" id="md_converted_choice_9_0" name="md_converted_radio_9"><code>client1</code> is independent of <code>Family</code>’s representation, so it keeps working correctly.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client1 depends on Family’s representation, and the dependency would be caught as a static error."><label for="md_converted_choice_9_1"><input type="radio" id="md_converted_choice_9_1" name="md_converted_radio_9"><code>client1</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client1 depends on Family’s representation, and the dependency would be caught as a dynamic error."><label for="md_converted_choice_9_2"><input type="radio" id="md_converted_choice_9_2" name="md_converted_radio_9"><code>client1</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client1 depends on Family’s representation, and the dependency would not be caught but would produce a wrong answer at runtime."><label for="md_converted_choice_9_3"><input type="radio" id="md_converted_choice_9_3" name="md_converted_radio_9"><code>client1</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would produce a wrong answer at runtime.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client1 depends on Family’s representation, and the dependency would not be caught but would (luckily) still produce the same answer."><label for="md_converted_choice_9_4"><input type="radio" id="md_converted_choice_9_4" name="md_converted_radio_9"><code>client1</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would (luckily) still produce the same answer.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-representation_independence-representation_2" data-target="#ex-representation_independence-representation_2" data-toggle="collapse"><a class="jump" href="#@ex-representation_independence-representation_2"></a><span class="panel-title">Representation 2</span></div><div class="panel-collapse collapse exercise-panel" id="ex-representation_independence-representation_2" data-outline="representation_2" data-ex-id="example_different_representations_for_strings/representation_2" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<table class="side-by-side"><tbody><tr><td><p>Original version:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a
+ * household together. A family always
+ * has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family,</span>
+    <span class="hljs-comment">// sorted from oldest to youngest,</span>
+    <span class="hljs-comment">// with no duplicates.</span>
+    <span class="hljs-keyword">public</span> List&lt;Person&gt; people;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all
+     *         the members of the family,
+     *         with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> people;
+    }
+}</code></pre></td><td><p>Changed version:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a
+ * household together. A family always
+ * has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family</span>
+    <span class="hljs-keyword">public</span> Set&lt;Person&gt; people;
+
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all
+     *         the members of the family,
+     *         with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ArrayList&lt;&gt;(people);
+    }
+}</code></pre></td></tr></tbody></table>
+
+<p id="@now_consider_client2"><a class="jump" href="#@now_consider_client2"></a>Now consider <code>client2</code>:</p>
+
+<pre id="@void_client2-family_f"><a class="jump" href="#@void_client2-family_f"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">client2</span><span class="hljs-params">(Family f)</span> </span>{
+    <span class="hljs-comment">// get size of the family</span>
+    <span class="hljs-keyword">int</span> familySize = f.people.size();
+    ...
+}</code></pre>
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_client2"><a class="jump" href="#@which_following_statements_true_about_client2"></a>Which of the following statements are true about client2 after Family is changed?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="client2 is independent of Family’s representation, so it keeps working correctly."><label for="md_converted_choice_10_0"><input type="radio" id="md_converted_choice_10_0" name="md_converted_radio_10"><code>client2</code> is independent of <code>Family</code>’s representation, so it keeps working correctly.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client2 depends on Family’s representation, and the dependency would be caught as a static error."><label for="md_converted_choice_10_1"><input type="radio" id="md_converted_choice_10_1" name="md_converted_radio_10"><code>client2</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client2 depends on Family’s representation, and the dependency would be caught as a dynamic error."><label for="md_converted_choice_10_2"><input type="radio" id="md_converted_choice_10_2" name="md_converted_radio_10"><code>client2</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client2 depends on Family’s representation, and the dependency would not be caught but would produce a wrong answer at runtime."><label for="md_converted_choice_10_3"><input type="radio" id="md_converted_choice_10_3" name="md_converted_radio_10"><code>client2</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would produce a wrong answer at runtime.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client2 depends on Family’s representation, and the dependency would not be caught but would (luckily) still produce the same answer."><label for="md_converted_choice_10_4"><input type="radio" id="md_converted_choice_10_4" name="md_converted_radio_10"><code>client2</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would (luckily) still produce the same answer.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-representation_independence-representation_3" data-target="#ex-representation_independence-representation_3" data-toggle="collapse"><a class="jump" href="#@ex-representation_independence-representation_3"></a><span class="panel-title">Representation 3</span></div><div class="panel-collapse collapse exercise-panel" id="ex-representation_independence-representation_3" data-outline="representation_3" data-ex-id="example_different_representations_for_strings/representation_3" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<table class="side-by-side"><tbody><tr><td><p>Original version:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a
+ * household together. A family always
+ * has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family,</span>
+    <span class="hljs-comment">// sorted from oldest to youngest,</span>
+    <span class="hljs-comment">// with no duplicates.</span>
+    <span class="hljs-keyword">public</span> List&lt;Person&gt; people;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all
+     *         the members of the family,
+     *         with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> people;
+    }
+}</code></pre></td><td><p>Changed version:</p>
+
+<pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a
+ * household together. A family always
+ * has at least one person in it.
+ * Families are mutable.
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{
+    <span class="hljs-comment">// the people in the family</span>
+    <span class="hljs-keyword">public</span> Set&lt;Person&gt; people;
+
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all
+     *         the members of the family,
+     *         with no duplicates.
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ArrayList&lt;&gt;(people);
+    }
+}</code></pre></td></tr></tbody></table>
+
+<p id="@now_consider_client3"><a class="jump" href="#@now_consider_client3"></a>Now consider <code>client3</code>:</p>
+
+<pre id="@void_client3-family_f"><a class="jump" href="#@void_client3-family_f"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">client3</span><span class="hljs-params">(Family f)</span> </span>{
+    <span class="hljs-comment">// get any person in the family</span>
+    Person anybody = f.getMembers().get(<span class="hljs-number">0</span>);
+    ...
+}</code></pre>
+
+<label class="exercise-part-heading" id="@which_following_statements_true_about_client3"><a class="jump" href="#@which_following_statements_true_about_client3"></a>Which of the following statements are true about <code>client3</code> after <code>Family</code> is changed?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="client3 is independent of Family’s representation, so it keeps working correctly."><label for="md_converted_choice_11_0"><input type="radio" id="md_converted_choice_11_0" name="md_converted_radio_11"><code>client3</code> is independent of <code>Family</code>’s representation, so it keeps working correctly.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client3 depends on Family’s representation, and the dependency would be caught as a static error."><label for="md_converted_choice_11_1"><input type="radio" id="md_converted_choice_11_1" name="md_converted_radio_11"><code>client3</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a static error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client3 depends on Family’s representation, and the dependency would be caught as a dynamic error."><label for="md_converted_choice_11_2"><input type="radio" id="md_converted_choice_11_2" name="md_converted_radio_11"><code>client3</code> depends on <code>Family</code>’s representation, and the dependency would be caught as a dynamic error.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client3 depends on Family’s representation, and the dependency would not be caught but would produce a wrong answer at runtime."><label for="md_converted_choice_11_3"><input type="radio" id="md_converted_choice_11_3" name="md_converted_radio_11"><code>client3</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would produce a wrong answer at runtime.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="client3 depends on Family’s representation, and the dependency would not be caught but would (luckily) still produce the same answer."><label for="md_converted_choice_11_4"><input type="radio" id="md_converted_choice_11_4" name="md_converted_radio_11"><code>client3</code> depends on <code>Family</code>’s representation, and the dependency would not be caught but would (luckily) still produce the same answer.</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-representation_independence-representation_4" data-target="#ex-representation_independence-representation_4" data-toggle="collapse"><a class="jump" href="#@ex-representation_independence-representation_4"></a><span class="panel-title">Representation 4</span></div><div class="panel-collapse collapse exercise-panel" id="ex-representation_independence-representation_4" data-outline="representation_4" data-ex-id="example_different_representations_for_strings/representation_4" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@each_section_family"><a class="jump" href="#@each_section_family"></a>For each section of the Family data type’s code shown below, is it part of the ADT’s specification, its representation, or its implementation?</p>
+
+<table><tbody><tr><td><p>1</p></td>
+    <td><div class="form-group exercise-part" data-outline="a"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Represents a family that lives in a household together.
+ * A family always has at least one person in it.
+ * Families are mutable.
+ */</span></code></pre></td></tr>
+
+  <tr><td><p>2</p></td>
+    <td><div class="form-group exercise-part" data-outline="b"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@public_class_family"><a class="jump" href="#@public_class_family"></a><code class="language-java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Family</span> </span>{</code></pre></td></tr><tr></tr><tr><td><p>3</p></td>
+    <td><div class="form-group exercise-part" data-outline="c"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@people_family_sorted"><a class="jump" href="#@people_family_sorted"></a><code class="language-java hljs">    <span class="hljs-comment">// the people in the family, sorted from oldest to youngest, with no duplicates.</span></code></pre></td></tr><tr></tr><tr><td><p>4</p></td>
+    <td><div class="form-group exercise-part" data-outline="d"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@private_list-person_people"><a class="jump" href="#@private_list-person_people"></a><code class="language-java hljs">    <span class="hljs-keyword">private</span> List&lt;Person&gt; people;</code></pre></td></tr><tr></tr><tr><td><p id="@5"><a class="jump" href="#@5"></a>5</p></td>
+    <td><div class="form-group exercise-part" data-outline="e"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@return_list_containing"><a class="jump" href="#@return_list_containing"></a><code class="language-java hljs">    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> a list containing all the members of the family, with no duplicates.
+     */</span></code></pre></td></tr><tr></tr><tr><td><p id="@6"><a class="jump" href="#@6"></a>6</p></td>
+    <td><div class="form-group exercise-part" data-outline="f"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@public_list-person_getmembers"><a class="jump" href="#@public_list-person_getmembers"></a><code class="language-java hljs">    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">getMembers</span><span class="hljs-params">()</span> </span>{</code></pre></td></tr><tr></tr><tr><td><p id="@7"><a class="jump" href="#@7"></a>7</p></td>
+    <td><div class="form-group exercise-part" data-outline="g"><div class="dropdown exercise-choice" data-outline="; specification; representation; implementation"><select class="form-control"><option selected="selected"></option><option>specification</option>,<option>representation</option>,<option>implementation</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div></td>
+    <td><pre id="@return_people"><a class="jump" href="#@return_people"></a><code class="language-java hljs">        <span class="hljs-keyword">return</span> people;</code></pre></td></tr><tr></tr><tr><td></td>
+    <td></td>
+    <td><pre><code class="hljs">    }
+}</code></pre></td></tr><tr></tr></tbody></table>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="realizing_adt_concepts_in_java"><a class="jump" href="#realizing_adt_concepts_in_java"></a>Realizing ADT concepts in Java</h2><div data-outline="realizing_adt_concepts_in_java">
+
+<p id="@summarize_some_general"><a class="jump" href="#@summarize_some_general"></a>Let’s summarize some of the general ideas we’ve discussed in this reading, which are applicable in general to programming in any language, and their specific realization using Java language features.  The point is that there are several ways to do it, and it’s important to both understand the big idea, like a creator operation, and different ways to achieve that idea in practice.
+We’ll also include three items that haven’t yet been discussed in this reading, with notes about them below:</p>
+
+<table class="adts-in-java-table pull-margin"><tbody><tr><th><p id="@adt_concept"><a class="jump" href="#@adt_concept"></a>ADT concept</p></th>
+    <th><p id="@ways_do_java"><a class="jump" href="#@ways_do_java"></a>Ways to do it in Java</p></th>
+    <th><p id="@examples"><a class="jump" href="#@examples"></a>Examples</p></th></tr>
+
+  <tr class="new-row"><td rowspan="3"><p>Abstract data type</p></td>
+    <td><p>Class</p></td>
+    <td><p><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html"><code>String</code></a></p></td></tr>
+  <tr><td><p id="@interface_class-es_1"><a class="jump" href="#@interface_class-es_1"></a>Interface + class(es) <sup>1</sup></p></td>
+    <td><p id="@list_arraylist"><a class="jump" href="#@list_arraylist"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html"><code>List</code></a> and <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/ArrayList.html"><code>ArrayList</code></a></p></td></tr>
+  <tr><td><p id="@enum_2"><a class="jump" href="#@enum_2"></a>Enum <sup>2</sup></p></td>
+    <td><p id="@dayofweek"><a class="jump" href="#@dayofweek"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/time/DayOfWeek.html"><code>DayOfWeek</code></a></p></td></tr>
+
+  <tr class="new-row"><td rowspan="3"><p>Creator operation</p></td>
+    <td><p>Constructor</p></td>
+    <td><p id="@arraylist"><a class="jump" href="#@arraylist"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/ArrayList.html#<init>()"><code>ArrayList()</code></a></p></td></tr>
+  <tr><td><p id="@static_factory_method"><a class="jump" href="#@static_factory_method"></a>Static (factory) method</p></td>
+    <td colspan="2"><p id="@list-of"><a class="jump" href="#@list-of"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#of(E...)"><code>List.of()</code></a></p></td></tr>
+  <tr><td><p id="@constant_3"><a class="jump" href="#@constant_3"></a>Constant <sup>3</sup></p></td>
+    <td><p id="@biginteger-zero"><a class="jump" href="#@biginteger-zero"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/math/BigInteger.html#ZERO"><code>BigInteger.ZERO</code></a></p></td></tr>
+
+  <tr class="new-row"><td rowspan="2"><p id="@observer_operation"><a class="jump" href="#@observer_operation"></a>Observer operation</p></td>
+    <td><p>Instance method</p></td>
+    <td><p id="@list-get"><a class="jump" href="#@list-get"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#get(int)"><code>List.get()</code></a></p></td></tr>
+  <tr><td><p>Static method</p></td>
+    <td><p id="@collections-max"><a class="jump" href="#@collections-max"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#max(java.util.Collection)"><code>Collections.max()</code></a></p></td></tr>
+
+
+  <tr class="new-row"><td rowspan="2"><p id="@producer_operation"><a class="jump" href="#@producer_operation"></a>Producer operation</p></td>
+    <td><p>Instance method</p></td>
+    <td><p id="@string-trim"><a class="jump" href="#@string-trim"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/String.html#trim()"><code>String.trim()</code></a></p></td></tr>
+  <tr><td><p>Static method</p></td>
+    <td colspan="2"><p id="@collections-unmodifiablelist"><a class="jump" href="#@collections-unmodifiablelist"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#unmodifiableList(java.util.List)"><code class="no-markdown">Collections.<wbr>unmodifiableList()</code></a></p></td></tr>
+
+
+  <tr class="new-row"><td rowspan="2"><p id="@mutator_operation"><a class="jump" href="#@mutator_operation"></a>Mutator operation</p></td>
+    <td><p>Instance method</p></td>
+    <td><p id="@list-add"><a class="jump" href="#@list-add"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html#add(E)"><code>List.add()</code></a></p></td></tr>
+  <tr><td><p>Static method</p></td>
+    <td><p id="@collections-copy"><a class="jump" href="#@collections-copy"></a><a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#copy(java.util.List,java.util.List)"><code>Collections.copy()</code></a></p></td></tr>
+
+  <tr class="new-row"><td><p>Representation</p></td>
+    <td><p id="@private_fields"><a class="jump" href="#@private_fields"></a><code>private</code> fields</p></td>
+    <td></td></tr></tbody></table>
+
+<p id="@notes"><a class="jump" href="#@notes"></a>Notes:</p>
+
+<ol id="@defining_abstract_data">
+<li><a class="jump" href="#@defining_abstract_data"></a>Defining an abstract data type using an <em>interface + class(es)</em>.
+We’ve seen <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/List.html"><code>List</code></a> and <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/ArrayList.html"><code>ArrayList</code></a> as an example, and we’ll discuss interfaces in a future reading.</li>
+<li>Defining an abstract data type using an <em>enumeration</em> (<code>enum</code>).
+Enums are ideal for ADTs that have a small fixed set of values, like the days of the week.
+We’ll discuss enumerations in a future reading.   </li>
+<li>Using a <em>constant</em> object as a creator operation.
+This pattern is commonly seen in immutable types, where the simplest or emptiest value of the type is simply a public constant, and producers are used to build up more complex values from it.</li>
+</ol>
+
+</div><h2 id="testing_an_abstract_data_type"><a class="jump" href="#testing_an_abstract_data_type"></a>Testing an abstract data type</h2><div data-outline="testing_an_abstract_data_type">
+
+<p id="@build_test_suite"><a class="jump" href="#@build_test_suite"></a>We build a test suite for an abstract data type by creating tests for each of its operations.
+These tests inevitably interact with each other.  The only way to test creators, producers, and mutators is by calling observers on the objects that result, and likewise, the only way to test observers is by creating objects for them to observe.</p>
+
+<p id="@here-s_might_partition"><a class="jump" href="#@here-s_might_partition"></a>Here’s how we might partition the input spaces of the four operations in our <code>MyString</code> type:</p>
+
+<pre id="@testing_strategy_each_operation_mystring_valueof_partiton_return_value_true_false_length_partition_string_length"><a class="jump" href="#@testing_strategy_each_operation_mystring_valueof_partiton_return_value_true_false_length_partition_string_length"></a><code class="language-java hljs"><span class="hljs-comment">// testing strategy for each operation of MyString:</span>
+<span class="hljs-comment">//</span>
+<span class="hljs-comment">// valueOf():</span>
+<span class="hljs-comment">//    partiton on return value: true, false</span>
+<span class="hljs-comment">// length(): </span>
+<span class="hljs-comment">//    partition on string length: 0, 1, &gt;1</span>
+<span class="hljs-comment">//    partition on this: produced by valueOf(), produced by substring()</span>
+<span class="hljs-comment">// charAt(): </span>
+<span class="hljs-comment">//    partition on string length: 0, 1, &gt;1</span>
+<span class="hljs-comment">//    partition on i=0, 0&lt;i&lt;len-1, i=len-1</span>
+<span class="hljs-comment">//    partition on this: produced by valueOf(), produced by substring()</span>
+<span class="hljs-comment">// substring():</span>
+<span class="hljs-comment">//    partition on string length: 0, 1, &gt;1</span>
+<span class="hljs-comment">//    partition on start=0, 0&lt;start&lt;len, start=len</span>
+<span class="hljs-comment">//    partition on end=0, 0&lt;end&lt;len, end=len</span>
+<span class="hljs-comment">//    partition on end-start: 0, &gt;0</span>
+<span class="hljs-comment">//    partition on this: produced by valueOf(), produced by substring()</span></code></pre>
+
+<p id="@since_several_operations"><a class="jump" href="#@since_several_operations"></a>Since several operations share the same partitions, we can also write this more DRYly:</p>
+
+<pre id="@testing_strategy_each_operation_mystring_valueof_partiton_return_value_true_false_length_charat_substring_partition"><a class="jump" href="#@testing_strategy_each_operation_mystring_valueof_partiton_return_value_true_false_length_charat_substring_partition"></a><code class="language-java hljs"><span class="hljs-comment">// testing strategy for each operation of MyString:</span>
+<span class="hljs-comment">//</span>
+<span class="hljs-comment">// valueOf():</span>
+<span class="hljs-comment">//    partiton on return value: true, false</span>
+<span class="hljs-comment">// length(), charAt(), substring():</span>
+<span class="hljs-comment">//    partition on string length: 0, 1, &gt;1</span>
+<span class="hljs-comment">//    partition on this: produced by valueOf(), produced by substring()</span>
+<span class="hljs-comment">// charAt(): </span>
+<span class="hljs-comment">//    partition on i=0, 0&lt;i&lt;len-1, i=len-1</span>
+<span class="hljs-comment">// substring():</span>
+<span class="hljs-comment">//    partition on start=0, 0&lt;start&lt;len, start=len</span>
+<span class="hljs-comment">//    partition on end=0, 0&lt;end&lt;len, end=len</span>
+<span class="hljs-comment">//    partition on end-start: 0, &gt;0</span></code></pre>
+
+<p id="@now_want_test"><a class="jump" href="#@now_want_test"></a>Now we want test cases that cover these partitions.
+Note that writing test cases that use <code>assertEquals</code> directly on <code>MyString</code> objects wouldn’t work, because we don’t have an equality operation defined on <code>MyString</code>.
+We’ll talk about how to implement equality carefully in a later reading.
+For now, the only operations we can perform with MyStrings are the ones we’ve defined above: <code>valueOf</code>, <code>length</code>, <code>charAt</code>, and <code>substring</code>.</p>
+
+<p id="@given_constraint_compact"><a class="jump" href="#@given_constraint_compact"></a>Given that constraint, a compact test suite that covers all these partitions might look like:</p>
+
+<pre id="@test_public_void"><a class="jump" href="#@test_public_void"></a><code class="language-java hljs"><span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testValueOfTrue</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">true</span>);
+    assertEquals(<span class="hljs-number">4</span>, s.length());
+    assertEquals(<span class="hljs-string">'t'</span>, s.charAt(<span class="hljs-number">0</span>));
+    assertEquals(<span class="hljs-string">'r'</span>, s.charAt(<span class="hljs-number">1</span>));
+    assertEquals(<span class="hljs-string">'u'</span>, s.charAt(<span class="hljs-number">2</span>));
+    assertEquals(<span class="hljs-string">'e'</span>, s.charAt(<span class="hljs-number">3</span>));
+}
+
+<span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testValueOfFalse</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">false</span>);
+    assertEquals(<span class="hljs-number">5</span>, s.length());
+    assertEquals(<span class="hljs-string">'f'</span>, s.charAt(<span class="hljs-number">0</span>));
+    assertEquals(<span class="hljs-string">'a'</span>, s.charAt(<span class="hljs-number">1</span>));
+    assertEquals(<span class="hljs-string">'l'</span>, s.charAt(<span class="hljs-number">2</span>));
+    assertEquals(<span class="hljs-string">'s'</span>, s.charAt(<span class="hljs-number">3</span>));
+    assertEquals(<span class="hljs-string">'e'</span>, s.charAt(<span class="hljs-number">4</span>));
+}
+
+<span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testEndSubstring</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">true</span>).substring(<span class="hljs-number">2</span>, <span class="hljs-number">4</span>);
+    assertEquals(<span class="hljs-number">2</span>, s.length());
+    assertEquals(<span class="hljs-string">'u'</span>, s.charAt(<span class="hljs-number">0</span>));
+    assertEquals(<span class="hljs-string">'e'</span>, s.charAt(<span class="hljs-number">1</span>));
+}
+
+<span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testMiddleSubstring</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">false</span>).substring(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>);
+    assertEquals(<span class="hljs-number">1</span>, s.length());
+    assertEquals(<span class="hljs-string">'a'</span>, s.charAt(<span class="hljs-number">0</span>));
+}
+
+<span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testSubstringIsWholeString</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">false</span>).substring(<span class="hljs-number">0</span>, <span class="hljs-number">5</span>);
+    assertEquals(<span class="hljs-number">5</span>, s.length());
+    assertEquals(<span class="hljs-string">'f'</span>, s.charAt(<span class="hljs-number">0</span>));
+    assertEquals(<span class="hljs-string">'a'</span>, s.charAt(<span class="hljs-number">1</span>));
+    assertEquals(<span class="hljs-string">'l'</span>, s.charAt(<span class="hljs-number">2</span>));
+    assertEquals(<span class="hljs-string">'s'</span>, s.charAt(<span class="hljs-number">3</span>));
+    assertEquals(<span class="hljs-string">'e'</span>, s.charAt(<span class="hljs-number">4</span>));
+}
+
+<span class="hljs-meta">@Test</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testSubstringOfEmptySubstring</span><span class="hljs-params">()</span> </span>{
+    MyString s = MyString.valueOf(<span class="hljs-keyword">false</span>).substring(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>).substring(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+    assertEquals(<span class="hljs-number">0</span>, s.length());
+}</code></pre>
+
+<p id="@try_match_each"><a class="jump" href="#@try_match_each"></a>Try to match each test case to the subdomains it covers.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-testing_an_abstract_data_type"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-testing_an_abstract_data_type-partition_covering" data-target="#ex-testing_an_abstract_data_type-partition_covering" data-toggle="collapse"><a class="jump" href="#@ex-testing_an_abstract_data_type-partition_covering"></a><span class="panel-title">Partition covering</span></div><div class="panel-collapse collapse exercise-panel" id="ex-testing_an_abstract_data_type-partition_covering" data-outline="partition_covering" data-ex-id="testing_an_abstract_data_type/partition_covering" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@which_test_cases_cover_part_charat"><a class="jump" href="#@which_test_cases_cover_part_charat"></a>Which test cases cover the part “<code>charAt()</code> with string length = 1”?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="testValueOfTrue"><label for="md_converted_choice_12_0"><input type="checkbox" id="md_converted_choice_12_0"><code>testValueOfTrue</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testValueOfFalse"><label for="md_converted_choice_12_1"><input type="checkbox" id="md_converted_choice_12_1"><code>testValueOfFalse</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testEndSubstring"><label for="md_converted_choice_12_2"><input type="checkbox" id="md_converted_choice_12_2"><code>testEndSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testMiddleSubstring"><label for="md_converted_choice_12_3"><input type="checkbox" id="md_converted_choice_12_3"><code>testMiddleSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringIsWholeString"><label for="md_converted_choice_12_4"><input type="checkbox" id="md_converted_choice_12_4"><code>testSubstringIsWholeString</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringOfEmptySubstring"><label for="md_converted_choice_12_5"><input type="checkbox" id="md_converted_choice_12_5"><code>testSubstringOfEmptySubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@which_test_cases_cover_part_substring"><a class="jump" href="#@which_test_cases_cover_part_substring"></a>Which test cases cover the part “<code>substring()</code> of string produced by <code>substring()</code>“?</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="checkbox exercise-choice" data-outline="testValueOfTrue"><label for="md_converted_choice_13_0"><input type="checkbox" id="md_converted_choice_13_0"><code>testValueOfTrue</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testValueOfFalse"><label for="md_converted_choice_13_1"><input type="checkbox" id="md_converted_choice_13_1"><code>testValueOfFalse</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testEndSubstring"><label for="md_converted_choice_13_2"><input type="checkbox" id="md_converted_choice_13_2"><code>testEndSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testMiddleSubstring"><label for="md_converted_choice_13_3"><input type="checkbox" id="md_converted_choice_13_3"><code>testMiddleSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringIsWholeString"><label for="md_converted_choice_13_4"><input type="checkbox" id="md_converted_choice_13_4"><code>testSubstringIsWholeString</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringOfEmptySubstring"><label for="md_converted_choice_13_5"><input type="checkbox" id="md_converted_choice_13_5"><code>testSubstringOfEmptySubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@which_test_cases_cover_part_valueof-true"><a class="jump" href="#@which_test_cases_cover_part_valueof-true"></a>Which test cases cover the part “<code>valueOf(true)</code>“?</p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="checkbox exercise-choice" data-outline="testValueOfTrue"><label for="md_converted_choice_14_0"><input type="checkbox" id="md_converted_choice_14_0"><code>testValueOfTrue</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testValueOfFalse"><label for="md_converted_choice_14_1"><input type="checkbox" id="md_converted_choice_14_1"><code>testValueOfFalse</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testEndSubstring"><label for="md_converted_choice_14_2"><input type="checkbox" id="md_converted_choice_14_2"><code>testEndSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testMiddleSubstring"><label for="md_converted_choice_14_3"><input type="checkbox" id="md_converted_choice_14_3"><code>testMiddleSubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringIsWholeString"><label for="md_converted_choice_14_4"><input type="checkbox" id="md_converted_choice_14_4"><code>testSubstringIsWholeString</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="testSubstringOfEmptySubstring"><label for="md_converted_choice_14_5"><input type="checkbox" id="md_converted_choice_14_5"><code>testSubstringOfEmptySubstring</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-testing_an_abstract_data_type-unit_testing_an_adt" data-target="#ex-testing_an_abstract_data_type-unit_testing_an_adt" data-toggle="collapse"><a class="jump" href="#@ex-testing_an_abstract_data_type-unit_testing_an_adt"></a><span class="panel-title">Unit testing an ADT</span></div><div class="panel-collapse collapse exercise-panel" id="ex-testing_an_abstract_data_type-unit_testing_an_adt" data-outline="unit_testing_an_adt" data-ex-id="testing_an_abstract_data_type/unit_testing_an_adt" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-10-abstract-data-types"><div class="panel-body">
+
+<p id="@units_being_unit-tested"><a class="jump" href="#@units_being_unit-tested"></a>What “units” are being unit-tested by <code>testValueOfTrue</code>?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="valueOf operation"><label for="md_converted_choice_15_0"><input type="checkbox" id="md_converted_choice_15_0"><code>valueOf</code> operation</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="length operation"><label for="md_converted_choice_15_1"><input type="checkbox" id="md_converted_choice_15_1"><code>length</code> operation</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="charAt operation"><label for="md_converted_choice_15_2"><input type="checkbox" id="md_converted_choice_15_2"><code>charAt</code> operation</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="substring operation"><label for="md_converted_choice_15_3"><input type="checkbox" id="md_converted_choice_15_3"><code>substring</code> operation</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="assertEquals operation"><label for="md_converted_choice_15_4"><input type="checkbox" id="md_converted_choice_15_4"><code>assertEquals</code> operation</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="summary"><a class="jump" href="#summary"></a>Summary</h2><div data-outline="summary">
+
+<ul id="@abstract_data_types_characterized_their_operations">
+<li><a class="jump" href="#@abstract_data_types_characterized_their_operations"></a>Abstract data types are characterized by their operations.</li>
+<li>Operations can be classified into creators, producers, observers, and mutators.</li>
+<li>An ADT’s specification is its set of operations and their specs.</li>
+<li>A good ADT is simple, coherent, adequate, and representation independent.</li>
+<li>An ADT is tested by generating tests for each of its operations, but using the creators, producers, mutators, and observers together in the same tests.</li>
+</ul>
+
+<p id="@these_ideas_connect"><a class="jump" href="#@these_ideas_connect"></a>These ideas connect to our three key properties of good software as follows:</p>
+
+<ul>
+<li><p id="@safe_bugs_good"><a class="jump" href="#@safe_bugs_good"></a><strong>Safe from bugs.</strong>  A good ADT offers a well-defined contract for a data type, so that clients know what to expect from the data type, and implementers have well-defined freedom to vary.</p></li>
+<li><p id="@easy_understand_good"><a class="jump" href="#@easy_understand_good"></a><strong>Easy to understand.</strong> A good ADT hides its implementation behind a set of simple operations, so that programmers using the ADT only need to understand the operations, not the details of the implementation.</p></li>
+<li><p id="@ready_change_representation"><a class="jump" href="#@ready_change_representation"></a><strong>Ready for change.</strong>  Representation independence allows the implementation of an abstract data type to change without requiring changes from its clients.</p></li>
+</ul>
+
+</div><h2 id="more_practice"><a class="jump" href="#more_practice"></a>More practice</h2><div data-outline="more_practice">
+
+<p id="@if_you_would"><a class="jump" href="#@if_you_would"></a>If you would like to get more practice with the concepts covered in this reading, you can visit the <a href="https://qable.mit.edu:8001/practice.html#ADTs">question bank</a>. The questions in this bank were written in previous semesters by students and staff, and are provided for review purposes only – doing them will not affect your classwork grades.</p></div></div>
+
+</div></main>
+<footer class="col-sm-2 footer-margin"><div>Collaboratively authored with contributions from: Saman Amarasinghe, Adam Chlipala, Srini Devadas, Michael Ernst, Max Goldman, John Guttag, Daniel Jackson, Rob Miller, Martin Rinard, and Armando Solar-Lezama. This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a>.</div></footer>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="classes-10-abstract-data-types"></script></body><!--
+Handout delivered Fri Jun 04 2021 14:04:16 GMT+0000 (Greenwich Mean Time)
+--></html>

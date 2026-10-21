@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3 课 · 为什么用这套技能包，以及怎么用</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 0 · 地图与工作台 · 第 3 课</p>
+  <h1>为什么用这套技能包，以及怎么用</h1>
+  <p class="lede">软件工程的理论要落到动作上。这一课先说清为什么学软件工程要装一套技能包，把它装进机器、把练习仓库配置好；再拿一个你熟悉的需求走完五步：从一句模糊的话，到一份可以审查的 diff（差异）。最后把技能包摊开，告诉你 38 个技能里哪些是主线，哪些可以先放着。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 50–60 分钟</span>
+  <span><b>前置</b> 第 1、2 课</span>
+  <span><b>产出</b> 装好的技能包 + 配置好的沙盒仓库 + 一张 38 技能全景表</span>
+  <span><b>主读物</b> <code>ask-matt/SKILL.md</code>、<code>setup-matt-pocock-skills/SKILL.md</code></span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清为什么学软件工程要装技能包、为什么选这一套，以及它和第 1、2 课的关系。</li>
+    <li>把技能包装进机器（每台机器一次），并初始化练习仓库（每个仓库一次）。</li>
+    <li>用一个具体功能走完五步，知道每一步的输入、输出和对应活动。</li>
+    <li>分清用户调用、模型调用、前置配置和路由器，知道开发者实际做什么。</li>
+    <li>在 38 个技能里认出主线、开发辅助，以及和软件工程无关的部分。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>为什么学软件工程，要装一套技能包</h2>
+  <p>这一课的主角是 Matt Pocock 维护的一套技能包：38 个技能，每个技能是一份 <code>SKILL.md</code>，写清什么时候用、问什么、产出什么、什么时候停。</p>
+  <p>学软件工程，为什么要先装一套工具？第 1 课的结论还记得：AI 把「写」的成本压了下来，把「判断」的成本抬了上去。判断没法靠背，只能在真实的工作流里练出来。第 2 课把软件工程摊成八个活动，但活动到那为止还是名词；技能包把它们翻成动词——每个活动问什么、写什么、停在哪儿、下一步接什么。这门课后面每个模块的练习，都跑在这套工具上。</p>
+  <p>市面上的 AI 编程工具很多，为什么选 Matt Pocock 的这一套？不是因为它的命令更多，而是因为它把软件工程的骨架露了出来，适合拿来练习和印证。</p>
+  <p>第一，它覆盖的是完整链路，不是单点技巧。它从逼问开始，经过 spec（规格说明）、工单、实现、审查，一直到提交。每一步都有明确的输入和输出，前一步的产物就是后一步的原料。跑一遍，就等于把「需求 → 计划 → 设计 → 实现 → 验证」完整经历了一次。</p>
+  <p>第二，它把产物写下来。逼问会留下 <code>GLOSSARY.md</code>（术语表），必要时留下 ADR（Architecture Decision Record，架构决策记录）；规格会留下 spec；计划会留下工单和阻塞边；实现会留下测试；审查会留下具体到行的意见。这些正是软件工程理论里说的需求、设计决策、计划、验证。理论在别处常常是抽象名词，在这里变成了可以打开的文件。</p>
+  <p>第三，它是为 agent 设计的。技能可以按需加载，不需要你每次重新解释流程；它们很小、可组合，也不绑定某一个模型。你不需要背 38 个命令，大部分时候只需要记住主线的几个入口，剩下的由 agent 在需要时拉起。</p>
+  <p>它还有一个可验证的实践样本：CMU 的 17-313 课程把 Project 1 命名为 “Hello, opencode!”，用 OpenCode 和这套方式做项目。这不是说它完美，而是说它不是只存在于博客里的方法。</p>
+  <p>但要说清楚：它不是唯一的做法，也不是理论本身。我们选它，是因为它把理论里的活动变成了一步步能照做的事情，适合当练习场。换一套工具，软件工程的原理仍然成立；工具会变，判断不会。</p>
+  <p>它也不反对快。有人把“直接让 agent 写”叫 vibe coding（氛围编程）；这套技能包更像“有轨道的 vibe coding”：照样快速交给 agent，但每一步都留下产物，也都有让你停一下、看一眼的闸门。Matt 在自己的 README 里说它是 “not vibe coding”，因为无轨道的直写正是它要修的毛病。</p>
+</section>
+
+<section>
+  <h2>动手：装技能包，初始化仓库</h2>
+  <p>为什么讲完了，接下来动手。只做两件事：把技能包装进机器，初始化练习仓库。前者每台机器做一次，装好后所有仓库共用；后者每个仓库做一次。</p>
+
+  <h3>先装技能包</h3>
+  <p>技能包住在 GitHub 上：<a href="https://github.com/mattpocock/skills">github.com/mattpocock/skills</a>。仓库提供了多种安装命令，Claude Code、Codex、GitHub Copilot、Gemini CLI 各有各的；本课程统一用 OpenCode，所以只走 <code>npx</code> 这一条。安装前先确认有 Node.js：</p>
+
+  <pre><code>node -v</code></pre>
+
+  <p>有版本号（建议 18 以上）就继续。没有的话，先装 Node.js LTS，再回来。然后在 PowerShell 里运行：</p>
+
+  <pre><code>npx skills@latest add mattpocock/skills -a opencode -g -s "*" --copy</code></pre>
+
+  <p>这条命令的意思是：用 <code>skills</code> 安装器，把 <code>mattpocock/skills</code> 里的全部技能，全局装到 OpenCode。<code>-g</code> 是全局；去掉它就只装进当前项目。<code>-s "*"</code> 是全部技能；引号不要省，避免 shell 把星号先展开。<code>-a opencode</code> 指定目标 agent。<code>--copy</code> 让安装器复制文件，而不是建符号链接；Windows 上更稳，也方便你直接打开 <code>SKILL.md</code>。</p>
+
+  <p>如果不想记命令，也可以直接在 OpenCode 的对话里说：</p>
+
+  <pre><code>请帮我从 https://github.com/mattpocock/skills 安装 Matt Pocock
+技能包，目标 agent 是 OpenCode，全局安装全部技能。装完请：
+1. 告诉我安装到了哪个目录；
+2. 列出技能清单；
+3. 确认 setup-matt-pocock-skills、triage、grill-with-docs 都在。</code></pre>
+
+  <p>装完先验一下。运行 <code>npx skills@latest ls -g</code>，列表里应该能看到 <code>setup-matt-pocock-skills</code>、<code>triage</code>、<code>grill-with-docs</code>、<code>code-review</code> 这些名字。如果 OpenCode 的技能列表没更新，开一个新会话，或者重启 OpenCode。以后要更新，运行 <code>npx skills@latest update -g</code>；也可以隔一段时间重跑一次 <code>add</code> 命令。</p>
+
+  <div class="note">
+    <p><strong>不要同时装两个 agent。</strong>Matt 的 README 明确说：同一个技能包装给两个 agent，会让你看到每个技能两次。这个课程只用 OpenCode；如果你也在用 Claude Code，选一个作为主入口。</p>
+  </div>
+
+  <h3>再初始化仓库</h3>
+  <p>技能装好了，但它还不知道你的仓库长什么样：工程技能假设仓库里有三样东西——issue tracker（问题跟踪器）、triage labels（分类标签）、domain docs（领域文档）的布局。<code>/setup-matt-pocock-skills</code> 就是把这三件事一次性问清楚，写进仓库。</p>
+
+  <p>先建一个练习仓库：</p>
+
+  <pre><code>mkdir D:\code\my_projects\se-course-sandbox
+cd D:\code\my_projects\se-course-sandbox
+git init</code></pre>
+
+  <p>如果目录已经存在，跳过 <code>mkdir</code>；如果已经 <code>git init</code> 过，也跳过最后一行。setup 可以重跑，它会先探索仓库，再决定是创建还是更新。</p>
+
+  <p>然后在 OpenCode 里输入 <code>/setup-matt-pocock-skills</code>。它会先探索仓库，再逐项问你。建议这样选：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>问题</th><th>选什么</th><th>为什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">Issue tracker</td><td><strong>Local markdown（本地 Markdown 文件）</strong></td><td>单人、无远程、不依赖 <code>gh</code>；工单就是仓库里的文件，随时可读。</td></tr>
+        <tr><td class="what">Triage labels</td><td><strong>默认五个</strong></td><td>保持和技能包一致，后面不用改映射。</td></tr>
+        <tr><td class="what">Domain docs</td><td><strong>single-context（单上下文）</strong></td><td>一个 <code>GLOSSARY.md</code> 加 <code>docs/adr/</code>，适合单仓库、单产品。</td></tr>
+        <tr><td class="what">入口文件</td><td><strong><code>AGENTS.md</code></strong></td><td>OpenCode 读这个；如果仓库里已经有 <code>CLAUDE.md</code>，它会改那一个，不要两个都建。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>完成后，仓库里应该多出这几样。它们不是课程作业，而是 agent 以后每次进仓库都要读的“长期配置”：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>文件</th><th>它管什么</th><th>什么时候出现</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="skill">AGENTS.md</td><td>agent 的入口。里面有一个 <code>## Agent skills</code> 区块，摘要三件事：工单在哪、标签怎么用、领域文档在哪，并指向下面三个文件。</td><td>setup 时创建或更新。</td></tr>
+        <tr><td class="skill">docs/agents/issue-tracker.md</td><td>工单和 spec 放在哪、怎么创建、怎么读取、状态怎么写。</td><td>setup 时写入。</td></tr>
+        <tr><td class="skill">docs/agents/domain.md</td><td>领域文档的布局：<code>GLOSSARY.md</code> 和 <code>docs/adr/</code> 在哪，agent 探索代码前该读什么。</td><td>setup 时写入。</td></tr>
+        <tr><td class="skill">docs/agents/triage-labels.md</td><td>五个 triage 角色的标签字符串，以及它们和仓库现有标签的映射。</td><td>只有装了 <code>triage</code> 才会生成；没有就跳过。</td></tr>
+        <tr><td class="skill">GLOSSARY.md</td><td>领域术语表。一个词只准有一个意思；只收这个上下文特有的词。</td><td>懒创建：第一次有词被真正定下来时才写。</td></tr>
+        <tr><td class="skill">docs/adr/</td><td>架构决策记录。只记难反转、且未来的人会问“为什么”的决定。</td><td>懒创建：第一次有值得记的决定时才建。</td></tr>
+        <tr><td class="skill">.scratch/&lt;feature&gt;/</td><td>Local markdown tracker 的工作区：spec 和工单都放这里。</td><td>懒创建：第一次发布 spec 或工单时才建。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>暂时没有 <code>GLOSSARY.md</code>、<code>docs/adr/</code>、<code>.scratch/</code> 是正常的。它们是懒创建的：等第一次真的需要时再建。不要提前建空文件，空文件只会让 agent 以为那里已经有约定。这些文件背后的理论，第 4 课讲术语表，第 7 课讲 ADR，第 8 课讲 spec，第 13 课讲 triage；这一课只需要确认「三件事都有地方查」。</p>
+
+  <p>Local markdown 的约定也先知道一下：一个功能一个目录，spec 放在 <code>.scratch/&lt;feature&gt;/spec.md</code>，工单放在 <code>.scratch/&lt;feature&gt;/issues/NN-&lt;slug&gt;.md</code>，一个工单一个文件。文件顶部写 <code>Status:</code>，依赖写 <code>Blocked by: NN, NN</code>，讨论追加在 <code>## Comments</code> 下。知道这些，后面看到“publish to the issue tracker”就不会懵。</p>
+
+  <div class="note">
+    <p><strong>版本提醒。</strong>这套技能包更新很快。本课按 2026 年 10 月的最新版写：术语表叫 <code>GLOSSARY.md</code>，多上下文用 <code>GLOSSARY-MAP.md</code>。如果你装到的是旧版，文件名可能是 <code>CONTEXT.md</code> 和 <code>CONTEXT-MAP.md</code>，作用相同。判断标准不是文件名，而是你的 <code>SKILL.md</code> 怎么写；两者不一致时，以你装到的 <code>SKILL.md</code> 为准。本课程后面统一写 <code>GLOSSARY.md</code>。</p>
+  </div>
+
+  <p>如果跑出来的和上面不完全一样，以你的实际产物为准。判断标准不是文件个数，而是三件事有没有地方查：工单放哪、标签怎么用、领域文档在哪。</p>
+</section>
+
+<section>
+  <h2>一个熟悉的场景：五步走完一条链路</h2>
+  <p>工作台装好了，下面拿一个你熟悉的需求，从头到尾走一遍技能包的基本流程。你在维护一个用户管理系统。产品经理走过来说：加一个按姓名搜索用户的功能，管理员要用。你回到工位，对 agent 说了一遍，它很快写完了：在数据库里加了一个 <code>LIKE '%name%'</code> 的查询，接口叫 <code>/users/search?name=</code>。能跑，看起来也对。</p>
+  <p>但你多看两眼，就会发现有一串问题没答案。大小写敏感吗？中文姓名怎么匹配？要不要分页？重名怎么排序？空字符串返回什么？只有管理员能搜，还是所有登录用户都能搜？搜索的“姓名”是显示名，还是登录名？</p>
+  <p>agent 没有问你，它按最常见的做法各猜了一个：区分大小写、只匹配英文、不分页、按 id 排序、空字符串返回全部、所有登录用户都能用、姓名按登录名算。每一条猜错的地方，都会在以后变成 bug 或返工。这不是 agent 不够聪明，而是你少了一条把模糊需求变成可验证行为的路径。</p>
+  <p>现在，换技能包重新走这条需求。这五步不是五个命令，而是五次把判断写下来的机会；每一步的产物，都是下一步的原料。先把上面那七个问题记在心里——走完这一节，它们会被一个个变成文件里的条款。</p>
+
+  <p>在开始第一步之前，先分清技能出现的四种方式。后面看到某个技能时，你可以马上知道“这是我输入，还是 agent 自己拉起”。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>类型</th><th>谁发起</th><th>例子</th><th>你做什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">用户调用（user-invoked）</td><td>你输入 <code>/...</code>。</td><td><code>/grill-with-docs</code>、<code>/to-spec</code>、<code>/implement</code></td><td>提供上下文、回答问题、做决定。</td></tr>
+        <tr><td class="what">模型调用（model-invoked）</td><td>agent 在流程里自己拉起；你也可以手动输入。</td><td><code>domain-modeling</code>、<code>codebase-design</code>、<code>tdd</code></td><td>不背命令；审查它产出的词条、接口、测试。</td></tr>
+        <tr><td class="what">前置配置</td><td>你在仓库里运行一次。</td><td><code>setup-matt-pocock-skills</code></td><td>选工单、标签、领域文档的布局。</td></tr>
+        <tr><td class="what">路由器</td><td>你问它“该用哪个”。</td><td><code>ask-matt</code></td><td>描述处境，按它的推荐走。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>「模型调用」不等于「你不能手动输入」。像 <code>code-review</code> 这样的技能，<code>/implement</code> 会在收尾时自己拉起，你也可以在整条分支上手动输入 <code>/code-review</code>。区别只在于：用户调用的技能负责编排流程，模型调用的技能负责提供可复用的纪律。</p>
+
+  <h3>第一步：把问题问清楚</h3>
+  <p>你输入 <code>/grill-with-docs</code>，说：给用户管理加一个按姓名搜索，管理员用。它不会急着写代码，而是一轮一轮问你。每一轮会把当前能问的问题一起摆出来，每个问题附一个推荐答案；事实由它去查，决定由你拍板。</p>
+  <p>它先问：这里的“姓名”是显示名，还是登录名？你说是显示名。接着问：精确匹配还是模糊匹配？大小写敏感吗？中文姓名按什么规则？要不要分页？重名怎么排序？空查询返回什么？权限只给管理员吗？</p>
+  <p>你一条条回答：模糊匹配；不区分大小写；中文按包含匹配；每页 20 条；按显示名排序；空查询返回空列表；只有管理员能搜；先不做全文搜索。它把 <code>User</code>、<code>Search</code>、<code>Display name</code> 这些词写进 <code>GLOSSARY.md</code>；“先不做全文搜索”写进后面 spec 的 Out of Scope。如果讨论中出现一个难反转、又有真实取舍的决定，比如“搜索先用数据库 <code>LIKE</code>，不引入倒排索引”，它才会写成 ADR；不是每个问题都值得一篇 ADR。这一步对应第 2 课里的 Requirements（需求）。</p>
+
+  <h3>第二步：把答案写成规格</h3>
+  <p>你输入 <code>/to-spec</code>。它不再做需求采访，而是把刚才的问答和仓库现状综合成一份 spec。它先探索代码，标出准备用来测试的 seam（接缝，即测试从哪个边界打进去），和你确认这些接缝是否符合预期，然后按模板写：Problem Statement、Solution、一长串 User Stories、Implementation Decisions、Testing Decisions、Out of Scope、Further Notes。</p>
+  <p>它会把 spec 发布到配置好的 issue tracker，并打上 <code>ready-for-agent</code> 标签。你只需要检查它有没有漏掉你刚说过的约束，以及接缝是不是太高或太低。验收条件在这个模板里主要落在 User Stories 和 Testing Decisions 两节；如果你们的习惯是单独列 acceptance criteria（验收标准），可以补一节，但不要假装模板里本来就有。这一步对应需求规格。</p>
+
+  <h3>第三步：切成可以独立做的工单</h3>
+  <p>你输入 <code>/to-tickets</code>。它把 spec 切成几张 tracer bullet（曳光弹，一条纵向穿透所有层的最小完整路径）工单，每张都能单独演示或验证，并且声明自己的 blocking edges（阻塞边，哪些工单必须先完成）。它会把拆分结果先给你看，问粒度是否合适、阻塞边是否正确，你批准后才发布。</p>
+  <p>切出来可能是三张：第一张“管理员能按显示名精确搜索”，从接口、查询、权限到测试完整走通；第二张“大小写不敏感，支持中文包含匹配”；第三张“分页和按显示名排序”。第二、三张都依赖第一张，所以先做第一张。每张工单都写清“要构建的行为”和可勾选的验收条件。这一步对应计划与过程。</p>
+
+  <div class="note">
+    <p><strong>一个例外。</strong>如果一次改动是纯机械的、影响面横跨整个代码库（比如重命名一个共享字段），硬切成纵向切片反而每张都跑不绿。技能包要求这种 wide refactor（大范围重构）改用 expand–contract：先加新形式、不动旧调用；再分批迁移；最后删掉旧形式。第 10 课会展开。</p>
+  </div>
+
+  <p>还有三个分支要记住。第一，如果这次工作一次会话就能做完，可以跳过 spec 和工单，直接 <code>/implement</code>；课程用三张工单，是为了让你看到完整链路。第二，如果第 1 步里有一个问题必须跑起来才能回答（状态模型、业务逻辑、UI），在进入 <code>/to-spec</code> 前用 <code>/prototype</code> 试一下，用 <code>/handoff</code> 进出；原型只回答那个问题。第三，第 1–3 步尽量保持在同一个上下文窗口里，不要中途 <code>/clear</code>；到了实现阶段，每张工单再清一次。</p>
+
+  <h3>第四步：一张一张实现</h3>
+  <p>你输入 <code>/implement</code>，把第一张工单交给它。它按 TDD（Test-Driven Development，测试驱动开发）的红-绿-重构循环做：先写一个会失败的测试，再写最小实现让测试转绿，再重构。它会在约定的接缝上测试，经常跑类型检查和单个测试文件，最后跑一次全量测试。做完它自己会调 <code>/code-review</code> 审这张工单的 diff，然后提交。</p>
+  <p>做完一张，你看 diff，确认行为对，<code>/clear</code>，再做下一张。每张工单都是自包含的，上一张的上下文可以丢。如果你不想一张一张盯，也可以用 <code>/implement-spec</code>：它把整份 spec 放在一条 integration branch（集成分支）上，把工单当任务图，派多个 implementer subagent（实现子智能体）并行做当前 frontier（前沿，所有阻塞都已完成的工单），最后对整个分支跑一次审查。这一步对应构造与测试。</p>
+
+  <h3>第五步：审查，再提交</h3>
+  <p>你输入 <code>/code-review</code>，给它一个固定点（某个 commit、分支、tag 或 merge-base）。它从两个轴看 diff：Standards 看代码是否符合仓库文档里的规范，外加一组 Fowler 坏味基线；Spec 看它是否真的实现了工单或 spec。两个轴由两个并行 subagent 分别跑，最后并排报告，不合并、不重新排序——因为“符合规范但做错事”和“做对事但破坏规范”是两种不同的问题。</p>
+  <p>好的审查会指向具体行，并引用规范或 spec 的原句，而不是只说“感觉不对”。你按意见改完，再提交。提交看起来最简单，但它对应配置管理：你得知道每次改了什么、为什么改、出问题怎么退回去。要开 PR（Pull Request，合并请求）时，<code>/pr</code> 会帮你把 PR body 写成“最小的可视化摘要 + 前后证据 + 合并风险判断”。做完一个功能，<code>/retro</code> 可以回看这次会话，建议改 agent 的环境——导航、自动检查、编码规范、steering 文件（引导文件）、工具——让下一次从更好的环境开始。</p>
+
+  <p>走完这一遍，你会发现需求不再是脑子里的一句话，而是一串可以打开、可以检查的东西：词表、ADR、spec、工单、测试、审查意见。技能包的价值不在于它替你写代码，而在于它逼你把每一步的判断留下来。回头看看那七个问题，现在每一个都有了具体的落点：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>场景里的问题</th><th>五步里落在了哪</th><th>谁检查</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>姓名是显示名还是登录名</td><td><code>GLOSSARY.md</code> 的词条边界</td><td>你拍板；agent 按词表命名</td></tr>
+        <tr><td>模糊还是精确、大小写、中文</td><td>User Stories + 测试用例</td><td>测试；你读 spec</td></tr>
+        <tr><td>每页 20 条、重名排序</td><td>工单 03 + 边界测试</td><td>测试；你验收</td></tr>
+        <tr><td>空查询返回什么</td><td>工单 01 的验收条件 + 测试</td><td>测试</td></tr>
+        <tr><td>只有管理员能搜吗</td><td>工单 01 的权限测试</td><td>测试 + 审查</td></tr>
+        <tr><td>先不做全文搜索</td><td>spec 的 Out of Scope</td><td>你确认范围</td></tr>
+        <tr><td>用 <code>LIKE</code> 还是倒排索引</td><td>ADR（如果这个取舍值得记）</td><td>你拍板；未来的人读</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p><strong>回到沙盒：</strong>沙盒里的“给知识库加一个搜索命令”是同一个形状。把“用户”换成 <code>Document</code>，把“姓名”换成关键词，把“管理员权限”换成知识库的访问范围，剩下的步骤完全一样。</p>
+  </div>
+
+  <p>在这个过程中，<code>domain-modeling</code>、<code>codebase-design</code>、<code>grilling</code>、<code>tdd</code> 都是模型调用的底层技能：前两个盯住词和模块的接口、接缝，后两个提供访谈和测试的纪律。你不用记它们的命令，只要回答问题、做决定、审查产物。</p>
+</section>
+
+<section>
+  <h2>它不替你做什么</h2>
+  <p>技能包能帮你把流程跑起来，但它不替你做判断。它不知道你的用户要什么，只能通过问题逼你去想；它不会替你做领域判断，<code>domain-modeling</code> 能指出矛盾，不能替你选边界；它不保证代码正确，它会生成看起来合理的错误；它也不会替你对结果负责，测试、审查、上线仍然是你的决定。</p>
+  <p>所以后面的每一节课都会问两个问题：这一步哪些判断必须由人做？哪些输出必须验证？如果一节课只教你敲一个命令，却没有回答这两个问题，那它就只是工具说明书，不是软件工程课。技能包是练习场，不是标准答案；理论仍然是主线，工具会变，判断不会。</p>
+
+  <h3>三种最常见的走错</h3>
+  <p>第一种，是需求不清就直接开原型。原型回答的是“这个设计跑起来是否成立”，不是“这个需求值不值得做”。方向错了，原型只会让你更快地做错。需要看见才能回答的设计问题，用 <code>/prototype</code>，用 <code>/handoff</code> 进出；不要把它当成需求访谈的替代品。</p>
+  <p>第二种，是工单不清就直接 implement。agent 会替你猜，而且猜得很合理，结果通常是一个看起来完成了、其实做错的东西。工单不清楚时，回到 <code>/to-tickets</code>，或者回到第一步重新问。</p>
+  <p>第三种，是上下文一满就默认 compact。先问上下文对下一步是否相关：无关就 <code>/clear</code>，别把噪声压成摘要继续用。阶段边界有五个选项——继续、<code>/clear</code>、<code>/handoff</code>、subagent、<code>/compact</code>；完整判断表在参考卡里。拿不准用哪个技能时，用 <code>/ask-matt</code>；拿不准一个做法对不对时，回到第 2 课的八个活动和理论来源。</p>
+</section>
+
+<section>
+  <h2>全景：38 个技能，三层</h2>
+  <p>这套技能包不只有主线那五个命令。本课写作时（2026 年 10 月），Matt 的仓库里有 38 个技能：engineering 20 个、productivity 7 个、misc 4 个、in-progress 7 个。你不需要学完，也不需要记住；先知道哪一层在哪，用到时再查。</p>
+  <p>下面按“和软件工程的关系”分三层。第一层直接对应第 2 课的八个活动，是你这门课要练的；第二层是开发辅助，用得上但不是主线；第三层和软件工程没有直接关系，留给你自己探索。标了“实验”的来自 <code>in-progress</code>，随时会变，不要拿它当稳定依赖。</p>
+
+  <h3>第一层：直接对应软件工程活动（18 个）</h3>
+  <p>先看第一层。主线只有五个命令，第一层则把需求、计划、设计、实现、测试、维护这些站点都标了出来。你不需要记住名字，先扫一眼“对应活动”那一列，确认它和第 2 课的八个活动怎么对上；学到那个模块时再回来查。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>技能</th><th>调用</th><th>它做什么</th><th>对应活动</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="skill">grill-with-docs</td><td class="call">用户</td><td>一轮一轮访谈，边问边写 <code>GLOSSARY.md</code> 和 ADR。</td><td>Requirements（需求）</td></tr>
+        <tr><td class="skill">grilling</td><td class="call">模型</td><td>访谈的原语：轮次、frontier、事实归 agent、决定归人。被多个技能复用。</td><td>Requirements</td></tr>
+        <tr><td class="skill">domain-modeling</td><td class="call">模型</td><td>主动维护领域模型：挑战模糊词、写术语表和 ADR。</td><td>Requirements / Design</td></tr>
+        <tr><td class="skill">to-spec</td><td class="call">用户</td><td>把当前对话综合成 spec，确认 seam 后发布到 issue tracker。</td><td>Requirements</td></tr>
+        <tr><td class="skill">to-tickets</td><td class="call">用户</td><td>把 spec 或计划切成 tracer-bullet 工单，标出阻塞边。</td><td>Process &amp; Management（过程与管理）</td></tr>
+        <tr><td class="skill">implement</td><td class="call">用户</td><td>按一张工单实现：内部驱动 TDD，收尾跑 code-review，然后提交。</td><td>Construction（构造）</td></tr>
+        <tr><td class="skill">implement-spec</td><td class="call">用户</td><td>把整份 spec 放在一条集成分支上，用子代理并行做 frontier 上的工单。</td><td>Construction（进阶）</td></tr>
+        <tr><td class="skill">tdd</td><td class="call">模型</td><td>红-绿-重构；好测试、坏测试、测试替身的规则。</td><td>Testing（测试）</td></tr>
+        <tr><td class="skill">code-review</td><td class="call">模型</td><td>固定点 diff 的 Standards / Spec 双轴审查，两个子代理并行。</td><td>Quality（质量）</td></tr>
+        <tr><td class="skill">pr</td><td class="call">模型</td><td>规定 PR body 的形状：最小可视化摘要、前后证据、合并风险判断。</td><td>Collaboration / Release（协作与发布）</td></tr>
+        <tr><td class="skill">prototype</td><td class="call">模型</td><td>一次性原型回答一个设计问题：状态模型对不对，或 UI（用户界面）该长什么样。</td><td>Design（设计）</td></tr>
+        <tr><td class="skill">codebase-design</td><td class="call">模型</td><td>深模块的共用词汇：module、interface、depth、seam、adapter。</td><td>Design &amp; Architecture</td></tr>
+        <tr><td class="skill">improve-codebase-architecture</td><td class="call">用户</td><td>扫描代码库的深化机会，出网页报告，再对选中的一项做 grill。</td><td>Design / Maintenance（维护）</td></tr>
+        <tr><td class="skill">diagnosing-bugs</td><td class="call">模型</td><td>难 bug 的诊断循环：先拿到会红的反馈回路，再最小化、假设、修复、加回归测试。</td><td>Maintenance</td></tr>
+        <tr><td class="skill">triage</td><td class="call">用户</td><td>把别人提的 issue 或 PR 过一遍分类状态机，补齐信息，写成 agent-ready brief。</td><td>Maintenance / Requirements</td></tr>
+        <tr><td class="skill">wayfinder</td><td class="call">用户</td><td>把一次会话装不下的大工作，画成一张决策地图，逐张解决。</td><td>Process &amp; Management</td></tr>
+        <tr><td class="skill">setup-matt-pocock-skills</td><td class="call">用户</td><td>每个仓库初始化一次：工单、标签、领域文档布局。</td><td>前置配置</td></tr>
+        <tr><td class="skill">retro</td><td class="call">用户</td><td>会话后回看，改进 agent 的环境：导航、自动检查、编码规范、steering 文件、工具。</td><td>Process improvement（过程改进）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>第二层：开发辅助（12 个）</h3>
+  <p>第二层不直接对应某个活动，但会在具体时刻救场：不知道下一步用什么、需要把阅读外包、要把工作交接出去、要开 PR。它们不是主线，缺了却会在边上卡住。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>技能</th><th>调用</th><th>它做什么</th><th>什么时候用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="skill">ask-matt</td><td class="call">用户</td><td>路由器：根据你的处境推荐技能或流程。</td><td>不知道下一步用哪个。</td></tr>
+        <tr><td class="skill">grill-me</td><td class="call">用户</td><td>同样的访谈，但无状态：不写 <code>GLOSSARY.md</code>，不建 ADR。</td><td>手上没有仓库，只在想一个计划或设计。</td></tr>
+        <tr><td class="skill">research</td><td class="call">模型</td><td>派后台代理查一手来源，写一份带引用的 Markdown。</td><td>需要读文档、查 API（应用程序接口）事实，或把阅读外包。</td></tr>
+        <tr><td class="skill">to-questionnaire</td><td class="call">用户</td><td>把你自己答不了的决定，变成一份给别人填的问卷。</td><td>答案在同事、客户或供应商手里。</td></tr>
+        <tr><td class="skill">handoff</td><td class="call">用户</td><td>把当前对话压成交接文档。</td><td>换工具、换目录、交给别人，或分叉一个旁支。</td></tr>
+        <tr><td class="skill">wait-what</td><td class="call">用户</td><td>让 agent 用简单英语和术语表，把刚才没听懂的话重讲一遍。</td><td>一条消息没落地，越听越糊。</td></tr>
+        <tr><td class="skill">wizard</td><td class="call">模型</td><td>生成一个交互式 bash 向导，带人完成只有人能做的步骤。</td><td>配置云资源、CI（持续集成）secret、第三方后台、一次性迁移。</td></tr>
+        <tr><td class="skill">writing-for-agents</td><td class="call">模型</td><td>写 agent 消费的文档：skill、<code>AGENTS.md</code>、被指针指向的文档。</td><td>维护技能包或 agent 的入口文件。</td></tr>
+        <tr><td class="skill">git-guardrails-claude-code</td><td class="call">模型</td><td>装 Claude Code 钩子，拦截 <code>push</code>、<code>reset --hard</code>、<code>clean</code> 等危险命令。</td><td>用 Claude Code，且想加一道保险。</td></tr>
+        <tr><td class="skill">setup-pre-commit</td><td class="call">模型</td><td>装 Husky + lint-staged + Prettier + 类型检查 + 测试。</td><td>想让提交前自动跑检查。</td></tr>
+        <tr><td class="skill">setup-ts-deep-modules（实验）</td><td class="call">用户</td><td>在 TypeScript 仓库里用 dependency-cruiser 强制每个 package 成为深模块。</td><td>用 TypeScript，且想把入口收窄。</td></tr>
+        <tr><td class="skill">claude-handoff（实验）</td><td class="call">用户</td><td>把当前对话交给一个新的后台 Claude agent。</td><td>用 Claude Code，想让后台接着做。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>第三层：和软件工程没有直接关系（8 个）</h3>
+  <p>这一层不是“没用”，而是解决别的问题。课程不覆盖，留给你按兴趣自己读 <code>SKILL.md</code>。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>技能</th><th>调用</th><th>它做什么</th><th>为什么不在主线</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="skill">teach</td><td class="call">用户</td><td>把当前目录当教学工作区，用多个会话教一个概念。</td><td>学习工具，不是开发活动。</td></tr>
+        <tr><td class="skill">migrate-to-shoehorn</td><td class="call">模型</td><td>把 TypeScript 测试里的 <code>as</code> 断言迁移到 shoehorn。</td><td>特定语言 / 测试库的迁移。</td></tr>
+        <tr><td class="skill">scaffold-exercises</td><td class="call">模型</td><td>生成课程练习的目录结构，并让它过 lint。</td><td>课程制作，不是产品开发。</td></tr>
+        <tr><td class="skill">chief-of-staff（实验）</td><td class="call">用户</td><td>在一个长会话里协调子代理，追求一个长期目标。</td><td>个人工作流，不是软件工程活动。</td></tr>
+        <tr><td class="skill">loop-me（实验）</td><td class="call">用户</td><td>逼问出你生活或工作里的 recurring loop（重复循环）的 workflow spec。</td><td>个人工作流设计。</td></tr>
+        <tr><td class="skill">writing-beats（实验）</td><td class="call">用户</td><td>写作：把素材组装成一段有节拍的旅程。</td><td>写作，不是代码。</td></tr>
+        <tr><td class="skill">writing-fragments（实验）</td><td class="call">用户</td><td>写作：先挖碎片，不急着定结构。</td><td>写作，不是代码。</td></tr>
+        <tr><td class="skill">writing-shape（实验）</td><td class="call">用户</td><td>写作：把素材逐段塑造成文章。</td><td>写作，不是代码。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>怎么用这张表？第一，先学第一层里和你当前模块对应的几个；主线只需要 <code>grill-with-docs</code>、<code>to-spec</code>、<code>to-tickets</code>、<code>implement</code>、<code>code-review</code>。第二，第二层用到再查，不要提前背。第三，第三层留给自己探索；它们不影响你理解软件工程，也不影响你跑主线。</p>
+
+  <div class="note">
+    <p><strong>别把“你机器上的技能”全当成 Matt 的。</strong>你的全局技能目录里可能还有别的来源，比如 <code>shy-*</code>、<code>skill-creator</code>、<code>find-skills</code>、<code>obsidian-markdown</code>、<code>playwriter</code>、<code>resolving-merge-conflicts</code> 等。它们不是 <code>mattpocock/skills</code> 仓库的一部分，本表也不收。判断一个技能是不是 Matt 的，看仓库和 README，不要看它有没有出现在 <code>ls -g</code> 里。</p>
+  </div>
+
+  <p>这张表会过时。技能包在更新，名字、数量、分类都可能变。写课程时以仓库 README 和你装到的 <code>SKILL.md</code> 为准；这张表的用处是给你一个坐标系，不是让你背目录。</p>
+</section>
+
+<section>
+  <h2>后面的课怎么用它</h2>
+  <p>这一课是地图；后面的课是每一站的讲解。每一站都会先讲软件工程里这个活动要解决什么问题、业内通常怎么做，再回来看技能包怎么落地。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模块</th><th>软件工程活动</th><th>对应的技能</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">1 · 需求与语言</td><td>Requirements（需求）</td><td><code>grilling</code>、<code>grill-with-docs</code>、<code>domain-modeling</code>、<code>to-spec</code></td></tr>
+        <tr><td class="what">2 · 计划与过程</td><td>Process &amp; Management（过程与管理）</td><td><code>to-tickets</code>、<code>wayfinder</code>、<code>triage</code></td></tr>
+        <tr><td class="what">3 · 设计与架构</td><td>Design &amp; Architecture（设计与架构）</td><td><code>codebase-design</code>、<code>prototype</code>、<code>improve-codebase-architecture</code></td></tr>
+        <tr><td class="what">4 · 实现与测试</td><td>Construction + Testing（构造与测试）</td><td><code>tdd</code>、<code>implement</code>、<code>implement-spec</code></td></tr>
+        <tr><td class="what">5 · 验收与维护</td><td>Quality + Maintenance + Operations（质量、维护与运维）</td><td><code>code-review</code>、<code>diagnosing-bugs</code>、<code>retro</code>、<code>pr</code></td></tr>
+        <tr><td class="what">6 · 专业实践与 AI</td><td>Professional Practice（专业实践）</td><td><code>research</code>、<code>handoff</code>、<code>to-questionnaire</code>、<code>writing-for-agents</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>你会发现，第一层技能的顺序和第 2 课的八个活动几乎是对应的。这不是巧合：它本来就是按软件工程的生命周期设计的。我们的课只是把每个活动背后的理论补上，再用它练一遍。不是每个技能都会有一节课；第三层和部分第二层，留给你自己按需读。</p>
+</section>
+
+<section>
+  <h2>练习：先验收工作台，再判断四个情境</h2>
+  <p>先做一次安装验收。下面四条都成立，才算工作台装好了：</p>
+  <ul>
+    <li><code>npx skills@latest ls -g</code> 里能看到 <code>setup-matt-pocock-skills</code>、<code>triage</code>、<code>grill-with-docs</code>、<code>code-review</code>。</li>
+    <li>沙盒仓库根目录有 <code>AGENTS.md</code>，里面有 <code>## Agent skills</code> 区块。</li>
+    <li><code>docs/agents/</code> 里有 <code>issue-tracker.md</code> 和 <code>domain.md</code>；装了 <code>triage</code> 的话，还应该有 <code>triage-labels.md</code>。</li>
+    <li>没有 <code>GLOSSARY.md</code>、<code>docs/adr/</code>、<code>.scratch/</code> 也没关系——它们是懒创建的。</li>
+  </ul>
+
+  <p>然后做四个情境判断。先写下你会用的技能，再展开「看判断」。答案不唯一，重点是理由。</p>
+
+  <div class="quiz">
+    <div class="quiz-item">
+      <p class="quiz-q">1. GitHub 上堆了 20 个别人提的 issue，格式乱、信息不全。</p>
+      <details><summary>看判断</summary><p class="answer"><b><code>/triage</code>。</b>外部输入先分类、补齐、写成 agent-ready。不要 triage 自己 <code>/to-tickets</code> 产出的工单，那些已经是 agent-ready。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">2. 线上偶发 500，日志看不出原因。</p>
+      <details><summary>看判断</summary><p class="answer"><b><code>/diagnosing-bugs</code>。</b>先要一条能稳定复现的失败命令，再谈原因。没有会红的反馈回路，猜原因只是浪费时间。修完加回归测试，再跑 <code>/retro</code> 问“什么能预防它”。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">3. 下个季度要重做整个知识库，方向还不清楚，一次会话装不下。</p>
+      <details><summary>看判断</summary><p class="answer"><b><code>/wayfinder</code>。</b>先产出决策地图，把雾推掉；地图清楚了再回到 <code>/to-spec</code>，不要直接 implement。它产出决策，不产出功能。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">4. 引用面板到底放侧栏还是就地展开，纸上画不清。</p>
+      <details><summary>看判断</summary><p class="answer"><b><code>/prototype</code>，用 <code>/handoff</code> 进出。</b>这是必须看见才能答的设计问题。原型只回答布局，不顺手做成产品；它回答完，答案回到主线。</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>技能包每台机器装一次，仓库初始化每个仓库做一次；setup 生成的文件是 agent 的长期配置，术语表、ADR、工单目录都是懒创建。</li>
+    <li>五步链路：逼问 → spec → 工单 → 实现（内部 TDD + 单张审查）→ 整条分支审查；每一步都留下可检查的产物，场景里那七个问题各有落点。</li>
+    <li>38 个技能分三层：先学直接对应活动的 18 个，开发辅助按需查，和软件工程无关的留给自己探索；技能包不替你判断。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>主读物：</strong>本机技能文件 <code>C:\Users\admin\.agents\skills\ask-matt\SKILL.md</code>（最新版主线、入口、阶段边界）与 <code>setup-matt-pocock-skills\SKILL.md</code>（安装后的仓库配置）；阶段边界的完整判断树见 <code>ask-matt\PHASE-BOUNDARIES.md</code>；38 个技能的完整清单见 <a href="https://github.com/mattpocock/skills">github.com/mattpocock/skills</a> 的 README。</p>
+  <p><strong>实践样本：</strong><a href="https://cmu-313.github.io/">CMU 17-313</a> 的 Project 1 “Hello, opencode!”；它用 OpenCode 和这套方式做项目，可以作为“这套方法在真实课程里跑过”的参考。</p>
+  <p><strong>说明：</strong>本课的技能清单按 2026 年 10 月的仓库版本整理；技能包更新后，以你装到的 <code>SKILL.md</code> 为准。不要为了背目录去读 38 份文件，地图的作用是让你按需打开。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong><a href="../lessons/0004-domain-language-and-context.html">第 4 课「领域语言：需求的前置条件」</a>。这一课已经讲过技能怎么被调用，也见过了 <code>GLOSSARY.md</code> 这个文件；下一课不再重复总览，直接把 <code>domain-modeling</code> 这一个技能展开，看它背后的理论和具体用法。</p>
+  <p>如果安装的输出和预期不一样，或者哪个情境的判断拿不准，直接问我。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0003-skill-map.html">技能包地图</a></p>
+</footer>
+
+</main>
+</body>
+</html>

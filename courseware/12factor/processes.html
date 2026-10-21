@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>The Twelve-Factor App </title>
+  <meta name="description" content="A methodology for building modern, scalable, maintainable software-as-a-service apps.">
+  <meta name="author" content="Adam Wiggins">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="canonical" href="https://12factor.net/processes">
+  <link rel="alternate" hreflang="x-default" href="https://12factor.net/processes">
+<link rel="alternate" hreflang="cs" href="https://12factor.net/cs/processes">
+<link rel="alternate" hreflang="de" href="https://12factor.net/de/processes">
+<link rel="alternate" hreflang="el" href="https://12factor.net/el/processes">
+<link rel="alternate" hreflang="en" href="https://12factor.net/processes">
+<link rel="alternate" hreflang="es" href="https://12factor.net/es/processes">
+<link rel="alternate" hreflang="fa" href="https://12factor.net/fa/processes">
+<link rel="alternate" hreflang="fr" href="https://12factor.net/fr/processes">
+<link rel="alternate" hreflang="it" href="https://12factor.net/it/processes">
+<link rel="alternate" hreflang="ja" href="https://12factor.net/ja/processes">
+<link rel="alternate" hreflang="ko" href="https://12factor.net/ko/processes">
+<link rel="alternate" hreflang="pl" href="https://12factor.net/pl/processes">
+<link rel="alternate" hreflang="pt_br" href="https://12factor.net/pt_br/processes">
+<link rel="alternate" hreflang="ru" href="https://12factor.net/ru/processes">
+<link rel="alternate" hreflang="sk" href="https://12factor.net/sk/processes">
+<link rel="alternate" hreflang="th" href="https://12factor.net/th/processes">
+<link rel="alternate" hreflang="tr" href="https://12factor.net/tr/processes">
+<link rel="alternate" hreflang="uk" href="https://12factor.net/uk/processes">
+<link rel="alternate" hreflang="vi" href="https://12factor.net/vi/processes">
+<link rel="alternate" hreflang="zh_cn" href="https://12factor.net/zh_cn/processes">
+  <link rel="shortcut icon" href="/images/favicon.ico">
+
+  <link rel="stylesheet" href="/css/screen.css" media="screen">
+  <link rel="stylesheet" href="/css/mobile.css" media="screen">
+
+  <script type="text/javascript" src="//use.typekit.com/rsq7tro.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+</head>
+<body>
+  
+  <!-- Google Tag Manager -->
+  <noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-TK5QTP"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  '//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TK5QTP');</script>
+  <!-- End Google Tag Manager -->
+  
+
+  <header>
+  <div class="header-container">
+  
+    <div class="title-wrapper">
+        <h1><a href="/" title="The Twelve-Factor App">The Twelve-Factor App</a></h1>
+    </div>
+    <div class="top-nav">
+      <ul>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/community">Community</a></li>
+        <li><a href="https://github.com/twelve-factor/twelve-factor" class="github-button">
+          <img src="/images/github-mark.svg" alt="GitHub logo" class="github-logo">GitHub
+        </a></li>
+      </ul>
+    </div>
+  
+  </div>
+  </header>
+
+  <section class="abstract" id="factor">
+  <article class="ltr">
+    
+<h2 id="vi_processes">VI. Processes</h2>
+
+<h3 id="execute_the_app_as_one_or_more_stateless_processes">Execute the app as one or more stateless processes</h3>
+
+<p>The app is executed in the execution environment as one or more <em>processes</em>.</p>
+
+<p>In the simplest case, the code is a stand-alone script, the execution environment is a developer’s local laptop with an installed language runtime, and the process is launched via the command line (for example, <code>python my_script.py</code>). On the other end of the spectrum, a production deploy of a sophisticated app may use many <a href="./concurrency">process types, instantiated into zero or more running processes</a>.</p>
+
+<p><strong>Twelve-factor processes are stateless and <a href="http://en.wikipedia.org/wiki/Shared_nothing_architecture">share-nothing</a>.</strong> Any data that needs to persist must be stored in a stateful <a href="./backing-services">backing service</a>, typically a database.</p>
+
+<p>The memory space or filesystem of the process can be used as a brief, single-transaction cache. For example, downloading a large file, operating on it, and storing the results of the operation in the database. The twelve-factor app never assumes that anything cached in memory or on disk will be available on a future request or job – with many processes of each type running, chances are high that a future request will be served by a different process. Even when running only one process, a restart (triggered by code deploy, config change, or the execution environment relocating the process to a different physical location) will usually wipe out all local (e.g., memory and filesystem) state.</p>
+
+<p>Asset packagers like <a href="http://code.google.com/p/django-assetpackager/">django-assetpackager</a> use the filesystem as a cache for compiled assets. A twelve-factor app prefers to do this compiling during the <a href="/build-release-run">build stage</a>. Asset packagers such as <a href="http://documentcloud.github.io/jammit/">Jammit</a> and the <a href="http://ryanbigg.com/guides/asset_pipeline.html">Rails asset pipeline</a> can be configured to package assets during the build stage.</p>
+
+<p>Some web systems rely on <a href="http://en.wikipedia.org/wiki/Load_balancing_%28computing%29#Persistence">“sticky sessions”</a> – that is, caching user session data in memory of the app’s process and expecting future requests from the same visitor to be routed to the same process. Sticky sessions are a violation of twelve-factor and should never be used or relied upon. Session state data is a good candidate for a datastore that offers time-expiration, such as <a href="http://memcached.org/">Memcached</a> or <a href="http://redis.io/">Redis</a>.</p>
+
+  </article>
+</section>
+
+<section class="concrete">
+  <nav>
+    <div id="locales"><a href="/cs/processes">Česky (cs)</a> | <a href="/de/processes">Deutsch (de)</a> | <a href="/el/processes">Ελληνικά (el)</a> | <span>English (en)</span> | <a href="/es/processes">Español (es)</a> | <a href="/fa/processes">فارسی (fa)</a> | <a href="/fr/processes">Français (fr)</a> | <a href="/it/processes">Italiano (it)</a> | <a href="/ja/processes">日本語 (ja)</a> | <a href="/ko/processes">한국어 (ko)</a> | <a href="/pl/processes">Polski (pl)</a> | <a href="/pt_br/processes">Português do Brasil (pt_br)</a> | <a href="/ru/processes">Русский (ru)</a> | <a href="/sk/processes">Slovensky (sk)</a> | <a href="/th/processes">ภาษาไทย (th)</a> | <a href="/tr/processes">Türkçe (tr)</a> | <a href="/uk/processes">Українська (uk)</a> | <a href="/vi/processes">Tiếng Việt (vi)</a> | <a href="/zh_cn/processes">简体中文 (zh_cn)</a></div>
+    <div id="prev"><a href="./build-release-run">&laquo; Previous</a></div>
+    <div id="next"><a href="./port-binding">Next &raquo;</a></div>
+  </nav>
+</section>
+
+
+  <footer>
+    <p id="locales"><a href="/cs/processes">Česky (cs)</a> | <a href="/de/processes">Deutsch (de)</a> | <a href="/el/processes">Ελληνικά (el)</a> | <span>English (en)</span> | <a href="/es/processes">Español (es)</a> | <a href="/fa/processes">فارسی (fa)</a> | <a href="/fr/processes">Français (fr)</a> | <a href="/it/processes">Italiano (it)</a> | <a href="/ja/processes">日本語 (ja)</a> | <a href="/ko/processes">한국어 (ko)</a> | <a href="/pl/processes">Polski (pl)</a> | <a href="/pt_br/processes">Português do Brasil (pt_br)</a> | <a href="/ru/processes">Русский (ru)</a> | <a href="/sk/processes">Slovensky (sk)</a> | <a href="/th/processes">ภาษาไทย (th)</a> | <a href="/tr/processes">Türkçe (tr)</a> | <a href="/uk/processes">Українська (uk)</a> | <a href="/vi/processes">Tiếng Việt (vi)</a> | <a href="/zh_cn/processes">简体中文 (zh_cn)</a></p>
+    <p>Written by Adam Wiggins • Last updated 2017 • <a href="https://github.com/heroku/12factor">Sourcecode</a> • <a href="/12factor.epub">Download ePub Book</a></p>
+    <p>© Copyright 2026 Salesforce, Inc. All rights reserved. Various trademarks held by their respective owners. Salesforce Tower, 415 Mission Street, 3rd Floor, San Francisco, CA 94105, United States</p>
+    <p class="legal"><a href="https://www.salesforce.com/company/legal/">Legal</a> <a href="https://www.salesforce.com/company/legal/sfdc-website-terms-of-service/">Terms of Service</a> <a href="https://www.salesforce.com/company/privacy/">Privacy Information</a> <a href="https://www.salesforce.com/company/disclosure/">Responsible Disclosure</a> <a href="https://trust.salesforce.com/en/">Trust</a> <a href="https://www.salesforce.com/form/contact/contactme/?d=70130000000EeYa">Contact</a> <span class="cpra"><a rel="nofollow" href="https://www.salesforce.com/form/other/privacy-request/"><img src="/images/privacy.png" aria-label="Privacy Icon" title="Privacy Icon">Your Privacy Choices</a></span> <a class="optanon-toggle-display" rel="nofollow" href="#">Cookie Preferences</a></p>
+  </footer>
+</body>
+</html>

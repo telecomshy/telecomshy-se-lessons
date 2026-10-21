@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技能包地图 · 主流程、入口、工作台</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 3 课</p>
+  <h1>技能包地图</h1>
+  <p class="lede">一条主流程、三个入口、两层词汇、38 个技能的三层索引。软件工程是主线，技能包是练习场；不确定时，先用 <code>/ask-matt</code>。</p>
+</header>
+
+<h2>主流程：五步</h2>
+<div class="flow">
+  <div class="flow-step"><p class="n">1</p><strong><code>/grill-with-docs</code></strong><p>访谈 + 写 GLOSSARY / ADR</p></div>
+  <div class="flow-step"><p class="n">2</p><strong><code>/to-spec</code></strong><p>综合成 spec，确认 seam</p></div>
+  <div class="flow-step"><p class="n">3</p><strong><code>/to-tickets</code></strong><p>纵向切片 + 阻塞边</p></div>
+  <div class="flow-step"><p class="n">4</p><strong><code>/implement</code></strong><p>按工单做，内部 TDD + 审查</p></div>
+  <div class="flow-step"><p class="n">5</p><strong><code>/code-review</code></strong><p>对整条分支做双轴复审</p></div>
+</div>
+<p><strong>收尾：</strong>提交 → 需要时 <code>/pr</code> 写 PR（Pull Request，合并请求）body → <code>/retro</code> 改进 agent 环境。</p>
+<p><strong>旁路：</strong>纸上答不出的设计问题 → <code>/prototype</code>，用 <code>/handoff</code> 进出。<strong>整份 spec：</strong>不想逐张盯 → <code>/implement-spec</code>，子代理并行做 frontier。<strong>小工作：</strong>一次会话能做完 → 直接 <code>/implement</code>。</p>
+
+<h2>三个入口</h2>
+<div class="card-grid">
+  <div class="card-item">
+    <p class="n">外部输入</p>
+    <h3><code>/triage</code></h3>
+    <p>别人提的 issue / PR，先分类、补齐、写成 agent-ready。</p>
+    <p><strong>不要</strong> triage 自己产出的工单。</p>
+  </div>
+  <div class="card-item">
+    <p class="n">坏了</p>
+    <h3><code>/diagnosing-bugs</code></h3>
+    <p>先拿到一条会红的反馈回路，再谈原因。</p>
+    <p>修完加回归测试，再跑 <code>/retro</code>。</p>
+  </div>
+  <div class="card-item">
+    <p class="n">太雾</p>
+    <h3><code>/wayfinder</code></h3>
+    <p>一次会话装不下的大工作，先产出决策地图。</p>
+    <p>它产出决策，不产出功能；地图清了回 <code>/to-spec</code>。</p>
+  </div>
+</div>
+
+<h2>两层词汇</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>层</th><th>管什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">/domain-modeling</td><td>领域语言、<code>GLOSSARY.md</code>、ADR；一个词只准有一个意思。</td></tr>
+      <tr><td class="skill">/codebase-design</td><td>module、interface、depth、seam、adapter、leverage、locality。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>技能怎么被调用</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>类型</th><th>例子</th><th>你做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">用户调用（user-invoked）</td><td><code>/grill-with-docs</code>、<code>/to-spec</code>、<code>/implement</code></td><td>输入命令、提供上下文、做决定。</td></tr>
+      <tr><td class="skill">模型调用（model-invoked）</td><td><code>domain-modeling</code>、<code>codebase-design</code>、<code>tdd</code></td><td>agent 自己拉起；你也可以手动输入。审查产物、做判断。</td></tr>
+      <tr><td class="skill">前置配置</td><td><code>setup-matt-pocock-skills</code></td><td>每个仓库一次。</td></tr>
+      <tr><td class="skill">路由器</td><td><code>ask-matt</code></td><td>不确定时问它。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>阶段边界：五选一</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>选项</th><th>什么时候</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Continue</td><td>下一阶段需要这一阶段的原文，或还有 smart zone（智能区）。</td></tr>
+      <tr><td class="skill">/clear</td><td>上下文对下一步无关。最便宜。</td></tr>
+      <tr><td class="skill">/handoff</td><td>换工具 / 目录 / 同事，或中途分叉。</td></tr>
+      <tr><td class="skill">Subagent</td><td>任务自包含，能离开键盘跑。</td></tr>
+      <tr><td class="skill">/compact</td><td>相关、同环境、你必须在环里。默认，不是首选。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>工作台：两层安装</h2>
+<div class="card-rule">
+  <p><strong>第一层，技能包（每台机器一次）：</strong></p>
+  <pre><code>npx skills@latest add mattpocock/skills -a opencode -g -s "*" --copy</code></pre>
+  <p><strong>验证：</strong><code>npx skills@latest ls -g</code>；<strong>更新：</strong><code>npx skills@latest update -g</code>。</p>
+  <p><strong>第二层，仓库（每个仓库一次）：</strong>在 OpenCode 里运行 <code>/setup-matt-pocock-skills</code>。</p>
+  <p><strong>仓库：</strong><code>D:\code\my_projects\se-course-sandbox</code></p>
+  <p><strong>Issue tracker：</strong>Local markdown，工单在 <code>.scratch/&lt;feature&gt;/</code></p>
+  <p><strong>Triage labels：</strong>默认五个</p>
+  <p><strong>Domain docs：</strong>single-context（<code>GLOSSARY.md</code> + <code>docs/adr/</code>）</p>
+  <p><strong>Agent 入口：</strong><code>AGENTS.md</code></p>
+</div>
+<pre><code>AGENTS.md
+docs/agents/issue-tracker.md
+docs/agents/domain.md
+docs/agents/triage-labels.md   ← 只在装了 triage 时生成</code></pre>
+<p><strong>懒创建：</strong><code>GLOSSARY.md</code>、<code>docs/adr/</code>、<code>.scratch/</code> 等第一次真需要时再建，不提前建空文件。</p>
+<p><strong>版本：</strong>最新版用 <code>GLOSSARY.md</code> / <code>GLOSSARY-MAP.md</code>；旧版用 <code>CONTEXT.md</code> / <code>CONTEXT-MAP.md</code>。以你装到的 <code>SKILL.md</code> 为准。</p>
+
+<h2>38 个技能的三层索引</h2>
+<p><strong>第一层，直接对应软件工程活动（18）：</strong>grill-with-docs、grilling、domain-modeling、to-spec、to-tickets、implement、implement-spec、tdd、code-review、pr、prototype、codebase-design、improve-codebase-architecture、diagnosing-bugs、triage、wayfinder、setup-matt-pocock-skills、retro。</p>
+<p><strong>第二层，开发辅助（12）：</strong>ask-matt、grill-me、research、to-questionnaire、handoff、wait-what、wizard、writing-for-agents、git-guardrails-claude-code、setup-pre-commit、setup-ts-deep-modules（实验）、claude-handoff（实验）。</p>
+<p><strong>第三层，和软件工程无关（8）：</strong>teach、migrate-to-shoehorn、scaffold-exercises、chief-of-staff（实验）、loop-me（实验）、writing-beats（实验）、writing-fragments（实验）、writing-shape（实验）。</p>
+<p><strong>完整说明见第 3 课的表。</strong>你的全局技能目录里可能还有非 Matt 的技能（<code>shy-*</code>、<code>skill-creator</code> 等），它们不在这个仓库里，也不在这 38 个里。</p>
+
+<div class="note">
+  <p><strong>不确定用哪个？</strong>用 <code>/ask-matt</code>。它是路由器，不用靠猜。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0003-ai-practice-and-workbench.html">第 3 课：为什么用这套技能包，以及怎么用</a> · <a href="course-map.html">课程地图</a> · 出处：<code>C:\Users\admin\.agents\skills\ask-matt\SKILL.md</code> 与 <a href="https://github.com/mattpocock/skills">mattpocock/skills</a></p>
+</footer>
+
+</main>
+</body>
+</html>

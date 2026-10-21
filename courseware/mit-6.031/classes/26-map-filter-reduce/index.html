@@ -1,0 +1,922 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Reading 26: Map, Filter, Reduce</title>
+
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#reading_26_map_filter_reduce">Reading 26: Map, Filter, Reduce</a></li><li><a href="#introduction_an_example">Introduction: an example</a></li><li><a href="#abstracting_out_control_flow">Abstracting out control flow</a></li><li><a href="#map">Map</a></li><li><a href="#method_references">Method references</a></li><li><a href="#filter">Filter</a></li><li><a href="#reduce">Reduce</a></li><li><a href="#back_to_the_intro_example">Back to the intro example</a></li><li><a href="#benefits_of_abstracting_out_control">Benefits of abstracting out control</a></li><li><a href="#summary">Summary</a></li><li><a href="#more_practice">More practice</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="reading_26_map_filter_reduce"><iframe class="exercises-status" src="https://6031.mit.edu/handx/sp21-java/status.php"></iframe><a class="jump" href="#reading_26_map_filter_reduce"></a>Reading 26: Map, Filter, Reduce</h1><div data-outline="reading_26_map_filter_reduce">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><h4 id="@software_6-031"><a class="jump" href="#@software_6-031"></a>Software in 6.031</h4>
+
+<table class="table table-striped no-markdown" id="@safe_bugseasy_understandready">
+<tbody><tr><th width="33%"><a class="jump" href="#@safe_bugseasy_understandready"></a>Safe from bugs</th><th>Easy to understand</th><th>Ready for change</th></tr>
+<tr><td>
+  Correct today and correct in the unknown future.
+</td><td>
+  Communicating clearly with future programmers, including future you.
+</td><td>
+  Designed to accommodate change without rewriting.
+</td></tr>
+</tbody></table>
+
+<h4 id="@objectives"><a class="jump" href="#@objectives"></a>Objectives</h4>
+
+<p id="@reading_you-ll_learn"><a class="jump" href="#@reading_you-ll_learn"></a>In this reading you’ll learn a design pattern for implementing functions that operate on sequences of elements, and you’ll see how treating functions themselves as <em>first-class values</em> that we can pass around and manipulate in our programs is an especially powerful idea.</p>
+
+<ul id="@map-filter-reduce_functional_objects">
+<li><a class="jump" href="#@map-filter-reduce_functional_objects"></a>Map/filter/reduce</li>
+<li>Functional objects</li>
+<li>Higher-order functions</li>
+</ul>
+
+<h2 id="introduction_an_example"><a class="jump" href="#introduction_an_example"></a>Introduction: an example</h2><div data-outline="introduction_an_example">
+
+<p id="@suppose_given_following"><a class="jump" href="#@suppose_given_following"></a>Suppose we’re given the following problem: write a method that finds all the words in the Java files in your project.</p>
+
+<p id="@following_good_practice"><a class="jump" href="#@following_good_practice"></a>Following good practice, we break it down into several simpler steps and write a method for each one:</p>
+
+<ul id="@find_all_files_project_scanning_recursively">
+<li><a class="jump" href="#@find_all_files_project_scanning_recursively"></a>find all the files in the project, by scanning recursively from the project’s root folder</li>
+<li>restrict them to files with a particular suffix, in this case <code>.java</code></li>
+<li>open each file and read it in line-by-line</li>
+<li>break each line into words</li>
+</ul>
+
+<p id="@writing_individual_methods"><a class="jump" href="#@writing_individual_methods"></a>Writing the individual methods for these substeps, we’ll find ourselves writing a lot of low-level iteration code.
+For example, here’s what the recursive traversal of the project folder might look like:</p>
+
+<pre id="@find_all_files_filesystem_subtree_rooted"><a class="jump" href="#@find_all_files_filesystem_subtree_rooted"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Find all the files in the filesystem subtree rooted at folder.
+ * <span class="hljs-doctag">@param</span> folder root of subtree, requires folder.isDirectory() == true
+ * <span class="hljs-doctag">@return</span> list of all ordinary files (not folders) that have folder as
+ *         their ancestor
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> List&lt;File&gt; <span class="hljs-title">allFilesIn</span><span class="hljs-params">(File folder)</span> </span>{
+    List&lt;File&gt; files = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();
+    <span class="hljs-keyword">for</span> (File f : folder.listFiles()) {
+        <span class="hljs-keyword">if</span> (f.isDirectory()) {
+            files.addAll(allFilesIn(f));
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (f.isFile()) {
+            files.add(f);
+        }
+    }
+    <span class="hljs-keyword">return</span> files;
+}</code></pre>
+
+<p id="@here-s_filtering_method"><a class="jump" href="#@here-s_filtering_method"></a>And here’s what the filtering method might look like, which restricts that file list down to just the Java files.
+Imagine calling this like <code>onlyFilesWithSuffix(files, ".java")</code>:</p>
+
+<pre id="@filter_list_files"><a class="jump" href="#@filter_list_files"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * Filter a list of files to those that end with suffix.
+ * <span class="hljs-doctag">@param</span> files list of files
+ * <span class="hljs-doctag">@param</span> suffix string to test
+ * <span class="hljs-doctag">@return</span> a new list consisting of only those files whose names end with suffix
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> List&lt;File&gt; <span class="hljs-title">onlyFilesWithSuffix</span><span class="hljs-params">(List&lt;File&gt; files, String suffix)</span> </span>{
+    List&lt;File&gt; result = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();
+    <span class="hljs-keyword">for</span> (File f : files) {
+        <span class="hljs-keyword">if</span> (f.getName().endsWith(suffix)) {
+            result.add(f);
+        }
+    }
+    <span class="hljs-keyword">return</span> result;
+}</code></pre>
+
+<p id="@full_java_code"><a class="jump" href="#@full_java_code"></a><a href="code.html#words1java"><strong>→ full Java code for the example</strong></a></p>
+
+<p id="@reading_discuss_map-filter-reduce"><a class="jump" href="#@reading_discuss_map-filter-reduce"></a>In this reading we discuss <em>map/filter/reduce</em>, a design pattern that substantially simplifies the implementation of functions that operate over sequences of elements.
+In this example, we’ll have lots of sequences — lists of files; input streams that are sequences of lines; lines that are sequences of words.
+Map/filter/reduce will enable us to operate on those sequences with no explicit control flow — not a single <code>for</code> loop or <code>if</code> statement.</p>
+
+<p id="@along_way_also"><a class="jump" href="#@along_way_also"></a>Along the way, we’ll also see another example of an important Big Idea that we encountered in a previous reading: <a href="../25-callbacks/#first-class_functions">functions as <em>first-class</em> data values</a>, meaning that they can be stored in variables, passed as arguments to functions, and created dynamically like other values.</p>
+
+</div><h2 id="abstracting_out_control_flow"><a class="jump" href="#abstracting_out_control_flow"></a>Abstracting out control flow</h2><div data-outline="abstracting_out_control_flow">
+
+<p id="@we-ve_already_seen"><a class="jump" href="#@we-ve_already_seen"></a>We’ve already seen one design pattern that abstracts away from the details of iterating over a data structure: Iterator.</p>
+
+<h3 id="iterator_abstraction"><a class="jump" href="#iterator_abstraction"></a>Iterator abstraction</h3><div data-outline="iterator_abstraction">
+
+<p id="@iterator_gives_you"><a class="jump" href="#@iterator_gives_you"></a>Iterator gives you a sequence of elements from a data structure, without you having to worry about whether the data structure is a set or a hash table or a list or an array — the <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Iterator.html"><code>Iterator</code></a> looks the same no matter what the data structure is.</p>
+
+<p id="@example_given_list-file"><a class="jump" href="#@example_given_list-file"></a>For example, given a <code>List&lt;File&gt; files</code>, we can iterate using indices:</p>
+
+<pre id="@int_ii_0"><a class="jump" href="#@int_ii_0"></a><code class="language-java hljs"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> ii = <span class="hljs-number">0</span>; ii &lt; files.size(); ii++) {
+    File f = files.get(ii);
+    <span class="hljs-comment">// ...</span></code></pre>
+
+<p id="@but_code_depends"><a class="jump" href="#@but_code_depends"></a>But this code depends on the <code>size</code> and <code>get</code> methods of <code>List</code>, which might be different in another data structure.
+Using an iterator abstracts away the details:</p>
+
+<pre id="@iterator-file_iter_files-iterator"><a class="jump" href="#@iterator-file_iter_files-iterator"></a><code class="language-java hljs">Iterator&lt;File&gt; iter = files.iterator();
+<span class="hljs-keyword">while</span> (iter.hasNext()) {
+    File f = iter.next();
+    <span class="hljs-comment">// ...</span></code></pre>
+
+<p id="@now_loop_be"><a class="jump" href="#@now_loop_be"></a>Now the loop will be identical for any type that provides an <code>Iterator</code>.
+There is, in fact, an interface for such types: <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Iterable.html"><code>Iterable</code></a>.
+Any <code>Iterable</code> can be used with Java’s <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/for.html">enhanced for statement</a> — <code>for (File f : files)</code> — and under the hood, it uses an iterator.</p>
+
+</div><h3 id="mapfilterreduce_abstraction"><a class="jump" href="#mapfilterreduce_abstraction"></a>Map/filter/reduce abstraction</h3><div data-outline="mapfilterreduce_abstraction">
+
+<p id="@map-filter-reduce_patterns_reading"><a class="jump" href="#@map-filter-reduce_patterns_reading"></a>The map/filter/reduce patterns in this reading do something similar to Iterator, but at an even higher level: they treat the entire sequence of elements as a unit.
+In this paradigm, the control statements disappear: specifically, the <code>for</code> statements, the <code>if</code> statements, and the <code>return</code> statements in the code from our introductory example will be gone.
+We’ll also be able to get rid of most of the temporary names (i.e., the local variables <code>files</code>, <code>f</code>, and <code>result</code>).</p>
+
+</div><h3 id="streams"><a class="jump" href="#streams"></a>Streams</h3><div data-outline="streams">
+
+<p id="@java_abstract_datatype"><a class="jump" href="#@java_abstract_datatype"></a>Java has an abstract datatype <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/stream/Stream.html"><code>Stream&lt;E&gt;</code></a> that represents a sequence of elements of type <code>E</code>.</p>
+
+<p id="@collection_types_like"><a class="jump" href="#@collection_types_like"></a>Collection types like <code>List</code> and <code>Set</code> provide a <code>stream()</code> operation that returns a <code>Stream</code> for the collection, and there’s an <code>Arrays.stream</code> function for creating a <code>Stream</code> from an array.
+The <code>Stream</code> interface itself provides several static factory creators for streams.</p>
+
+<p id="@here_few_examples"><a class="jump" href="#@here_few_examples"></a>Here are a few examples of streams created in different ways:</p>
+
+<pre id="@list-integer_intlist_list-of-1"><a class="jump" href="#@list-integer_intlist_list-of-1"></a><code class="language-java hljs">List&lt;Integer&gt; intList = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">9</span>, <span class="hljs-number">16</span>);
+Stream&lt;Integer&gt; intStream = intList.stream();
+
+String[] stringArray = <span class="hljs-keyword">new</span> String[] {<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>};
+Stream&lt;String&gt; stringStream = Arrays.stream(stringArray);
+
+Stream&lt;String&gt; moreStringsStream = Stream.concat(stringStream,
+                                                 Stream.of(<span class="hljs-string">"d"</span>, <span class="hljs-string">"e"</span>, <span class="hljs-string">"f"</span>));
+
+Stream&lt;Integer&gt; numbers0Through99 = IntStream.range(<span class="hljs-number">0</span>, <span class="hljs-number">100</span>).boxed();
+            <span class="hljs-comment">// IntStream.range() produces a stream of primitive ints, </span>
+            <span class="hljs-comment">// just like range() in Python.</span>
+            <span class="hljs-comment">// Then boxed() converts it to a Stream of Integer objects.</span></code></pre>
+
+<p id="@three_operations_streams"><a class="jump" href="#@three_operations_streams"></a>We’ll have three operations for streams: map, filter, and reduce.
+Let’s look at each one in turn, and then look at how they work together.</p>
+
+</div></div><h2 id="map"><a class="jump" href="#map"></a>Map</h2><div data-outline="map">
+
+<p><mark data-mark-text="map" data-structure-text="map" id="^map"><strong>Map</strong></mark> applies a unary function to each element in the stream and returns a new stream containing the results, in the same order:</p>
+
+<p id="@map_stream-e_e"><a class="jump" href="#@map_stream-e_e"></a><strong>map : Stream&lt;‍E&gt; × (E → F) → Stream&lt;‍F&gt;</strong></p>
+
+<p>For example:</p>
+
+<pre id="@list-integer_list_list-of-1"><a class="jump" href="#@list-integer_list_list-of-1"></a><code class="language-java hljs">List&lt;Integer&gt; list = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">9</span>, <span class="hljs-number">16</span>);
+Stream&lt;Integer&gt; s = list.stream();
+Stream&lt;Double&gt; t = s.map(x -&gt; Math.sqrt(x));</code></pre>
+
+<p id="@code_starts_stream"><a class="jump" href="#@code_starts_stream"></a>This code starts with a stream <code>s</code> containing the integers <code>1, 4, 9, 16</code>, and applies the square root function to each element to produce the double values <code>1.0, 2.0, 3.0, 4.0</code>.
+In the call <code>s.map(x -&gt; Math.sqrt(x))</code>:</p>
+
+<ul id="@map_type_stream-integer">
+<li><a class="jump" href="#@map_type_stream-integer"></a><code>map</code> has type Stream&lt;‍Integer&gt; × (Integer → Double) → Stream&lt;‍Double&gt;</li>
+<li>the input stream <code>s</code> has type Stream&lt;‍Integer&gt;</li>
+<li>the mapping function <code>x -&gt; Math.sqrt(x)</code> has type Integer → Double</li>
+<li>the return value has type Stream&lt;‍Double&gt;</li>
+</ul>
+
+<p id="@can_write_same"><a class="jump" href="#@can_write_same"></a>We can write the same expression more compactly as:</p>
+
+<pre id="@list-of-1_4_9_16-stream_map-x_math-sqrt-x"><a class="jump" href="#@list-of-1_4_9_16-stream_map-x_math-sqrt-x"></a><code class="language-java hljs">List.of(<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">9</span>, <span class="hljs-number">16</span>).stream()
+    .map(x -&gt; Math.sqrt(x))</code></pre>
+
+<p id="@which_syntax_future"><a class="jump" href="#@which_syntax_future"></a>which is the syntax that future examples will use.
+This kind of function-calling syntax – where the return value of a method is immediately used to call another method – is called <em>method call chaining</em>.
+The result of the <code>List.of()</code> method is chained into the <code>stream()</code> method, and then the result of that is chained into the <code>map</code> method.
+Chaining is a very common pattern in map/filter/reduce code.</p>
+
+<p id="@another_example_map"><a class="jump" href="#@another_example_map"></a>Another example of a map:</p>
+
+<pre id="@list-of-a_b_c-stream"><a class="jump" href="#@list-of-a_b_c-stream"></a><code class="language-java hljs">List.of(<span class="hljs-string">"A"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"C"</span>).stream()
+   .map(s -&gt; s.toLowerCase())</code></pre>
+
+<p id="@which_produces_stream"><a class="jump" href="#@which_produces_stream"></a>which produces a stream containing <code>"a", "b", "c"</code>.</p>
+
+<p id="@operation_captures_common"><a class="jump" href="#@operation_captures_common"></a>This operation captures a common pattern for operating over sequences: doing the same thing to each element of the sequence.</p>
+
+</div><h2 id="method_references"><a class="jump" href="#method_references"></a>Method references</h2><div data-outline="method_references">
+
+<p id="@lambda_expression_like"><a class="jump" href="#@lambda_expression_like"></a>A lambda expression like <code>x -&gt; Math.sqrt(x)</code> has an unnecessary level of indirection – it takes an argument, calls <code>sqrt</code> on that argument, and directly returns the result of <code>sqrt</code>.
+So calling the lambda expression is effectively the same as calling <code>sqrt</code> directly.</p>
+
+<p id="@java_lets_us"><a class="jump" href="#@java_lets_us"></a>Java lets us eliminate this level of indirection by referring to the <code>sqrt</code> method directly:</p>
+
+<pre id="@list-of-1_4_9_16-stream_map-math-sqrt"><a class="jump" href="#@list-of-1_4_9_16-stream_map-math-sqrt"></a><code class="language-java hljs">List.of(<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">9</span>, <span class="hljs-number">16</span>).stream()
+    .map(Math::sqrt)</code></pre>
+
+<p id="@syntax_math-sqrt_called"><a class="jump" href="#@syntax_math-sqrt_called"></a>This syntax, <code>Math::sqrt</code>, is called a <mark data-mark-text="method reference (Java)" data-structure-text="method reference (Java)" id="^method_reference_java"><em>method reference</em></mark>.
+Note the <code>::</code> between the class name and method name, rather than the usual <code>.</code> which distinguishes the method reference from an ordinary method call or field lookup.
+You can read more about <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html"><strong>method references</strong></a> in the Java Tutorials for the details about the several kinds of method references that Java supports, including not only static methods like <code>sqrt</code> but also instance methods like <code>String::toLowerCase</code>.</p>
+
+<p id="@but_pause_here"><a class="jump" href="#@but_pause_here"></a>But let’s pause here for a second, because we’re doing something unusual with functions. The <code>map</code> method takes a reference to a <em>function</em> as its argument — not to the result of that function.
+When we wrote <code>map(Math::sqrt)</code>, we didn’t <em>call</em> <code>sqrt</code>, like <code>Math.sqrt(25)</code> is a call.
+Instead we referred to the function itself by name.
+<code>Math::sqrt</code> is a reference to an object representing the <code>sqrt</code> function.
+The type of that object is <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/function/Function.html"><code>Function&lt;T,R&gt;</code></a>, which represents unary functions from <code>T</code> to <code>R</code>.
+The primary operation of a <code>Function</code> is <code>apply()</code>, which calls the function with an argument.
+So <code>(Math::sqrt).apply(25.0)</code> returns <code>5.0</code>, just like <code>Math.sqrt(25.0)</code> would.  </p>
+
+<p id="@but_you_can"><a class="jump" href="#@but_you_can"></a>But you can also assign that functional object to another variable if you like, and it still behaves like <code>sqrt</code>:</p>
+
+<pre id="@function-double-double_mysquareroot_math-sqrt"><a class="jump" href="#@function-double-double_mysquareroot_math-sqrt"></a><code class="language-java hljs">Function&lt;Double,Double&gt; mySquareRoot = Math::sqrt;
+mySquareRoot.apply(<span class="hljs-number">16.0</span>); <span class="hljs-comment">// returns 4.0</span></code></pre>
+
+<p id="@you_can_also"><a class="jump" href="#@you_can_also"></a>You can also pass a reference to the functional object as a parameter to another function, and that’s what we’re doing here with <code>map</code>.
+You can use functional objects the same way you would use any other value in Java, like ints or string references or other object references.
+Even though a function itself is not strictly <a href="../25-callbacks/#first-class_functions">first-class</a> in Java, using a functional object achieves the same effect.</p>
+
+<h3 id="more_ways_to_use_map"><a class="jump" href="#more_ways_to_use_map"></a>More ways to use map</h3><div data-outline="more_ways_to_use_map">
+
+<p id="@map_useful_even"><a class="jump" href="#@map_useful_even"></a>Map is useful even if you don’t care about the return value of the function.
+When you have a sequence of mutable objects, for example, you may want to map a mutator operation over them.
+Because mutator operations typically return <code>void</code>, however, Java requires using <code>forEach</code> instead of <code>map</code>.
+<code>forEach</code> applies the function to each element of the stream, but does not collect their return values into a new stream:</p>
+
+<pre id="@stream-thread_threads_threadlist-stream"><a class="jump" href="#@stream-thread_threads_threadlist-stream"></a><code class="language-java hljs">Stream&lt;Thread&gt; threads = threadList.stream();
+threadList.stream().forEach(Thread::join);
+
+Stream&lt;Socket&gt; sockets = socketList.stream();
+sockets.forEach(Socket::close);</code></pre>
+
+<div class="handout-solo alert alert-warning"><p id="@be_careful_using"><a class="jump" href="#@be_careful_using"></a>Be careful when using functions that have side-effects in <code>map</code> and <code>forEach</code>.
+As we will see at the end of this handout, these methods make no guarantees about the order of execution of the function on elements of the stream, because it’s possible for stream operations to be executed in parallel, in separate threads.
+So the function that you pass to <code>map</code> or <code>forEach</code> has to be <a href="https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/stream/package-summary.html#Statelessness" class="alert-link">stateless</a>, meaning that its behavior should not depend on any state that changes over the course of executing the <code>map</code> or <code>forEach</code>.</p></div>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-method_references"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-method_references-map_1" data-target="#ex-method_references-map_1" data-toggle="collapse"><a class="jump" href="#@ex-method_references-map_1"></a><span class="panel-title">map 1</span></div><div class="panel-collapse collapse exercise-panel" id="ex-method_references-map_1" data-outline="map_1" data-ex-id="more_ways_to_use_map/map_1" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>What sequence is the result of</p>
+
+<pre><code class="language-java hljs">List.of(<span class="hljs-string">"1"</span>, <span class="hljs-string">"2"</span>, <span class="hljs-string">"3"</span>).stream()
+    .map(String::length);</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="1"><label for="md_converted_choice_1_0"><input type="radio" id="md_converted_choice_1_0" name="md_converted_radio_1"><code>1</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[1, 1, 1]"><label for="md_converted_choice_1_1"><input type="radio" id="md_converted_choice_1_1" name="md_converted_radio_1"><code>[1, 1, 1]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[1, 2, 3]"><label for="md_converted_choice_1_2"><input type="radio" id="md_converted_choice_1_2" name="md_converted_radio_1"><code>[1, 2, 3]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[ &quot;1&quot;, &quot;1&quot;, &quot;1&quot; ]"><label for="md_converted_choice_1_3"><input type="radio" id="md_converted_choice_1_3" name="md_converted_radio_1"><code>[ "1", "1", "1" ]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[ &quot;1&quot;, &quot;2&quot;, &quot;3&quot; ]"><label for="md_converted_choice_1_4"><input type="radio" id="md_converted_choice_1_4" name="md_converted_radio_1"><code>[ "1", "2", "3" ]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_1_5"><input type="radio" id="md_converted_choice_1_5" name="md_converted_radio_1">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_1_6"><input type="radio" id="md_converted_choice_1_6" name="md_converted_radio_1">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-method_references-map_2" data-target="#ex-method_references-map_2" data-toggle="collapse"><a class="jump" href="#@ex-method_references-map_2"></a><span class="panel-title">map 2</span></div><div class="panel-collapse collapse exercise-panel" id="ex-method_references-map_2" data-outline="map_2" data-ex-id="more_ways_to_use_map/map_2" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>What sequence is the result of</p>
+
+<pre><code class="language-java hljs">List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>).stream()
+    .map(String::length);</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="1"><label for="md_converted_choice_2_0"><input type="radio" id="md_converted_choice_2_0" name="md_converted_radio_2"><code>1</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[1, 1, 1]"><label for="md_converted_choice_2_1"><input type="radio" id="md_converted_choice_2_1" name="md_converted_radio_2"><code>[1, 1, 1]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[1, 2, 3]"><label for="md_converted_choice_2_2"><input type="radio" id="md_converted_choice_2_2" name="md_converted_radio_2"><code>[1, 2, 3]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[ &quot;1&quot;, &quot;1&quot;, &quot;1&quot; ]"><label for="md_converted_choice_2_3"><input type="radio" id="md_converted_choice_2_3" name="md_converted_radio_2"><code>[ "1", "1", "1" ]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[ &quot;1&quot;, &quot;2&quot;, &quot;3&quot; ]"><label for="md_converted_choice_2_4"><input type="radio" id="md_converted_choice_2_4" name="md_converted_radio_2"><code>[ "1", "2", "3" ]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_2_5"><input type="radio" id="md_converted_choice_2_5" name="md_converted_radio_2">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_2_6"><input type="radio" id="md_converted_choice_2_6" name="md_converted_radio_2">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="filter"><a class="jump" href="#filter"></a>Filter</h2><div data-outline="filter">
+
+<p id="@our_next_important"><a class="jump" href="#@our_next_important"></a>Our next important sequence operation is <mark data-structure-text="filter" id="^filter"><strong>filter</strong></mark>, which tests each element with a unary predicate, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/function/Predicate.html"><code>Predicate&lt;T&gt;</code></a>, which represents functions from <code>T</code> to boolean.</p>
+
+<p id="@elements_satisfy_predicate"><a class="jump" href="#@elements_satisfy_predicate"></a>Elements that satisfy the predicate are kept; those that don’t are removed.
+A new sequence is returned; filter doesn’t modify its input sequence.</p>
+
+<p id="@filter_stream-e_e"><a class="jump" href="#@filter_stream-e_e"></a><strong>filter : Stream&lt;‍E&gt; × (E → boolean) → Stream&lt;‍E&gt;</strong></p>
+
+<p id="@examples"><a class="jump" href="#@examples"></a>Examples:</p>
+
+<pre id="@list-of-x_y_2"><a class="jump" href="#@list-of-x_y_2"></a><code class="language-java hljs">List.of(<span class="hljs-string">'x'</span>, <span class="hljs-string">'y'</span>, <span class="hljs-string">'2'</span>, <span class="hljs-string">'3'</span>, <span class="hljs-string">'a'</span>).stream()
+   .filter(Character::isLetter)
+<span class="hljs-comment">// returns the stream ['x', 'y', 'a']</span>
+
+List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>).stream()
+   .filter(x -&gt; x%<span class="hljs-number">2</span> == <span class="hljs-number">1</span>)
+<span class="hljs-comment">// returns the stream [1, 3]</span>
+
+List.of(<span class="hljs-string">"abc"</span>, <span class="hljs-string">""</span>, <span class="hljs-string">"d"</span>).stream()
+   .filter(s -&gt; !s.isEmpty())
+<span class="hljs-comment">// returns the stream ["abc", "d"]</span></code></pre>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-filter"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-filter-filter_1" data-target="#ex-filter-filter_1" data-toggle="collapse"><a class="jump" href="#@ex-filter-filter_1"></a><span class="panel-title">filter 1</span></div><div class="panel-collapse collapse exercise-panel" id="ex-filter-filter_1" data-outline="filter_1" data-ex-id="filter/filter_1" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>Given:</p>
+
+<pre><code class="language-java hljs">String s1 = <span class="hljs-string">"Abel"</span>;
+String s2 = <span class="hljs-string">"Baker"</span>;
+String s3 = <span class="hljs-string">"Charlie"</span>;</code></pre>
+
+<p>What sequence is the result of</p>
+
+<pre id="@list-of-s1_s2_s3-stream_filter-s_s-startswith-a"><a class="jump" href="#@list-of-s1_s2_s3-stream_filter-s_s-startswith-a"></a><code class="language-java hljs">List.of(s1, s2, s3).stream()
+    .filter(s -&gt; s.startsWith(<span class="hljs-string">"A"</span>));</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="[s1, s2, s3]"><label for="md_converted_choice_3_0"><input type="radio" id="md_converted_choice_3_0" name="md_converted_radio_3"><code>[s1, s2, s3]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;Abel&quot;, &quot;Baker&quot;, &quot;Charlie&quot;]"><label for="md_converted_choice_3_1"><input type="radio" id="md_converted_choice_3_1" name="md_converted_radio_3"><code>["Abel", "Baker", "Charlie"]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;Abel&quot;, &quot;&quot;, &quot;&quot;]"><label for="md_converted_choice_3_2"><input type="radio" id="md_converted_choice_3_2" name="md_converted_radio_3"><code>["Abel", "", ""]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;Abel&quot;]"><label for="md_converted_choice_3_3"><input type="radio" id="md_converted_choice_3_3" name="md_converted_radio_3"><code>["Abel"]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[]"><label for="md_converted_choice_3_4"><input type="radio" id="md_converted_choice_3_4" name="md_converted_radio_3"><code>[]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_3_5"><input type="radio" id="md_converted_choice_3_5" name="md_converted_radio_3">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_3_6"><input type="radio" id="md_converted_choice_3_6" name="md_converted_radio_3">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-filter-filter_2" data-target="#ex-filter-filter_2" data-toggle="collapse"><a class="jump" href="#@ex-filter-filter_2"></a><span class="panel-title">filter 2</span></div><div class="panel-collapse collapse exercise-panel" id="ex-filter-filter_2" data-outline="filter_2" data-ex-id="filter/filter_2" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p id="@again_given"><a class="jump" href="#@again_given"></a>Again given:</p>
+
+<pre><code class="language-java hljs">String s1 = <span class="hljs-string">"Abel"</span>;
+String s2 = <span class="hljs-string">"Baker"</span>;
+String s3 = <span class="hljs-string">"Charlie"</span>;</code></pre>
+
+<p>What sequence is the result of</p>
+
+<pre id="@list-of-s1_s2_s3-stream_filter-s_s-startswith-z"><a class="jump" href="#@list-of-s1_s2_s3-stream_filter-s_s-startswith-z"></a><code class="language-java hljs">List.of(s1, s2, s3).stream()
+    .filter(s -&gt; s.startsWith(<span class="hljs-string">"Z"</span>));</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="[s1, s2, s3]"><label for="md_converted_choice_4_0"><input type="radio" id="md_converted_choice_4_0" name="md_converted_radio_4"><code>[s1, s2, s3]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;Abel&quot;, &quot;Baker&quot;, &quot;Charlie&quot;]"><label for="md_converted_choice_4_1"><input type="radio" id="md_converted_choice_4_1" name="md_converted_radio_4"><code>["Abel", "Baker", "Charlie"]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;&quot;, &quot;&quot;, &quot;&quot;]"><label for="md_converted_choice_4_2"><input type="radio" id="md_converted_choice_4_2" name="md_converted_radio_4"><code>["", "", ""]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[]"><label for="md_converted_choice_4_3"><input type="radio" id="md_converted_choice_4_3" name="md_converted_radio_4"><code>[]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_4_4"><input type="radio" id="md_converted_choice_4_4" name="md_converted_radio_4">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_4_5"><input type="radio" id="md_converted_choice_4_5" name="md_converted_radio_4">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-filter-filter_3" data-target="#ex-filter-filter_3" data-toggle="collapse"><a class="jump" href="#@ex-filter-filter_3"></a><span class="panel-title">filter 3</span></div><div class="panel-collapse collapse exercise-panel" id="ex-filter-filter_3" data-outline="filter_3" data-ex-id="filter/filter_3" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>What is the result of </p>
+
+<pre id="@list-of-a_1_b_2-stream_filter-character-isdigit"><a class="jump" href="#@list-of-a_1_b_2-stream_filter-character-isdigit"></a><code class="language-java hljs">List.of(<span class="hljs-string">'a'</span>, <span class="hljs-string">'1'</span>, <span class="hljs-string">'b'</span>, <span class="hljs-string">'2'</span>).stream()
+    .filter(Character::isDigit);</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="&quot;&quot;"><label for="md_converted_choice_5_0"><input type="radio" id="md_converted_choice_5_0" name="md_converted_radio_5"><code>""</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;12&quot;"><label for="md_converted_choice_5_1"><input type="radio" id="md_converted_choice_5_1" name="md_converted_radio_5"><code>"12"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;12&quot;]"><label for="md_converted_choice_5_2"><input type="radio" id="md_converted_choice_5_2" name="md_converted_radio_5"><code>["12"]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="['1', '2']"><label for="md_converted_choice_5_3"><input type="radio" id="md_converted_choice_5_3" name="md_converted_radio_5"><code>['1', '2']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[null, '1', null, '2']"><label for="md_converted_choice_5_4"><input type="radio" id="md_converted_choice_5_4" name="md_converted_radio_5"><code>[null, '1', null, '2']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="['a', '1', 'b', '2']"><label for="md_converted_choice_5_5"><input type="radio" id="md_converted_choice_5_5" name="md_converted_radio_5"><code>['a', '1', 'b', '2']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_5_6"><input type="radio" id="md_converted_choice_5_6" name="md_converted_radio_5">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_5_7"><input type="radio" id="md_converted_choice_5_7" name="md_converted_radio_5">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-filter-filter_4" data-target="#ex-filter-filter_4" data-toggle="collapse"><a class="jump" href="#@ex-filter-filter_4"></a><span class="panel-title">filter 4</span></div><div class="panel-collapse collapse exercise-panel" id="ex-filter-filter_4" data-outline="filter_4" data-ex-id="filter/filter_4" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>What is the result of </p>
+
+<pre id="@list-of-a_1_b_2-stream_filter_character-isdigit"><a class="jump" href="#@list-of-a_1_b_2-stream_filter_character-isdigit"></a><code class="language-java hljs">List.of(<span class="hljs-string">'a'</span>, <span class="hljs-string">'1'</span>, <span class="hljs-string">'b'</span>, <span class="hljs-string">'2'</span>).stream()
+    .filter( ! Character::isDigit);</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="&quot;&quot;"><label for="md_converted_choice_6_0"><input type="radio" id="md_converted_choice_6_0" name="md_converted_radio_6"><code>""</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="&quot;ab&quot;"><label for="md_converted_choice_6_1"><input type="radio" id="md_converted_choice_6_1" name="md_converted_radio_6"><code>"ab"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[&quot;ab&quot;]"><label for="md_converted_choice_6_2"><input type="radio" id="md_converted_choice_6_2" name="md_converted_radio_6"><code>["ab"]</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="['a', 'b']"><label for="md_converted_choice_6_3"><input type="radio" id="md_converted_choice_6_3" name="md_converted_radio_6"><code>['a', 'b']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="[null, 'a', null, 'b']"><label for="md_converted_choice_6_4"><input type="radio" id="md_converted_choice_6_4" name="md_converted_radio_6"><code>[null, 'a', null, 'b']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="['a', '1', 'b', '2']"><label for="md_converted_choice_6_5"><input type="radio" id="md_converted_choice_6_5" name="md_converted_radio_6"><code>['a', '1', 'b', '2']</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="static error"><label for="md_converted_choice_6_6"><input type="radio" id="md_converted_choice_6_6" name="md_converted_radio_6">static error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="dynamic error"><label for="md_converted_choice_6_7"><input type="radio" id="md_converted_choice_6_7" name="md_converted_radio_6">dynamic error</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="reduce"><a class="jump" href="#reduce"></a>Reduce</h2><div data-outline="reduce">
+
+<p id="@our_final_operator"><a class="jump" href="#@our_final_operator"></a>Our final operator, <mark data-structure-text="reduce" id="^reduce"><strong>reduce</strong></mark>, combines the elements of the sequence together, using a binary function.
+In addition to the function and the list, it also takes an <em>initial value</em> that initializes the reduction, and that ends up being the return value if the list is empty:</p>
+
+<p><strong>reduce : Stream&lt;‍E&gt; × E × (E × E → E) → E</strong></p>
+
+<p id="@stream-reduce-init_f_combines"><a class="jump" href="#@stream-reduce-init_f_combines"></a><code>stream.reduce(init, f)</code> combines the elements of the stream together.
+Here is one way that it might compute the result:</p>
+
+<blockquote class="no-markdown">result<sub>0</sub> = init
+<br>result<sub>1</sub> = f(result<sub>0</sub>, stream[0])
+<br>result<sub>2</sub> = f(result<sub>1</sub>, stream[1])
+<br>...
+<br>result<sub>n</sub> = f(result<sub>n-1</sub>, stream[n-1])
+</blockquote>
+
+<p class="no-markdown" id="@resultn_final_result"><a class="jump" href="#@resultn_final_result"></a>result<sub>n</sub> is the final result for an n-element sequence.</p>
+
+<p id="@adding_numbers_probably"><a class="jump" href="#@adding_numbers_probably"></a>Adding numbers is probably the most straightforward example:</p>
+
+<pre id="@list-of-1-2-3-stream_reduce-0_x-y_x-y_computes_0-1-2-3"><a class="jump" href="#@list-of-1-2-3-stream_reduce-0_x-y_x-y_computes_0-1-2-3"></a><code class="language-java hljs">List.of(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>).stream()
+    .reduce(<span class="hljs-number">0</span>, (x,y) -&gt; x+y)
+<span class="hljs-comment">// computes (((0+1)+2)+3) to produce the integer 6</span></code></pre>
+
+<h3 id="initial_value"><a class="jump" href="#initial_value"></a>Initial value</h3><div data-outline="initial_value">
+
+<p id="@there_three_design"><a class="jump" href="#@there_three_design"></a>There are three design choices in the reduce operation.
+First is whether to require an initial value.
+In Java, the initial value can be omitted, in which case reduce uses the first element of the stream as the initial value of the reduction.
+But if the stream is empty, then reduce has no value to return, so this version of the <code>reduce</code> operation has return type <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Optional.html"><code>Optional&lt;E&gt;</code></a>.</p>
+
+<p id="@makes_easier_use"><a class="jump" href="#@makes_easier_use"></a>This makes it easier to use reducers like <code>max</code>, which have no well-defined initial value:</p>
+
+<pre id="@list-of-5_8_3"><a class="jump" href="#@list-of-5_8_3"></a><code class="language-java hljs">List.of(<span class="hljs-number">5</span>, <span class="hljs-number">8</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>).stream()
+    .reduce(Math::max)
+<span class="hljs-comment">// computes max(max(max(5,8),3),1) and returns an Optional&lt;Integer&gt; value containing 8</span></code></pre>
+
+</div><h3 id="order_of_operations"><a class="jump" href="#order_of_operations"></a>Order of operations</h3><div data-outline="order_of_operations">
+
+<p id="@second_design_choice"><a class="jump" href="#@second_design_choice"></a>The second design choice is the order in which the elements are accumulated.
+Java’s reduce operation requires that the operator be associative, like <code>+</code> and <code>max</code>.  For associative operators, the order of combination makes no difference, and this gives the Java implementation a great deal of flexibility, including the ability to automatically parallelize the computation, which will be discussed later.</p>
+
+<p id="@but_other_languages"><a class="jump" href="#@but_other_languages"></a>But other languages allow non-associative operators to be used in reductions, and then the order of combination matters.
+Python’s reduce, called <strong>fold-left</strong> in other programming languages, combines the sequence starting from the left (the first element):</p>
+
+<blockquote class="no-markdown">result<sub>0</sub> = init
+<br>result<sub>1</sub> = f(result<sub>0</sub>, stream[0])
+<br>result<sub>2</sub> = f(result<sub>1</sub>, stream[1])
+<br>...
+<br>result<sub>n</sub> = f(result<sub>n-1</sub>, stream[n-1])
+</blockquote>
+
+<p id="@fold-right_goes_other"><a class="jump" href="#@fold-right_goes_other"></a><strong>Fold-right</strong> goes in the other direction:</p>
+
+<blockquote class="no-markdown">result<sub>0</sub> = init
+<br>result<sub>1</sub> = f(stream[n-1], result<sub>0</sub>)
+<br>result<sub>2</sub> = f(stream[n-2], result<sub>1</sub>)
+<br>...
+<br>result<sub>n</sub> = f(stream[0], result<sub>n-1</sub>)
+</blockquote>
+
+<p class="no-markdown" id="@produce_resultn_final"><a class="jump" href="#@produce_resultn_final"></a>to produce result<sub>n</sub> as the final result.</p>
+
+<p id="@here-s_diagram_two"><a class="jump" href="#@here-s_diagram_two"></a>Here’s a diagram of two ways to reduce, from the left or from the right.
+If the operator is non-associative (like subtraction, shown here), then each direction might produce a different answer:</p>
+
+<table class="no-markdown" id="@fold-left_1_2">
+<tbody><tr>
+<td rowspan="2"><a class="jump" href="#@fold-left_1_2"></a><img src="fold-left.svg"></td>
+<td valign="top" style="text-align: left; padding: .75em 1.5em .75em 1.5em;"><strong>fold-left( [1, 2, 3], 0, – )</strong><br> = ((0 - 1) - 2) - 3<br> = -6</td>
+<td style="padding: 2em;"></td>
+<td valign="top" style="text-align: right; padding: .75em 1.5em .75em 1.5em;"><strong>fold-right( [1, 2, 3], 0, – )</strong><br> = 1 - (2 - (3 - 0))<br> = 2</td>
+<td rowspan="2"><img src="fold-right.svg"></td>
+</tr>
+<tr>
+<td>
+</td></tr>
+</tbody></table>
+
+<p id="@java_because_operator"><a class="jump" href="#@java_because_operator"></a>In Java, because the operator is required to be associative, the implementation of <code>reduce</code> is free to choose any order of combination, including partial combinations from within the sequence.
+So the reduction</p>
+
+<pre><code class="language-java hljs">List.of(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>).stream()
+   .reduce(<span class="hljs-number">0</span>, (x,y) -&gt; x+y)</code></pre>
+
+<p id="@can_be_computed"><a class="jump" href="#@can_be_computed"></a>can be computed in any of these orders:</p>
+
+<pre id="@0-1-2-3_6_0-1-2-3"><a class="jump" href="#@0-1-2-3_6_0-1-2-3"></a><code class="language-java hljs">((<span class="hljs-number">0</span>+<span class="hljs-number">1</span>)+<span class="hljs-number">2</span>)+<span class="hljs-number">3</span> = <span class="hljs-number">6</span>
+(<span class="hljs-number">0</span>+<span class="hljs-number">1</span>)+(<span class="hljs-number">2</span>+<span class="hljs-number">3</span>) = <span class="hljs-number">6</span>
+<span class="hljs-number">0</span>+((<span class="hljs-number">1</span>+<span class="hljs-number">2</span>)+<span class="hljs-number">3</span>) = <span class="hljs-number">6</span>
+<span class="hljs-number">0</span>+(<span class="hljs-number">1</span>+(<span class="hljs-number">2</span>+<span class="hljs-number">3</span>)) = <span class="hljs-number">6</span></code></pre>
+
+</div><h3 id="reduction_to_another_type"><a class="jump" href="#reduction_to_another_type"></a>Reduction to another type</h3><div data-outline="reduction_to_another_type">
+
+<p id="@third_design_choice"><a class="jump" href="#@third_design_choice"></a>The third design choice is the return type of the reduce operation.
+It doesn’t necessarily have to match the type of the sequence elements.
+For example, we can use reduce to concatenate a sequence of integers (type E) into a string (type F).
+But because Java leaves the order of combination unspecified, this requires <em>two</em> binary operators with slightly different type signatures:</p>
+
+<ul>
+<li><p id="@accumulator_f_e"><a class="jump" href="#@accumulator_f_e"></a>an accumulator ⊙ : F × E → F that adds an element from the sequence (of type E) into the growing result (of type F)</p></li>
+<li><p id="@combiner_f_f"><a class="jump" href="#@combiner_f_f"></a>a combiner ⊗ : F × F → F that combines two partial results, each accumulated from part of the sequence, into a growing result</p></li>
+</ul>
+
+<p id="@so_most_general"><a class="jump" href="#@so_most_general"></a>So the most general form of reduce in Java looks like this:</p>
+
+<p id="@reduce_stream-e_f"><a class="jump" href="#@reduce_stream-e_f"></a><strong>reduce : Stream&lt;‍E&gt; × F × (F × E → F) × (F × F → F) → F</strong></p>
+
+<p id="@here-s_simple_example"><a class="jump" href="#@here-s_simple_example"></a>Here’s a simple example that concatenates a sequence of integers into a string:</p>
+
+<pre id="@list-of-1-2-3-stream_reduce_identity"><a class="jump" href="#@list-of-1-2-3-stream_reduce_identity"></a><code class="language-java hljs">List.of(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>).stream()
+   .reduce(
+       <span class="hljs-string">""</span>,                           <span class="hljs-comment">// identity value</span>
+       (String s, Integer n) -&gt; s+n, <span class="hljs-comment">// accumulator</span>
+       (String s, String t) -&gt; s+t   <span class="hljs-comment">// combiner</span>
+   )
+<span class="hljs-comment">// returns "123"</span></code></pre>
+
+<p id="@we-ve_included_parameter"><a class="jump" href="#@we-ve_included_parameter"></a>We’ve included parameter type declarations in the lambda expressions above in order to clarify the difference between the accumulator and the combiner.
+The accumulator ⊙ and combiner ⊗ must both be associative, and must also be consistent with each other in the sense that any order of applying accumulators and combiners to the initial value and the elements of the sequence must produce the same result:</p>
+
+<pre id="@1_2_3"><a class="jump" href="#@1_2_3"></a><code class="language-java hljs">((<span class="hljs-string">""</span> ⊙ <span class="hljs-number">1</span>) ⊙ <span class="hljs-number">2</span>) ⊙ <span class="hljs-number">3</span> = <span class="hljs-string">"123"</span>
+(<span class="hljs-string">""</span> ⊙ <span class="hljs-number">1</span>) ⊗ ((<span class="hljs-string">""</span> ⊙ <span class="hljs-number">2</span>) ⊙ <span class="hljs-number">3</span>) = <span class="hljs-string">"123"</span>
+(<span class="hljs-string">""</span> ⊙ <span class="hljs-number">1</span>) ⊗ ((<span class="hljs-string">""</span> ⊙ <span class="hljs-number">2</span>) ⊗ (<span class="hljs-string">""</span> ⊙ <span class="hljs-number">3</span>)) = <span class="hljs-string">"123"</span></code></pre>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-reduce"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-reduce-reduce_1" data-target="#ex-reduce-reduce_1" data-toggle="collapse"><a class="jump" href="#@ex-reduce-reduce_1"></a><span class="panel-title">reduce 1</span></div><div class="panel-collapse collapse exercise-panel" id="ex-reduce-reduce_1" data-outline="reduce_1" data-ex-id="reduction_to_another_type/reduce_1" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<pre id="@list-of-e1_e2_e3-stream"><a class="jump" href="#@list-of-e1_e2_e3-stream"></a><code class="language-java hljs">List.of(e1, e2, e3).stream()
+    .reduce(<span class="hljs-keyword">true</span>, 
+            (Boolean x, String y) -&gt; x &amp;&amp; y.equals(<span class="hljs-string">"true"</span>),
+            (Boolean x, Boolean y) -&gt; x &amp;&amp; y);</code></pre>
+
+<p id="@reduction_should_be"><a class="jump" href="#@reduction_should_be"></a>In this reduction, what should be the type of the elements <code>e1,e2,e3</code>?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="boolean"><label for="md_converted_choice_10_0"><input type="radio" id="md_converted_choice_10_0" name="md_converted_radio_10"><code>boolean</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="int"><label for="md_converted_choice_10_1"><input type="radio" id="md_converted_choice_10_1" name="md_converted_radio_10"><code>int</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="String"><label for="md_converted_choice_10_2"><input type="radio" id="md_converted_choice_10_2" name="md_converted_radio_10"><code>String</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="String × boolean → boolean"><label for="md_converted_choice_10_3"><input type="radio" id="md_converted_choice_10_3" name="md_converted_radio_10"><code>String</code> × <code>boolean</code> → <code>boolean</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="boolean × boolean → boolean"><label for="md_converted_choice_10_4"><input type="radio" id="md_converted_choice_10_4" name="md_converted_radio_10"><code>boolean</code> × <code>boolean</code> → <code>boolean</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p id="@assuming_e1-e2-e3_type"><a class="jump" href="#@assuming_e1-e2-e3_type"></a>Assuming <code>e1,e2,e3</code> have that type, which is the best description of the behavior of this reduction?</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="always returns false"><label for="md_converted_choice_11_0"><input type="radio" id="md_converted_choice_11_0" name="md_converted_radio_11">always returns <code>false</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns true iff the list is empty"><label for="md_converted_choice_11_1"><input type="radio" id="md_converted_choice_11_1" name="md_converted_radio_11">returns <code>true</code> iff the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns true iff e1,e2,e3 are all true"><label for="md_converted_choice_11_2"><input type="radio" id="md_converted_choice_11_2" name="md_converted_radio_11">returns <code>true</code> iff <code>e1,e2,e3</code> are all <code>true</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns true iff e1,e2,e3 are strings"><label for="md_converted_choice_11_3"><input type="radio" id="md_converted_choice_11_3" name="md_converted_radio_11">returns <code>true</code> iff <code>e1,e2,e3</code> are strings</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns true iff e1,e2,e3 are all the string &quot;true&quot;"><label for="md_converted_choice_11_4"><input type="radio" id="md_converted_choice_11_4" name="md_converted_radio_11">returns <code>true</code> iff <code>e1,e2,e3</code> are all the string <code>"true"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="returns true iff at least one of e1,e2,e3 is the string &quot;true&quot;"><label for="md_converted_choice_11_5"><input type="radio" id="md_converted_choice_11_5" name="md_converted_radio_11">returns <code>true</code> iff at least one of <code>e1,e2,e3</code> is the string <code>"true"</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-reduce-reduce_2" data-target="#ex-reduce-reduce_2" data-toggle="collapse"><a class="jump" href="#@ex-reduce-reduce_2"></a><span class="panel-title">reduce 2</span></div><div class="panel-collapse collapse exercise-panel" id="ex-reduce-reduce_2" data-outline="reduce_2" data-ex-id="reduction_to_another_type/reduce_2" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p>What is the result of:</p>
+
+<pre id="@list-of-1_2_3-stream_reduce-0_a-b_a-b"><a class="jump" href="#@list-of-1_2_3-stream_reduce-0_a-b_a-b"></a><code class="language-java hljs">List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>).stream()
+    .reduce(<span class="hljs-number">0</span>, (a,b) -&gt; a*b)</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="textfield ttfont exercise-choice"><input type="text" class="form-control" style="width: 25%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p>What is the result of:</p>
+
+<pre id="@list-of-oscar_papa_tango-stream"><a class="jump" href="#@list-of-oscar_papa_tango-stream"></a><code class="language-java hljs">List.of(<span class="hljs-string">"oscar"</span>, <span class="hljs-string">"papa"</span>, <span class="hljs-string">"tango"</span>).stream()
+    .reduce((a,b) -&gt; a.length() &gt; b.length() ? a : b)</code></pre>
+
+<div class="form-group exercise-part" data-outline="b"><div class="textfield ttfont exercise-choice"><input type="text" class="form-control" style="width: 50%;"><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-reduce-reduce_3" data-target="#ex-reduce-reduce_3" data-toggle="collapse"><a class="jump" href="#@ex-reduce-reduce_3"></a><span class="panel-title">reduce 3</span></div><div class="panel-collapse collapse exercise-panel" id="ex-reduce-reduce_3" data-outline="reduce_3" data-ex-id="reduction_to_another_type/reduce_3" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p id="@exercise_explores_three"><a class="jump" href="#@exercise_explores_three"></a>This exercise explores three different ways to reduce a list using <code>Math.min()</code>, finding the minimum value.
+Unlike the reducing functions in the previous exercises, which have identity elements that are natural to use as initial values of the reduction, <code>Math.min()</code> has no natural identity element.</p>
+
+<p>Given a list of integers:</p>
+
+<pre id="@list-integer_list_list-of"><a class="jump" href="#@list-integer_list_list-of"></a><code class="language-java hljs">List&lt;Integer&gt; list = List.of(...);</code></pre>
+
+<p id="@here_three_possible"><a class="jump" href="#@here_three_possible"></a>…here are three possible ways to compute the minimum value of the list:</p>
+
+<pre id="@optional-integer_mayberesult_list-stream-reduce-math-min_int_result_mayberesult-get"><a class="jump" href="#@optional-integer_mayberesult_list-stream-reduce-math-min_int_result_mayberesult-get"></a><code class="language-java hljs">Optional&lt;Integer&gt; maybeResult = list.stream().reduce(Math::min);
+<span class="hljs-keyword">int</span> result = maybeResult.get();</code></pre>
+
+<pre id="@optional-integer_mayberesult_list-stream-reduce-math-min_int_result_mayberesult-orelse-0"><a class="jump" href="#@optional-integer_mayberesult_list-stream-reduce-math-min_int_result_mayberesult-orelse-0"></a><code class="language-java hljs">Optional&lt;Integer&gt; maybeResult = list.stream().reduce(Math::min);
+<span class="hljs-keyword">int</span> result = maybeResult.orElse(<span class="hljs-number">0</span>);</code></pre>
+
+<pre id="@int_result_list-stream-reduce-integer-max_value"><a class="jump" href="#@int_result_list-stream-reduce-integer-max_value"></a><code class="language-java hljs"><span class="hljs-keyword">int</span> result = list.stream().reduce(Integer.MAX_VALUE, Math::min);</code></pre>
+
+<p id="@note_first_two"><a class="jump" href="#@note_first_two"></a>Note that the first two approaches use <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Optional.html">Optional</a>, so read its API documentation to make sure you understand what that type is for, and what the <code>get()</code> and <code>orElse()</code> operations do.</p>
+
+<label class="exercise-part-heading" id="@which_following_true_about_mayberesult-get_approach"><a class="jump" href="#@which_following_true_about_mayberesult-get_approach"></a>Which of the following are true about the <code>maybeResult.get()</code> approach?</label>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(1, 2, 3) "><label for="md_converted_choice_7_0"><input type="checkbox" id="md_converted_choice_7_0"><code>result</code> is the right answer when the list is <code>List.of(1, 2, 3)</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(-1, -2, -3)"><label for="md_converted_choice_7_1"><input type="checkbox" id="md_converted_choice_7_1"><code>result</code> is the right answer when the list is <code>List.of(-1, -2, -3)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is 0 when the list is empty"><label for="md_converted_choice_7_2"><input type="checkbox" id="md_converted_choice_7_2"><code>result</code> is 0 when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is a large positive integer when the list is empty"><label for="md_converted_choice_7_3"><input type="checkbox" id="md_converted_choice_7_3"><code>result</code> is a large positive integer when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="an exception is thrown when the list is empty"><label for="md_converted_choice_7_4"><input type="checkbox" id="md_converted_choice_7_4">an exception is thrown when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<label class="exercise-part-heading" id="@which_following_true_about_mayberesult-orelse_approach"><a class="jump" href="#@which_following_true_about_mayberesult-orelse_approach"></a>Which of the following are true about the <code>maybeResult.orElse()</code> approach?</label>
+
+<div class="form-group exercise-part" data-outline="b"><div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(1, 2, 3) "><label for="md_converted_choice_8_0"><input type="checkbox" id="md_converted_choice_8_0"><code>result</code> is the right answer when the list is <code>List.of(1, 2, 3)</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(-1, -2, -3)"><label for="md_converted_choice_8_1"><input type="checkbox" id="md_converted_choice_8_1"><code>result</code> is the right answer when the list is <code>List.of(-1, -2, -3)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is 0 when the list is empty"><label for="md_converted_choice_8_2"><input type="checkbox" id="md_converted_choice_8_2"><code>result</code> is 0 when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is a large positive integer when the list is empty"><label for="md_converted_choice_8_3"><input type="checkbox" id="md_converted_choice_8_3"><code>result</code> is a large positive integer when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="an exception is thrown when the list is empty"><label for="md_converted_choice_8_4"><input type="checkbox" id="md_converted_choice_8_4">an exception is thrown when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<label class="exercise-part-heading" id="@which_following_true_about_reduce-integer-max_value_approach"><a class="jump" href="#@which_following_true_about_reduce-integer-max_value_approach"></a>Which of the following are true about the <code>reduce(Integer.MAX_VALUE, ...)</code> approach?</label>
+
+<div class="form-group exercise-part" data-outline="c"><div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(1, 2, 3) "><label for="md_converted_choice_9_0"><input type="checkbox" id="md_converted_choice_9_0"><code>result</code> is the right answer when the list is <code>List.of(1, 2, 3)</code> </label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is the right answer when the list is List.of(-1, -2, -3)"><label for="md_converted_choice_9_1"><input type="checkbox" id="md_converted_choice_9_1"><code>result</code> is the right answer when the list is <code>List.of(-1, -2, -3)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is 0 when the list is empty"><label for="md_converted_choice_9_2"><input type="checkbox" id="md_converted_choice_9_2"><code>result</code> is 0 when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="result is a large positive integer when the list is empty"><label for="md_converted_choice_9_3"><input type="checkbox" id="md_converted_choice_9_3"><code>result</code> is a large positive integer when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="an exception is thrown when the list is empty"><label for="md_converted_choice_9_4"><input type="checkbox" id="md_converted_choice_9_4">an exception is thrown when the list is empty</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="back_to_the_intro_example"><a class="jump" href="#back_to_the_intro_example"></a>Back to the intro example</h2><div data-outline="back_to_the_intro_example">
+
+<p id="@going_back_example"><a class="jump" href="#@going_back_example"></a>Going back to the example we started with, where we want to find all the words in the Java files in our project, let’s try creating a useful abstraction for filtering files by suffix:</p>
+
+<pre id="@static_predicate-file_endswith-string"><a class="jump" href="#@static_predicate-file_endswith-string"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">static</span> Predicate&lt;File&gt; <span class="hljs-title">endsWith</span><span class="hljs-params">(String suffix)</span> </span>{
+    <span class="hljs-keyword">return</span> f -&gt; f.getPath().endsWith(suffix);
+}</code></pre>
+
+<p id="@java-s_string-endswith_function"><a class="jump" href="#@java-s_string-endswith_function"></a>Java’s <code>String.endsWith</code> is a function <code>String</code> × <code>String</code> → <code>boolean</code>.</p>
+
+<p id="@our_new_endswith"><a class="jump" href="#@our_new_endswith"></a>Our new <code>endsWith</code> wrapper returns <em>functions</em> that are useful as filters.
+It takes a filename suffix like <code>.java</code> and dynamically generates a function that we can use with filter to test for that suffix.
+Given a <code>Stream&lt;File&gt; files</code>, we can now write, e.g., <code>files.filter(endsWith(".java"))</code> to obtain a new filtered stream.</p>
+
+<p id="@endswith_different_kind"><a class="jump" href="#@endswith_different_kind"></a><code>endsWith</code> is a different kind of beast than our usual functions.
+It’s a <mark data-structure-text="higher-order function" id="^higher-order_function"><strong>higher-order function</strong></mark>, meaning that it’s a function that takes another function as an argument, or returns another function as its result, as <code>endsWith</code> does.
+Higher-order functions are operations on the datatype of functions.
+In this case, <code>endsWith</code> is a <em>creator</em> of functions.</p>
+
+<p id="@signature_string_file"><a class="jump" href="#@signature_string_file"></a>Its signature is: <code>String</code> → (<code>File</code> → <code>boolean</code>).</p>
+
+<p id="@now_use_map"><a class="jump" href="#@now_use_map"></a>Now let’s use map and filter to recursively traverse the folder tree:</p>
+
+<div class="pull-margin"><pre id="@static_stream-file_allfilesin-file"><a class="jump" href="#@static_stream-file_allfilesin-file"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">static</span> Stream&lt;File&gt; <span class="hljs-title">allFilesIn</span><span class="hljs-params">(File folder)</span> </span>{
+    File[] children = folder.listFiles();
+    Stream&lt;File&gt; descendants = Arrays.stream(children)
+                                     .filter(File::isDirectory)
+                                     .flatMap(Words2::allFilesIn);
+    <span class="hljs-keyword">return</span> Stream.concat(descendants,
+                         Arrays.stream(children).filter(File::isFile));
+}</code></pre></div>
+
+<p id="@first_line_gets"><a class="jump" href="#@first_line_gets"></a>The first line gets all the children of the folder, which might look like this:</p>
+
+<pre id="@src-client_src-server_src-main-java"><a class="jump" href="#@src-client_src-server_src-main-java"></a><code class="hljs json">[<span class="hljs-string">"src/client"</span>, <span class="hljs-string">"src/server"</span>, <span class="hljs-string">"src/Main.java"</span>, ...]
+</code></pre>
+
+<p id="@second_line_key"><a class="jump" href="#@second_line_key"></a>The second line is the key bit: it filters the children for just the subfolders using the <code>isDirectory</code> method, and then recursively maps <code>allFilesIn</code> against this list of subfolders!
+The result might look like this:</p>
+
+<pre><code class="hljs json">[[<span class="hljs-string">"src/client/MyClient.java"</span>, ...], [<span class="hljs-string">"src/server/MyServer.java"</span>, ...], ...]
+</code></pre>
+
+<p id="@so_flatten_remove"><a class="jump" href="#@so_flatten_remove"></a>So we have to <em>flatten</em> it to remove the nested structure, which is what <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/stream/Stream.html#flatMap(java.util.function.Function)"><code>flatMap</code></a> does:</p>
+
+<pre><code class="hljs json">[<span class="hljs-string">"src/client/MyClient.java"</span>, ..., <span class="hljs-string">"src/server/MyServer.java"</span>, ...]
+</code></pre>
+
+<p id="@finally_add_immediate"><a class="jump" href="#@finally_add_immediate"></a>Finally we add the immediate children that are plain files (not folders), and that’s our result.</p>
+
+<p id="@can_also_do"><a class="jump" href="#@can_also_do"></a>We can also do the other pieces of the problem with map/filter/reduce.
+Once we have the list of all files underneath the current folder, we can filter it to just the Java files:</p>
+
+<pre id="@stream-file_files_allfilesin-new"><a class="jump" href="#@stream-file_files_allfilesin-new"></a><code class="language-java hljs">Stream&lt;File&gt; files = allFilesIn(<span class="hljs-keyword">new</span> File(<span class="hljs-string">"."</span>))
+                      .filter(endsWith(<span class="hljs-string">".java"</span>));</code></pre>
+
+<p id="@now_files_want"><a class="jump" href="#@now_files_want"></a>Now that we have the files we want to extract words from, we’re ready to load their contents.
+Java has a useful utility function for this, <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/nio/file/Files.html#readAllLines(java.nio.file.Path)"><code>Files.readAllLines</code></a>, which requires first converting the <code>File</code> objects into <code>Path</code>s:</p>
+
+<pre id="@stream-path_paths_files-map-file-topath"><a class="jump" href="#@stream-path_paths_files-map-file-topath"></a><code class="language-java hljs">Stream&lt;Path&gt; paths = files.map(File::toPath);</code></pre>
+
+<p id="@then_calling_readalllines"><a class="jump" href="#@then_calling_readalllines"></a>and then calling <code>readAllLines</code>:</p>
+
+<pre id="@stream-list-string_filecontents_paths-map-path"><a class="jump" href="#@stream-list-string_filecontents_paths-map-path"></a><code class="language-java hljs">Stream&lt;List&lt;String&gt;&gt; fileContents = paths.map(path -&gt; { 
+    <span class="hljs-keyword">try</span> { 
+        <span class="hljs-keyword">return</span> Files.readAllLines(path);
+    } <span class="hljs-keyword">catch</span> (IOException ioe) {
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> UncheckedIOException(ioe);
+    }
+});</code></pre>
+
+<p id="@note_step_complicated"><a class="jump" href="#@note_step_complicated"></a>Note that this step is complicated slightly by the fact that the functions passed to map/filter/reduce must not throw any checked exceptions, so <code>readAllLines</code> has to be wrapped with a lambda expression that converts the checked <code>IOException</code> into an unchecked exception.</p>
+
+<p id="@finally_can_flatten"><a class="jump" href="#@finally_can_flatten"></a>Finally, we can flatten the stream of lists of lines into a simple stream of lines:</p>
+
+<pre id="@stream-string_lines_filecontents-flatmap-list-stream"><a class="jump" href="#@stream-string_lines_filecontents-flatmap-list-stream"></a><code class="language-java hljs">Stream&lt;String&gt; lines = fileContents.flatMap(List::stream);</code></pre>
+
+<p id="@then_extract_nonempty"><a class="jump" href="#@then_extract_nonempty"></a>and then extract the nonempty words from each line:</p>
+
+<pre id="@stream-string_words_lines-flatmap-line"><a class="jump" href="#@stream-string_words_lines-flatmap-line"></a><code class="language-java hljs">Stream&lt;String&gt; words = lines.flatMap(line -&gt; Arrays.stream(line.split(<span class="hljs-string">"\\W+"</span>))
+                                             .filter(s -&gt; s.length() &gt; <span class="hljs-number">0</span>));</code></pre>
+
+<p id="@done_our_list"><a class="jump" href="#@done_our_list"></a>And we’re done, we have our list of all words in the project’s Java files!
+As promised, the control statements have disappeared.</p>
+
+<p id="@full_code_example"><a class="jump" href="#@full_code_example"></a><a href="code.html#words2java"><strong>→ full code for the example</strong></a></p>
+
+<div class="handout-solo alert alert-warning"><p id="@note_stream_can"><a class="jump" href="#@note_stream_can"></a>Note that a stream can be consumed only once, and is not reusable.  So after we have used the <code>lines</code> stream to create the <code>words</code> stream, for example, we can’t reuse the same <code>lines</code> stream for some other purpose, say to find lines with comments on them.
+We would have to construct a fresh stream of lines to do that, starting from a new call to <code>allFilesIn()</code>.
+If we needed this, of course, we would put the line-stream-construction into a method that can be called more than once.</p>
+
+<p id="@sense_stream_similar"><a class="jump" href="#@sense_stream_similar"></a>In that sense, <code>Stream</code> is similar to <code>Iterator</code>, and to <code>InputStream</code> and <code>OutputStream</code>.
+Once consumed, these objects can’t be used again, and must be recreated instead.</p></div>
+
+</div><h2 id="benefits_of_abstracting_out_control"><a class="jump" href="#benefits_of_abstracting_out_control"></a>Benefits of abstracting out control</h2><div data-outline="benefits_of_abstracting_out_control">
+
+<p id="@map-filter-reduce_can_often"><a class="jump" href="#@map-filter-reduce_can_often"></a>Map/filter/reduce can often make code shorter and simpler, and allow the programmer to focus on the heart of the computation rather than on the details of loops, branches, and control flow.</p>
+
+<p id="@arranging_our_program"><a class="jump" href="#@arranging_our_program"></a>By arranging our program in terms of map, filter, and reduce, and in particular using immutable datatypes and pure functions (functions that do not mutate data) as much as possible, we’ve created more opportunities for safe concurrency.
+Maps and filters using pure functions over immutable datatypes are instantly parallelizable — invocations of the function on different elements of the sequence can be run in different threads, on different processors, even on different machines, and the result will still be the same.</p>
+
+<p id="@java-s_map-filter-reduce_implementation"><a class="jump" href="#@java-s_map-filter-reduce_implementation"></a>Java’s map/filter/reduce implementation supports this concurrency automatically.
+We can take any <code>Stream</code> and create a parallelized version of it by calling <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/stream/BaseStream.html#parallel()"><code>parallel()</code></a>:</p>
+
+<pre id="@stream-path_paths_files-parallel-map-file-topath"><a class="jump" href="#@stream-path_paths_files-parallel-map-file-topath"></a><code class="language-java hljs">Stream&lt;Path&gt; paths = files.parallel().map(File::toPath);</code></pre>
+
+<p id="@collection_can_call"><a class="jump" href="#@collection_can_call"></a>Or on a collection, we can call <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collection.html#parallelStream()"><code>parallelStream()</code></a>.</p>
+
+<p id="@subsequent_map-filter-reduce_operations"><a class="jump" href="#@subsequent_map-filter-reduce_operations"></a>Subsequent map/filter/reduce operations on the parallel stream may be executed in separate threads created automatically by Java.
+So this simple change allows the file loading and word splitting to happen in parallel.</p>
+
+<p id="@mapreduce_pattern_parallelizing"><a class="jump" href="#@mapreduce_pattern_parallelizing"></a><a href="https://en.wikipedia.org/wiki/MapReduce">MapReduce</a> is a pattern for parallelizing very large computations in this way, that require a cluster of machines to compute.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-benefits_of_abstracting_out_control"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-benefits_of_abstracting_out_control-mapfilterreduce" data-target="#ex-benefits_of_abstracting_out_control-mapfilterreduce" data-toggle="collapse"><a class="jump" href="#@ex-benefits_of_abstracting_out_control-mapfilterreduce"></a><span class="panel-title">map/filter/reduce</span></div><div class="panel-collapse collapse exercise-panel" id="ex-benefits_of_abstracting_out_control-mapfilterreduce" data-outline="mapfilterreduce" data-ex-id="benefits_of_abstracting_out_control/mapfilterreduce" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-26-map-filter-reduce"><div class="panel-body">
+
+<p id="@function_computes_product"><a class="jump" href="#@function_computes_product"></a>This function computes the product of just the odd integers in a list:</p>
+
+<pre id="@static_int_productofodds-list-integer_list_int_result"><a class="jump" href="#@static_int_productofodds-list-integer_list_int_result"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">productOfOdds</span><span class="hljs-params">(List&lt;Integer&gt; list)</span> </span>{
+    <span class="hljs-keyword">int</span> result = <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> x : list) {
+        <span class="hljs-keyword">if</span> (x % <span class="hljs-number">2</span> == <span class="hljs-number">1</span>) {
+            result *= x;
+        }
+    }
+    <span class="hljs-keyword">return</span> result;
+}</code></pre>
+
+<p id="@rewrite_code_using"><a class="jump" href="#@rewrite_code_using"></a>Rewrite this code using map, filter, and reduce:</p>
+
+<pre id="@static_int_productofodds-list-integer_list_return_expr"><a class="jump" href="#@static_int_productofodds-list-integer_list_return_expr"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">productOfOdds</span><span class="hljs-params">(List&lt;Integer&gt; list)</span> </span>{
+    <span class="hljs-keyword">return</span> ▶▶EXPR◀◀;
+}</code></pre>
+
+<style class="no-markdown">
+#mfr-options td { vertical-align: top; }
+#mfr-options td:nth-child(1),
+#mfr-options td:nth-child(4) { padding-top: 4px; padding-right: 2px; }
+#mfr-options td:nth-child(3) { width: 2em; }
+#mfr-options pre { padding: 5px; }
+</style>
+
+<div class="pull-right pull-margin" style="letter-spacing:-.1pt; padding-left:10px;"><pre id="@class_c_static"><a class="jump" href="#@class_c_static"></a><code class="language-java hljs"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span> </span>{
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> x = <span class="hljs-number">5</span>;
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> y = <span class="hljs-number">8</span>;
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isOdd</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x)</span> </span>{
+      <span class="hljs-keyword">return</span> x % <span class="hljs-number">2</span> == <span class="hljs-number">1</span>;
+    }
+
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> xIsOdd = x % <span class="hljs-number">2</span> == <span class="hljs-number">1</span>;
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">oddOrIdentity</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x)</span> </span>{
+      <span class="hljs-keyword">return</span> isOdd(x) ? x : <span class="hljs-number">1</span>;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">identityFunction</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x)</span> </span>{
+        <span class="hljs-keyword">return</span> x;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">sum</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x, <span class="hljs-keyword">int</span> y)</span> </span>{
+      <span class="hljs-keyword">return</span> x + y;
+    }
+
+    <span class="hljs-keyword">static</span> Function&lt;Integer, Integer&gt; identity = x -&gt; x;
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">product</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x, <span class="hljs-keyword">int</span> y)</span> </span>{
+      <span class="hljs-keyword">return</span> x * y;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">alwaysTrue</span><span class="hljs-params">(<span class="hljs-keyword">int</span> x)</span> </span>{
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">static</span> Function&lt;Integer,Boolean&gt; <span class="hljs-title">modulusTester</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span> </span>{
+      <span class="hljs-keyword">return</span> x -&gt; x % <span class="hljs-number">2</span> == i;
+    }
+    ...
+}</code></pre></div>
+
+<p id="@assuming_code_class"><a class="jump" href="#@assuming_code_class"></a>Assuming this code is in the class C shown on the right, which of the following expressions can replace <code>▶▶EXPR◀◀</code>?</p>
+
+<pre id="@list-stream_map-c-identityfunction_filter-c-isodd"><a class="jump" href="#@list-stream_map-c-identityfunction_filter-c-isodd"></a><code class="language-java hljs">list.stream()
+.map(C::identityFunction)
+.filter(C::isOdd)
+.reduce(<span class="hljs-number">1</span>, C::product)</code></pre>
+
+<div class="form-group exercise-part" data-outline="a"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<pre id="@list-stream_map-identity_filter-c-alwaystrue"><a class="jump" href="#@list-stream_map-identity_filter-c-alwaystrue"></a><code class="language-java hljs">list.stream()
+.map(identity)
+.filter(C::alwaysTrue)
+.reduce(<span class="hljs-number">1</span>, C::product)</code></pre>
+
+<div class="form-group exercise-part" data-outline="b"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<pre id="@list-stream_map-identity_filter-c-modulustester"><a class="jump" href="#@list-stream_map-identity_filter-c-modulustester"></a><code class="language-java hljs">list.stream()
+.map(identity)
+.filter(C::modulusTester)
+.reduce(<span class="hljs-number">1</span>, C::product)</code></pre>
+
+<div class="form-group exercise-part" data-outline="c"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<pre id="@list-stream_map-x_filter-c-oddoridentity"><a class="jump" href="#@list-stream_map-x_filter-c-oddoridentity"></a><code class="language-java hljs">list.stream()
+.map(x)
+.filter(C::oddOrIdentity)
+.reduce(<span class="hljs-number">1</span>, C::product)</code></pre>
+
+<div class="form-group exercise-part" data-outline="d"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<pre id="@list-stream_map-c-oddoridentity_filter-c-alwaystrue"><a class="jump" href="#@list-stream_map-c-oddoridentity_filter-c-alwaystrue"></a><code class="language-java hljs">list.stream()
+.map(C::oddOrIdentity)
+.filter(C::alwaysTrue)
+.reduce(<span class="hljs-number">1</span>, C::product)</code></pre>
+
+<div class="form-group exercise-part" data-outline="e"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<pre id="@list-stream_map-c-identityfunction_filter-xisodd"><a class="jump" href="#@list-stream_map-c-identityfunction_filter-xisodd"></a><code class="language-java hljs">list.stream()
+.map(C::identityFunction)
+.filter(xIsOdd)
+.reduce(<span class="hljs-number">1</span>, x*y)</code></pre>
+
+<div class="form-group exercise-part" data-outline="f"><div class="dropdown exercise-choice" data-outline="; correct; static error; dynamic error; no error but wrong answer"><select class="form-control"><option selected="selected"></option><option>correct</option>,<option>static error</option>,<option>dynamic error</option>,<option>no error but wrong answer</option></select><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+<h3 id="more_examples"><a class="jump" href="#more_examples"></a>More examples</h3><div data-outline="more_examples">
+
+<p id="@look_typical_database"><a class="jump" href="#@look_typical_database"></a>Let’s look at a typical database query example.
+Suppose we have a database about digital cameras, in which each object is of type <code>Camera</code> with observer methods for its properties (<code>brand()</code>, <code>pixels()</code>, <code>cost()</code>, etc.).
+The whole database is in a stream called <code>cameras</code>.
+Then we can describe queries on this database using map/filter/reduce:</p>
+
+<pre id="@what-s_highest_resolution"><a class="jump" href="#@what-s_highest_resolution"></a><code class="language-java hljs"><span class="hljs-comment">// What's the highest resolution Nikon sells? </span>
+cameras.filter(camera -&gt; camera.brand().equals(<span class="hljs-string">"Nikon"</span>))
+       .map(Camera::pixels)
+       .reduce(Math::max);</code></pre>
+
+<p id="@relational_databases_use"><a class="jump" href="#@relational_databases_use"></a>Relational databases use the map/filter/reduce paradigm (where it’s called project/select/aggregate).
+<a href="https://en.wikipedia.org/wiki/SQL">SQL</a> (Structured Query Language) is the <em>de facto</em> standard language for querying relational databases.
+A typical SQL query looks like this:</p>
+
+<pre id="@select_max-pixels_cameras"><a class="jump" href="#@select_max-pixels_cameras"></a><code class="hljs cs"><span class="hljs-function"><span class="hljs-keyword">select</span> <span class="hljs-title">max</span>(<span class="hljs-params">pixels</span>) <span class="hljs-keyword">from</span> cameras <span class="hljs-keyword">where</span> brand</span> = <span class="hljs-string">"Nikon"</span>
+</code></pre>
+
+<blockquote>
+  <p id="@cameras_sequence_list"><a class="jump" href="#@cameras_sequence_list"></a><code>cameras</code> is a <strong>sequence</strong> (a list of rows, where each row has the data for one camera)</p>
+  
+  <p id="@brand_nikon_filter"><a class="jump" href="#@brand_nikon_filter"></a><code>where brand = "Nikon"</code> is a <strong>filter</strong></p>
+  
+  <p id="@pixels_map_extracting"><a class="jump" href="#@pixels_map_extracting"></a><code>pixels</code> is a <strong>map</strong> (extracting just the pixels field from the row)</p>
+  
+  <p id="@max_reduce"><a class="jump" href="#@max_reduce"></a><code>max</code> is a <strong>reduce</strong></p>
+</blockquote>
+
+</div></div><h2 id="summary"><a class="jump" href="#summary"></a>Summary</h2><div data-outline="summary">
+
+<p id="@reading_about_modeling"><a class="jump" href="#@reading_about_modeling"></a>This reading is about modeling problems and implementing systems with <em>immutable data</em> and operations that implement <em>pure functions</em>, as opposed to <em>mutable data</em> and operations with <em>side effects</em>.
+<em>Functional programming</em> is the name for this style of programming.</p>
+
+<p id="@functional_programming_much"><a class="jump" href="#@functional_programming_much"></a>Functional programming is much easier to do when you have <em>first-class functions</em> in your language and you can build <em>higher-order functions</em> that abstract away control flow code.</p>
+
+<p id="@some_languages_haskell"><a class="jump" href="#@some_languages_haskell"></a>Some languages — <a href="http://www.haskell.org/">Haskell</a>, <a href="http://www.scala-lang.org/">Scala</a>, <a href="http://ocaml.org/">OCaml</a> — are strongly associated with functional programming.
+Many other languages — <a href="https://developer.mozilla.org/en-US/docs/JavaScript">JavaScript</a>, <a href="https://developer.apple.com/swift/">Swift</a>, <a href="http://www.ruby-lang.org/">Ruby</a>, and so on — use functional programming to a greater or lesser extent.
+With Java’s recently-added functional language features, if you continue programming in Java you should expect to see more functional programming there, too.</p>
+
+</div><h2 id="more_practice"><a class="jump" href="#more_practice"></a>More practice</h2><div data-outline="more_practice">
+
+<p id="@if_you_would"><a class="jump" href="#@if_you_would"></a>If you would like to get more practice with the concepts covered in this reading, you can visit the <a href="https://qable.mit.edu:8001/practice.html#Map%2C%20Filter%2C%20Reduce">question bank</a>. The questions in this bank were written in previous semesters by students and staff, and are provided for review purposes only – doing them will not affect your classwork grades.  </p></div></div>
+
+</div></main>
+<footer class="col-sm-2 footer-margin"><div>Collaboratively authored with contributions from: Saman Amarasinghe, Adam Chlipala, Srini Devadas, Michael Ernst, Max Goldman, John Guttag, Daniel Jackson, Rob Miller, Martin Rinard, and Armando Solar-Lezama. This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a>.</div></footer>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="classes-26-map-filter-reduce"></script></body><!--
+Handout delivered Fri Jun 04 2021 14:11:07 GMT+0000 (Greenwich Mean Time)
+--></html>

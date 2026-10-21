@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>grilling 逼问记录卡 · 把模糊想法问成决定</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 5 课</p>
+  <h1>grilling 逼问记录卡</h1>
+  <p class="lede">elicitation（需求获取）是 Requirements 的第一个子活动。目标不是「开工」，而是把藏着的决定一个个摊开、拍板，直到前沿为空。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>elicitation 在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements（需求）</td><td>第一个子活动：把散落在头脑、来源、旧系统里的需求「取」出来，写成可检验的形式。</td></tr>
+      <tr><td class="skill">紧接其后</td><td>第 4 课先给了一致的词；本课用词去问「做什么」；第 6 课把答案写成完整需求。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>核心机制</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>词</th><th>是什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">design tree（设计树）</td><td>每个决定挂在依赖它的子决定下面，画出「先定哪个、再定哪个」的依赖关系。</td></tr>
+      <tr><td class="what">frontier（前沿）</td><td>树里所有「前置已定、现在就能问」的问题的集合。一次问完一轮，答案把树推大，再问下一轮。</td></tr>
+      <tr><td class="what">rounds（轮次）</td><td>每轮只问 frontier；某个问题依赖本轮还没答的别的决定，就顺延到下一轮。</td></tr>
+      <tr><td class="what">事实 vs 决定</td><td>可查的（文件系统、代码现状）是事实，归 agent 派子代理查；选择与取舍是决定，归你拍板。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>铁律</h2>
+<div class="card-rule">
+  <p><strong>找事实是 agent 的活，永远不是你的；做决定是你的活，永远不推给 agent。</strong><br>（finding facts is your job, never the user's）</p>
+</div>
+
+<h2>一轮问话的格式</h2>
+<pre><code>❓ Q1 - 标题：问题正文（可含多个选项）
+➡️ 推荐答案
+---
+❓ Q2 - 标题：问题正文
+➡️ 推荐答案</code></pre>
+<p><strong>每个问题都措辞成「答 yes 就接受推荐答案」</strong>——认同就少打几个字，不认同就说「No，因为……」。推荐答案只是 agent 的试探，不是决定。</p>
+
+<h2>一句话的逼问流程</h2>
+<ol class="steps">
+  <li>给它一个模糊想法（一行 seed，不给更多）。</li>
+  <li>它画 design tree，每次只问 frontier，一轮一个推荐答案。</li>
+  <li>回答每个决定；答不上来的如果是事实，让它查，别替它查。</li>
+  <li>frontier 空了、它问「我们一致了吗」——先自检有没有被默认掉的决定，再确认。</li>
+  <li>把这段对话存下来 = 本课产物：一份以明确决定收尾的逼问记录。</li>
+</ol>
+
+<h2>行业做法（SE-EDU Gathering Requirements）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>方法</th><th>是什么 / 怎么做</th><th>何时用 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Interviews（访谈）</td><td>一对一/多和干系人或专家问答；先开放后收敛；追问「为什么」。</td><td>来源是人时用；依赖对方记忆，问不好得到客套。</td></tr>
+      <tr><td class="what">Observation（观察）</td><td>看真实行为或使用数据，发现用户在哪犯错；错点往往是新需求。</td><td>有现有系统时用；单人项目里你观察的常是自己。</td></tr>
+      <tr><td class="what">Surveys（问卷）</td><td>封闭式问题给选项以便统计，加一两个开放题。</td><td>用户量大、要群体分布时用；只能答到你问过的问题。</td></tr>
+      <tr><td class="what">Focus group / Brainstorming（焦点小组 / 头脑风暴）</td><td>一群人互相激发；brainstorming 只管多、不管对，先不问「对不对」。</td><td>方向未定、要大量候选时；易跑偏、受声音大的人影响。</td></tr>
+      <tr><td class="what">Prototyping（原型）</td><td>做缩小版 UI 或概念验证原型，拿它跟用户「对」，确认是不是这个意思；原型本身可当 spec。</td><td>交互类需求讲不清时用；有制作成本，太真会让人误当成品。</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>共性是同一件事：<strong>把对方脑子里还没说出口的东西逼出来。</strong>有没有统一标准？没有——受监管行业按各自规范来；普通项目里这些是主流做法和取舍，不是法律。</p>
+
+<h2>三个常见误区</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">默认点过推荐答案</td><td>把 agent 的试探当成决定，yes 没真的拍过。</td><td>每个 yes 都亲手拍；不确定就 No + 理由。</td></tr>
+      <tr><td class="what">替 agent 查，或让 agent 替你做决定</td><td>事实在查的这边、决定在拍的那边，全错位了。</td><td>事实让它查，决定你拍；两边都别越界。</td></tr>
+      <tr><td class="what">frontier 没空就开工</td><td>「先做能做的部分」里藏着一个没问的决定。</td><td>等树问完、确认一致，再动手。这是 grilling 的终点。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt 怎么落地：<code>grilling</code></h2>
+<p><code>grilling</code> 是<strong>用户调用（user-invoked）</strong>的技能：你主动说「跑一次 grilling，目标是把 X 问成决定」。它把模糊想法长成 design tree，一轮一轮问 frontier，并给每个问题附推荐答案。</p>
+<p>你要做三件事：回答 frontier 每个决定（尤其认真挑推荐）；把领域真实说法、约束、旧实现喂给它；当它停、问「一致了吗」时，核对有没有被悄悄默认的决定。</p>
+<p><strong>它自动化了什么：</strong>拆树、排轮次、算前沿、亮默认值、事实派子代理查。<strong>它没自动化：</strong>每个决定、每个推荐是否接受、树是否问完——全是你把关。</p>
+<p><strong>适用条件与边界：</strong>它逼问的对象是你自己，不是真实用户。单人项目里这是合理收敛；交付真人的产品仍要补真实用户访谈。它不能替代 elicitation 的访谈 / 观察 / 问卷。</p>
+
+<h2>写完怎么验</h2>
+<pre><code>读我这份 grilling 记录，再读
+C:\Users\admin\.agents\skills\grilling\SKILL.md。
+
+按技能包规则逐条检查：
+1. 是不是 design tree？决定有没有挂到依赖它的子决定下？
+2. 每轮是不是只问 frontier？有没有跳过前置、提前问后面的？
+3. 每个问题有没有「推荐答案」，措辞是否可接受（答 yes 即接受）？
+4. 有没有把该查的事实抛给用户？有没有替用户拍决定？
+5. frontier 是否真空才收尾？有没有决定被默认、用户还没答？
+6. 结束前有没有让用户确认「达成一致」？
+
+逐条指出问题并引用原句。最后给三个结论：
+哪些定了 / 哪些还悬着 / 下一个该问哪一组。</code></pre>
+
+<div class="note">
+  <p><strong>seed 越少越好。</strong>只给「加个命令，把一篇 Document 总结成几句话」，其余交给它问。给太多，等于替它回答了，逼问就没了意义。</p>
+  <p><strong>第 4 课的词表在起作用。</strong>逼问里你用的 Document / Entry / Citation 若对不上，先在 GLOSSARY.md 里理清，再往下问。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章，p48–61（需求活动分类与 elicitation）；SE-EDU《Gathering Requirements》（全章）；CMU 17-313《07-specs》（spec 是契约，derive 前需清晰理解）。</p>
+  <p><strong>实践工具：</strong>以 <code>C:\Users\admin\.agents\skills\grilling\SKILL.md</code> 为准；它是落地方式，不是理论出处。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0005-grilling.html">第 5 课：逼问：把模糊想法问成决定</a> · <a href="course-map.html">课程地图</a> · <a href="0004-glossary-card.html">第 4 课：GLOSSARY.md 词条卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

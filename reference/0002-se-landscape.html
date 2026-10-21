@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>软件工程全景图 · 八个活动与课程路线</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 2 课</p>
+  <h1>软件工程全景图</h1>
+  <p class="lede">八个互相牵制的活动，一条为学习压扁的路线。卡住的时候，先问：我现在在解决哪一层的问题？</p>
+</header>
+
+<h2>八个核心活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>它要回答的问题</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements</td><td>谁用、解决什么、什么算做完、有哪些非功能约束。</td></tr>
+      <tr><td class="skill">Design &amp; Architecture</td><td>系统怎么分、接口是什么、哪些质量属性优先、代价是什么。</td></tr>
+      <tr><td class="skill">Construction</td><td>怎么写可验证的代码、依赖怎么管、构建怎么重复。</td></tr>
+      <tr><td class="skill">Testing &amp; Quality</td><td>怎么知道它真的对、该测哪些、覆盖到什么程度算够。</td></tr>
+      <tr><td class="skill">Maintenance &amp; Evolution</td><td>怎么修、怎么改、怎么迁移、什么时候该退役。</td></tr>
+      <tr><td class="skill">Process &amp; Management</td><td>先做什么、要多久、风险在哪、进度是不是真的。</td></tr>
+      <tr><td class="skill">Configuration &amp; Operations</td><td>怎么版本化、怎么发布、出事怎么发现和恢复。</td></tr>
+      <tr><td class="skill">Professional Practice</td><td>安全、伦理、沟通、责任：哪些事不能只图快。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>课程路线</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>模块</th><th>对应活动</th></tr></thead>
+    <tbody>
+      <tr><td class="what">0 · 地图与工作台</td><td>全貌 + 方法</td></tr>
+      <tr><td class="what">1 · 需求与语言</td><td>Requirements</td></tr>
+      <tr><td class="what">2 · 计划与过程</td><td>Process &amp; Management</td></tr>
+      <tr><td class="what">3 · 设计与架构</td><td>Design &amp; Architecture</td></tr>
+      <tr><td class="what">4 · 实现与测试</td><td>Construction + Testing</td></tr>
+      <tr><td class="what">5 · 验收与维护</td><td>Quality + Maintenance + Operations</td></tr>
+      <tr><td class="what">6 · 专业实践与 AI</td><td>Professional Practice</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card-rule">
+  <p><strong>它们互相牵制。</strong>比如「支持离线」这个需求，会同时改变架构（本地缓存、同步、冲突）、测试（断网、半同步、重复写入）、运维（同步失败可见）、维护（数据迁移）和安全（本地数据保护）。</p>
+  <p>所以软件工程不是逐条打勾的清单，而是在范围、时间、成本、质量之间做取舍，并把放弃的部分说清楚。</p>
+</div>
+
+<div class="note">
+  <p><strong>这门课怎么练：</strong>软件工程理论是主线；AI 辅助编程和 Matt Pocock 技能包是实践方式。技能包给出一条可执行的工作流，agent 给快速反馈，但技能包不是标准答案。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0002-what-software-engineering-covers.html">第 2 课：软件工程到底包含什么</a> · <a href="course-map.html">课程地图</a> · 出处：SWEBOK v4 第 1 章；SE-EDU《Software Engineering》</p>
+</footer>
+
+</main>
+</body>
+</html>

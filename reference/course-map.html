@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课程地图 · 软件工程，从术语到落地</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">Course Map · v3 · 2026-10-20</p>
+  <h1>软件工程，从术语到落地</h1>
+  <p class="lede">软件工程是主线，AI 辅助编程和 Matt Pocock 技能包是实践方式。写给有编程经验、但没有系统学过软件工程的开发者。单人可执行，Python 沙盒，34 节。</p>
+</header>
+
+<section id="why">
+  <h2>这门课要解决什么</h2>
+  <p>不是零散地补术语，而是用一条主线把软件工程系统走一遍，同时解决三个具体问题：</p>
+  <ul>
+    <li><strong>术语记不住</strong>：每个词都能查到定义，但不知道它落在开发的哪一步、解决谁的痛。</li>
+    <li><strong>流程接不上</strong>：知道要写测试、要做设计，但不知道什么时候做、做到什么程度算够。</li>
+    <li><strong>AI 用不出效果</strong>：能让 agent 改代码，但改完靠感觉验收，返工多、说不清为什么。</li>
+  </ul>
+  <p>解法是同一件事：<strong>每个术语都绑到一个动作上，每个动作都在沙盒里真做一遍，做完由 agent 按技能包和经典清单给你反馈。</strong>但顺序不能反：先有软件工程的判断，再用 AI 和技能包把它练出来。</p>
+</section>
+
+<section id="principles">
+  <h2>五条设计原则</h2>
+
+  <h3>一、术语表是脊柱</h3>
+  <p>每节课最多引入三个新词。词条保留英文原词，给中文解释，并注明「哪个技能在用这个词」。学完后你能用自己的话解释它为什么存在，而不只是背出定义。</p>
+
+  <h3>二、短课 + 参考卡，而不是长课</h3>
+  <p>单节课控制在 25–40 分钟。要「详尽」，靠的是课的数量和可打印的参考卡，不是把一节课写成一本书。参考资料会单独放在 <code>reference/</code>，方便回看。</p>
+
+  <h3>三、理论是主线，实践是证据</h3>
+  <p>不设独立的「理论模块」和「实践模块」。每节课先讲清一个活动在回答什么问题、有哪些经典取舍，再在沙盒里做一个动作，用 AI 和技能包验证它。原理负责判断，动作负责记住；技能包是练习场，不是标准答案。</p>
+
+  <h3>四、单人开发者版</h3>
+  <p>大学课件默认有团队、助教、学期项目。这门课把那些内容翻译成一个人能执行的动作：团队沟通变成设计文档与 review，同伴评审变成 agent 按清单复核，学期项目变成沙盒里的小步交付。</p>
+
+  <h3>五、讲解用完整句子</h3>
+  <p>短课不等于碎片。概念、推理和取舍用完整段落写清楚；表格只用来对照，不用短语堆砌。读起来应该像一篇文章，而不是一张 PPT。</p>
+</section>
+
+<section id="shape">
+  <h2>每节课的形状</h2>
+  <p>从模块 1 开始，每节课都先定位软件工程活动，再讲理论、行业做法，最后落到 AI + 技能包。模块 0 的三节是全课地图，不套这个结构。完整规范见 <code>COURSE-STANDARD.md</code>。</p>
+  <ol class="steps">
+    <li><strong>位置</strong>：这属于第 2 课八个活动里的哪一个？依赖哪一课，又给哪一课提供依据？</li>
+    <li><strong>问题与概念</strong>：一个真实场景，加一个概念；说清它为什么存在、经典来源是什么、有哪些取舍。</li>
+    <li><strong>行业做法</strong>：业内通常怎么做？哪些是标准，哪些是主流，哪些只是观点？每条做法有来源吗？常见失败是什么？</li>
+    <li><strong>AI + Matt 怎么落地</strong>：技能包怎么实现这件事？它自动化了什么？哪里和理论不一致？人必须判断什么？</li>
+    <li><strong>练习与带走</strong>：沙盒里做一次，agent 按经典清单和技能清单检查，产出一张参考卡，并指向下一课。</li>
+  </ol>
+  <p>模块 1–6 的第一节课之前，多一步「模块导读」：一篇主读物、三个问题、十分钟。它不产出练习，只负责把这一模块的原理先立起来。</p>
+</section>
+
+<section id="modules">
+  <h2>七个模块，三十四节课</h2>
+  <p class="module-intro">主线是软件工程的生命周期；技能包是把每一步练出来的实践工具。顺序是：先看清全貌，再想清楚，再写成计划，再做出来，再验收，最后学会在主线之外做探索和上下文管理。经典软件工程的缺口补在对应模块里，不另开「理论课」。</p>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">0</span>
+      <h3>地图、全貌与工作台</h3>
+    </div>
+    <p class="module-intro">先建立坐标系：为什么学软件工程、它包含什么、为什么选这套技能包以及怎么用。三节课之后再进需求。这三节是全课地图，不套五段结构。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="what"><a href="../lessons/0001-what-is-software-engineering.html">软件工程不是把代码写出来</a></td><td class="skill">—</td><td>一张三问卡：时间 / 规模 / 代价</td></tr>
+          <tr><td class="num">2</td><td class="what"><a href="../lessons/0002-what-software-engineering-covers.html">软件工程到底包含什么</a></td><td class="skill">—</td><td>一张软件工程全景图 + 一条本课程路线</td></tr>
+          <tr><td class="num">3</td><td class="what"><a href="../lessons/0003-ai-practice-and-workbench.html">为什么用这套技能包，以及怎么用</a></td><td class="skill">ask-matt / setup-matt-pocock-skills</td><td>装好技能包和仓库；走通五步；在 38 个技能里认出主线、辅助和无关项</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">1</span>
+      <h3>需求与语言</h3>
+    </div>
+    <p class="module-intro">对应第 2 课的 Requirements（需求）活动。大部分返工不是代码写错，是词没对齐、需求没问清、决定没记下来。领域语言是需求分析的前置条件：说不清词，就说不清需求。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">4</td><td class="what"><a href="../lessons/0004-domain-language-and-context.html">领域语言：需求的前置条件</a></td><td class="skill">domain-modeling</td><td>三个词条 + 能说清它在需求、设计、测试、维护里的位置</td></tr>
+          <tr><td class="num">5</td><td class="what"><a href="../lessons/0005-grilling.html">逼问：把模糊想法问成决定</a></td><td class="skill">grilling</td><td>一份完整的逼问记录，结尾是明确决定</td></tr>
+          <tr><td class="num">6</td><td class="what"><a href="../lessons/0006-requirements.html">需求工程：来源、验收标准与非功能需求</a></td><td class="skill">—</td><td>一份带验收标准的需求清单，含至少一条非功能需求</td></tr>
+          <tr><td class="num">7</td><td class="what"><a href="../lessons/0007-adr.html">ADR：什么决定值得记下来</a></td><td class="skill">domain-modeling</td><td>一篇 ADR，含被否掉的方案</td></tr>
+          <tr><td class="num">8</td><td class="what">Spec：从共识到可执行</td><td class="skill">to-spec</td><td>一份发布到 tracker 的 spec</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">2</span>
+      <h3>计划与过程</h3>
+    </div>
+    <p class="module-intro">对应 Process &amp; Management（过程与管理）。先知道这套流程在软件工程史里的位置，再学怎么切、怎么排、怎么估。Spec 不是需求文档，工单也不是任务清单。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">9</td><td class="what">过程模型：瀑布、迭代、敏捷，以及这套流程的位置</td><td class="skill">—</td><td>一张对照表：什么项目适合什么过程，为什么</td></tr>
+          <tr><td class="num">10</td><td class="what">纵向切片与阻塞边：先做哪个</td><td class="skill">to-tickets</td><td>一个穿透所有层的工单，加一张带阻塞边的依赖图</td></tr>
+          <tr><td class="num">11</td><td class="what">计划、估算与度量：为什么工时估算总是不准</td><td class="skill">—</td><td>一份带区间和假设的估算，以及一个不骗人的度量</td></tr>
+          <tr><td class="num">12</td><td class="what">模糊的大项目：wayfinder 与决策单</td><td class="skill">wayfinder</td><td>一张决策地图，以及「何时不该用」的判据</td></tr>
+          <tr><td class="num">13</td><td class="what">外部输入：triage 与 agent-ready</td><td class="skill">triage</td><td>一个别人提的 issue，被整理成可执行 brief</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">3</span>
+      <h3>设计与架构</h3>
+    </div>
+    <p class="module-intro">对应 Design &amp; Architecture（设计与架构）。从代码级的模块形状，长到系统级的架构取舍。核心不是画图，是说清「什么被藏在后面、什么被暴露出来、为什么这样分」。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">14</td><td class="what">深模块、信息隐藏与不变量</td><td class="skill">codebase-design</td><td>一个接口草图，加一条能在测试里守住的不变量</td></tr>
+          <tr><td class="num">15</td><td class="what">接缝与适配器：测试的地基</td><td class="skill">codebase-design</td><td>一个 port 加两个 adapter</td></tr>
+          <tr><td class="num">16</td><td class="what">设计两次：先造两个候选再选</td><td class="skill">codebase-design</td><td>两套方案与一条取舍理由</td></tr>
+          <tr><td class="num">17</td><td class="what">架构：质量属性、视图与取舍</td><td class="skill">—</td><td>一张组件图，加三个质量属性的取舍说明</td></tr>
+          <tr><td class="num">18</td><td class="what">设计文档：让下一个人（或 agent）能接手</td><td class="skill">—</td><td>一份 design doc，含目标、非目标、取舍与风险</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">4</span>
+      <h3>实现与测试</h3>
+    </div>
+    <p class="module-intro">对应 Construction + Testing（构造与测试）。先补测试的底子，再进 TDD；先会设计用例，再谈红绿重构。核心是「怎么知道它真的对」。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">19</td><td class="what">pytest 与测试设计：划分、边界、覆盖率</td><td class="skill">—</td><td>一组按输入划分和边界值设计的 pytest 测试</td></tr>
+          <tr><td class="num">20</td><td class="what">TDD 红绿重构：先写失败测试买到了什么</td><td class="skill">tdd</td><td>第一个完整的红绿重构循环</td></tr>
+          <tr><td class="num">21</td><td class="what">好测试的形状：行为、边界、可读性</td><td class="skill">tdd</td><td>三个只测行为、不测实现的测试</td></tr>
+          <tr><td class="num">22</td><td class="what">测试替身：fake、stub、mock 的边界</td><td class="skill">tdd</td><td>一个 fake，以及一个「不该 mock」的判断</td></tr>
+          <tr><td class="num">23</td><td class="what"><code>/implement</code>：把一个工单真正做完</td><td class="skill">implement</td><td>一个从红到绿、再通过 review 的工单</td></tr>
+          <tr><td class="num">24</td><td class="what">CI：让检查自动跑</td><td class="skill">—</td><td>一条 push 就会跑的检查链：格式化、lint、测试</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">5</span>
+      <h3>验收与维护</h3>
+    </div>
+    <p class="module-intro">对应 Quality + Maintenance + Operations（质量、维护与运维）。会写还不够，要能判断「对不对」和「哪里开始坏了」。这一段是 code review、诊断、架构改良、事故复盘。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">25</td><td class="what">双轴审查与读 diff</td><td class="skill">code-review</td><td>一份并排的 Standards / Spec 报告，指向具体行</td></tr>
+          <tr><td class="num">26</td><td class="what">紧反馈回路：先要一条会红的命令</td><td class="skill">diagnosing-bugs</td><td>一条能稳定复现的失败命令</td></tr>
+          <tr><td class="num">27</td><td class="what">回归测试与根因：修的是哪一层</td><td class="skill">diagnosing-bugs</td><td>修复加一个防复发的测试</td></tr>
+          <tr><td class="num">28</td><td class="what">架构改良与遗留代码</td><td class="skill">improve-codebase-architecture</td><td>一个能通过 deletion test 的改良提案，加一条 characterization test</td></tr>
+          <tr><td class="num">29</td><td class="what">运维与事故：从 SRE 到 postmortem</td><td class="skill">—</td><td>一份无责复盘，含时间线与后续动作</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">6</span>
+      <h3>专业实践与 AI</h3>
+    </div>
+    <p class="module-intro">对应 Professional Practice（专业实践）。真实工作不总在主线。有时要试，有时要查，有时该清空上下文，有时该停手。最后把流程搬回你的真实项目。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">30</td><td class="what">原型：可丢弃代码回答一个设计问题</td><td class="skill">prototype</td><td>一个被回答的问题，代码留在分支上</td></tr>
+          <tr><td class="num">31</td><td class="what">研究：把阅读外包，把引用留下</td><td class="skill">research</td><td>一份带一手引用的笔记</td></tr>
+          <tr><td class="num">32</td><td class="what">阶段边界：clear、compact、handoff、subagent</td><td class="skill">handoff</td><td>一次有理由的边界决策</td></tr>
+          <tr><td class="num">33</td><td class="what">责任：安全、伦理与 AI 的边界</td><td class="skill">—</td><td>一张「哪些事不能交给 AI」的清单，加一个安全取舍</td></tr>
+          <tr><td class="num">34</td><td class="what">综合演练 + 迁移到真实项目</td><td class="skill">全部主线</td><td>一个上线的功能，加一份迁移到 <code>knowledge-pet</code> 的计划</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="reading">
+  <h2>配套读物：每个模块读什么</h2>
+  <p>课件已经下载到 <code>courseware/</code>，下面的本地路径可以直接打开；原站链接保留，方便看排版和更新。不要求读完，每个模块只指定一份主读物。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模块</th><th>主读物（本地优先）</th><th>原站</th><th>用来讲什么</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="what">0 · 地图</td>
+          <td><a href="../courseware/brooks/no-silver-bullet.pdf">Brooks《No Silver Bullet》PDF</a>；<a href="../courseware/se-education/book/softwareEngineering/print.html">SE-EDU：Software Engineering</a>；<a href="https://abseil.io/resources/swe-book/html/ch01.html">SE at Google 第 1 章（在线）</a></td>
+          <td><a href="https://missing-semester-cn.github.io/2026/">Missing Semester 2026（中文版）</a></td>
+          <td>为什么学、SE 全貌、本质 / 偶然复杂度；工具与调试</td>
+        </tr>
+        <tr>
+          <td class="what">1 · 需求与语言</td>
+          <td><a href="../courseware/se-education/book/requirements/print.html">SE-EDU：Requirements</a>；<a href="../courseware/se-education/book/gatheringRequirements/print.html">Gathering Requirements</a>；<a href="../courseware/se-education/book/specifyingRequirements/print.html">Specifying Requirements</a>；<a href="../courseware/cmu-17-313/pdfs/07-specs.pdf">CMU：Software Specifications</a></td>
+          <td><a href="https://softengbook.org/chapter3.html">Valente 第 3 章</a></td>
+          <td>需求来源、用户故事、验收标准、规格与行为等价</td>
+        </tr>
+        <tr>
+          <td class="what">2 · 计划与过程</td>
+          <td><a href="../courseware/se-education/book/processModels/print.html">SE-EDU：Process Models</a>；<a href="../courseware/se-education/book/projectPlanning/print.html">Project Planning</a>；<a href="../courseware/cmu-17-313/pdfs/03-project-planning.pdf">CMU：Project Planning</a>；<a href="../courseware/cmu-17-313/pdfs/06-Metrics.pdf">Metrics</a></td>
+          <td><a href="https://softengbook.org/chapter2.html">Valente 第 2 章</a></td>
+          <td>瀑布 / 迭代 / 敏捷的取舍；估算、度量与风险</td>
+        </tr>
+        <tr>
+          <td class="what">3 · 设计与架构</td>
+          <td><a href="../courseware/se-education/book/architecture/print.html">SE-EDU：Architecture</a>；<a href="../courseware/se-education/book/design/print.html">Design</a>；<a href="../courseware/cmu-17-313/pdfs/08-design-docs.pdf">CMU：Design Docs</a>；<a href="../courseware/swebok/swebok-v4.pdf">SWEBOK 第 2 章</a></td>
+          <td><a href="https://softengbook.org/chapter7.html">Valente 第 7 章</a></td>
+          <td>质量属性、视图、架构取舍；设计文档</td>
+        </tr>
+        <tr>
+          <td class="what">4 · 实现与测试</td>
+          <td><a href="../courseware/mit-6.031/classes/03-testing/index.html">MIT 6.031：Testing</a>；<a href="../courseware/cmu-17-313/pdfs/09-testing.pdf">CMU：Testing</a>；<a href="../courseware/cmu-17-313/pdfs/11-oracles.pdf">Oracles</a>；<a href="../courseware/se-education/book/testCaseDesign/print.html">SE-EDU：Test Case Design</a></td>
+          <td><a href="https://softengbook.org/chapter8.html">Valente 第 8 章</a></td>
+          <td>划分、边界、覆盖率、oracle、测试替身</td>
+        </tr>
+        <tr>
+          <td class="what">5 · 验收与维护</td>
+          <td><a href="../courseware/google-sre/postmortem-culture/index.html">SRE：Postmortem Culture</a>；<a href="../courseware/se-education/book/refactoring/print.html">SE-EDU：Refactoring</a>；<a href="../courseware/swebok/swebok-v4.pdf">SWEBOK 第 7 章</a></td>
+          <td><a href="https://google.github.io/eng-practices/review/">Google Code Review 指南</a></td>
+          <td>审查、诊断、维护类型、事故复盘</td>
+        </tr>
+        <tr>
+          <td class="what">6 · 专业实践与 AI</td>
+          <td><a href="../courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf">CMU：Responsible AI use</a>；<a href="../courseware/cmu-17-313/pdfs/04-737MAX.pdf">737-MAX 案例</a></td>
+          <td><a href="https://missing-semester-cn.github.io/2026/agentic-coding/">Missing Semester：智能体编程</a></td>
+          <td>验证、责任、伦理；上下文管理与子智能体</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p><strong>整套课件怎么用：</strong><a href="https://cmu-313.github.io/">CMU 17-313</a> 用 OpenCode 做项目，环境与本课程一致；<a href="https://se-education.org/se-book">SE-EDU</a> 覆盖最全的经典主题；<a href="https://web.mit.edu/6.031/www/sp21/">MIT 6.031</a> 的测试与规格最扎实。只取指定章节，不要求整门跟。</p>
+    <p><strong>模块 0 的实践读物：</strong><code>ask-matt/SKILL.md</code> 与 <code>setup-matt-pocock-skills/SKILL.md</code>；技能包是练习场，理论仍以 SWEBOK、SE-EDU 和 SE at Google 为主。</p>
+    <p><strong>每课的具体章节/页码见 <code>SOURCE-MAP.md</code>；</strong>写课时先查它，不要凭记忆。</p>
+  </div>
+
+  <h3>术语的家谱</h3>
+  <p>这张表解决的是「这个词从哪来、为什么存在」。定义可以查，家谱查不到。每学一个词，先知道它在回答谁的什么问题。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>术语</th><th>出处</th><th>课</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">本质复杂度 / 偶然复杂度</td><td>Brooks, <em>No Silver Bullet</em>（1986）</td><td class="num">1</td></tr>
+        <tr><td class="what">需求 / 验收标准 / 非功能需求</td><td>SWEBOK 第 1 章；SE-EDU Requirements</td><td class="num">6</td></tr>
+        <tr><td class="what">信息隐藏</td><td>Parnas, <em>On the Criteria To Be Used in Decomposing Systems into Modules</em>（1972）</td><td class="num">14–15</td></tr>
+        <tr><td class="what">深模块</td><td>Ousterhout, <em>A Philosophy of Software Design</em>（2018）</td><td class="num">14</td></tr>
+        <tr><td class="what">接缝 seam</td><td>Feathers, <em>Working Effectively with Legacy Code</em>（2004）</td><td class="num">15</td></tr>
+        <tr><td class="what">Tracer bullet</td><td>Hunt &amp; Thomas, <em>The Pragmatic Programmer</em>（1999）</td><td class="num">10</td></tr>
+        <tr><td class="what">Walking skeleton</td><td>Freeman &amp; Pryce, <em>Growing Object-Oriented Software, Guided by Tests</em>（2009）</td><td class="num">10</td></tr>
+        <tr><td class="what">质量属性 / 视图</td><td>SWEBOK 第 2 章；SE-EDU Architecture</td><td class="num">17</td></tr>
+        <tr><td class="what">Ubiquitous Language</td><td>Evans, <em>Domain-Driven Design</em>（2003）</td><td class="num">4</td></tr>
+        <tr><td class="what">elicitation / design tree / frontier</td><td>SWEBOK 第 1 章；Matt Pocock <code>grilling</code></td><td class="num">5</td></tr>
+        <tr><td class="what">ADR（架构决策记录）</td><td>Nygard, <em>Documenting Architecture Decisions</em>（2011）；Matt Pocock <code>domain-modeling</code></td><td class="num">7</td></tr>
+        <tr><td class="what">红绿重构</td><td>Beck, <em>Test-Driven Development: By Example</em>（2002）</td><td class="num">20</td></tr>
+        <tr><td class="what">测试金字塔 / 覆盖率</td><td>Mike Cohn（2009）；MIT 6.031 Testing</td><td class="num">19</td></tr>
+        <tr><td class="what">双轴审查</td><td>Matt Pocock <code>code-review</code>；Google Code Review 指南</td><td class="num">25</td></tr>
+        <tr><td class="what">无责复盘（blameless postmortem）</td><td>Google SRE Book</td><td class="num">29</td></tr>
+        <tr><td class="what">Smart zone</td><td>Matt Pocock / AI Hero</td><td class="num">32</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="intros">
+  <h2>模块导读：每次十分钟</h2>
+  <p>模块 1–6 开头各有一次导读。不讲课，只给一篇主读物和三个问题。读完再进第一节课；读不完可以只读摘要，但三个问题要能用自己的话答。导读不计入 34 节，也不单独产出练习。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模块</th><th>读什么</th><th>带着三个问题</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="what">1 · 需求与语言</td>
+          <td><a href="../courseware/se-education/book/gatheringRequirements/print.html">SE-EDU：Gathering Requirements</a>；<a href="../courseware/cmu-17-313/pdfs/07-specs.pdf">CMU：Specs</a></td>
+          <td>需求从哪来？验收标准长什么样？非功能需求为什么最容易被忽略？</td>
+        </tr>
+        <tr>
+          <td class="what">2 · 计划与过程</td>
+          <td><a href="../courseware/se-education/book/processModels/print.html">SE-EDU：Process Models</a>；<a href="../courseware/cmu-17-313/pdfs/03-project-planning.pdf">CMU：Project Planning</a></td>
+          <td>瀑布和迭代各自怕什么？估算为什么总是不准？度量为谁服务？</td>
+        </tr>
+        <tr>
+          <td class="what">3 · 设计与架构</td>
+          <td><a href="../courseware/se-education/book/architecture/print.html">SE-EDU：Architecture</a>；<a href="../courseware/swebok/swebok-v4.pdf">SWEBOK 第 2 章</a></td>
+          <td>质量属性怎么变成设计约束？视图是给谁看的？什么样的架构算「好」？</td>
+        </tr>
+        <tr>
+          <td class="what">4 · 实现与测试</td>
+          <td><a href="../courseware/mit-6.031/classes/03-testing/index.html">MIT 6.031：Testing</a>；<a href="../courseware/cmu-17-313/pdfs/09-testing.pdf">CMU：Testing</a></td>
+          <td>怎么选测试用例？覆盖率能证明什么、不能证明什么？oracle 从哪来？</td>
+        </tr>
+        <tr>
+          <td class="what">5 · 验收与维护</td>
+          <td><a href="../courseware/google-sre/postmortem-culture/index.html">SRE：Postmortem Culture</a>；<a href="../courseware/swebok/swebok-v4.pdf">SWEBOK 第 7 章</a></td>
+          <td>一次事故该留下什么？维护有哪几种？什么时候该重写、什么时候该修？</td>
+        </tr>
+        <tr>
+          <td class="what">6 · 专业实践与 AI</td>
+          <td><a href="../courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf">CMU：Responsible AI use</a>；<a href="../courseware/cmu-17-313/pdfs/04-737MAX.pdf">737-MAX 案例</a></td>
+          <td>AI 的错误谁负责？哪些任务不该交给 AI？上下文什么时候该清空？</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="rhythm">
+  <h2>节奏与验收</h2>
+  <p>34 节，每节 25–40 分钟阅读加 45–60 分钟动手，合计约 52 小时。按每周 5–8 小时算，8–10 周跑完；每周 3–4 节。六个模块导读各占十分钟，不额外占课时。</p>
+  <div class="note">
+    <p><strong>不设考试。</strong>每个模块结束是一次能力检查：给你一个没见过的情境，你产出该模块要求的产物，agent 按对应 <code>SKILL.md</code> 和经典清单逐条检查。检查不通过就补一节课，不往后赶。</p>
+  </div>
+  <p>模块 0–1 结束时，你应该能独立完成一次「需求 → 决定 → 词条 + ADR」。模块 2 结束时，能独立把决定拆成可交付的工单，并给出带假设的估算。模块 3 结束时，能说清一个模块和一个系统的设计取舍。模块 4 结束时，能靠测试和 CI 而不是感觉来判断代码对不对。模块 5–6 结束时，能维护、复盘，并在主线之外自己选路。</p>
+</section>
+
+<section id="sandbox">
+  <h2>沙盒：迷你知识库，CLI + 薄 HTTP adapter</h2>
+  <p>练习不在 <code>knowledge-pet</code> 上做，另开一个 Python 仓库。主题是一个迷你知识库：把 Markdown 文件入库、建索引、按关键词检索、回答时给引用。</p>
+  <p>先做 CLI，后面加一个薄的 HTTP adapter。不是为了做产品，而是让课程需要的设计张力都有落点：</p>
+  <ul>
+    <li><strong>状态机</strong>：入库的排队、失败、重试、取消，够讲清楚状态与副作用。</li>
+    <li><strong>接缝</strong>：存储、文件读取、HTTP 各放一个 port，后面接多个 adapter；HTTP adapter 本身就是「接缝」那一课的真实产物。</li>
+    <li><strong>深模块</strong>：一个 <code>index.search(query)</code> 背后可以藏分块、倒排、排序，接口只有一个。</li>
+    <li><strong>架构与质量属性</strong>：CLI 和 HTTP 两个入口，逼你谈延迟、可靠性、可观测性。</li>
+    <li><strong>CI 与运维</strong>：有一个可启动、可打日志、可制造故障的对象；不需要云和数据库。</li>
+    <li><strong>可显示的界面</strong>：最后做一个 HTML 报告页，够开一次 UI 原型。</li>
+  </ul>
+  <p>去掉 RAG、向量库、Live2D。课程要练的是工程判断，不是把产品再做一遍。</p>
+</section>
+
+<section id="next">
+  <h2>接下来</h2>
+  <ol class="steps">
+    <li>地图 v3 已确认：34 节、7 模块、单人版、CLI + 薄 HTTP adapter。</li>
+    <li>第 1–7 课已写完；第 7 课「ADR：什么决定值得记下来」按五段结构写完，产出「总结产物存不存、怎么进索引」带被否方案的 ADR。下一步写第 8 课「Spec：从共识到可执行」。</li>
+    <li>沙盒已经跑过 setup：<code>AGENTS.md</code> 与 <code>docs/agents/</code> 存在（当前缺 <code>triage-labels.md</code>，写第 13 课前补）。<code>GLOSSARY.md</code> 等第 4 课练习时再懒创建。</li>
+    <li>之后按「详细大纲先行、完整课只做接下来两节」的方式推进，学完一个模块再根据实际理解调整下一个。</li>
+  </ol>
+</section>
+
+<footer class="colophon">
+  <p>课程工作区：<code>D:\code\my_projects\study-mattpocock-skills</code> · 技能包以 <code>C:\Users\admin\.agents\skills\</code> 下的 <code>SKILL.md</code> 为准 · 理论引用依据见 <code>SOURCE-MAP.md</code> · 复核记录见 <code>CURRICULUM-REVIEW.md</code> · 课程开发规范见 <code>COURSE-STANDARD.md</code>。</p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Reading 22: Locks and Synchronization</title>
+
+
+<style>
+.handout-javadoc-comment ~ .hljs-comment,
+.handout-javadoc-comment ~ * .hljs-comment { color: rgb(63,95,191); }
+</style>
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#reading_22_locks_and_synchronization">Reading 22: Locks and Synchronization</a></li><li><a href="#introduction">Introduction</a></li><li><a href="#synchronization">Synchronization</a></li><li><a href="#deadlock">Deadlock</a></li><li><a href="#developing_a_threadsafe_abstract_data_type">Developing a threadsafe abstract data type</a></li><li><a href="#locking">Locking</a></li><li><a href="#monitor_pattern">Monitor pattern</a></li><li><a href="#thread_safety_argument_with_synchronization">Thread safety argument with synchronization</a></li><li><a href="#atomic_operations">Atomic operations</a></li><li><a href="#designing_a_datatype_for_concurrency">Designing a datatype for concurrency</a></li><li><a href="#deadlock_rears_its_ugly_head">Deadlock rears its ugly head</a></li><li><a href="#concurrency_in_practice">Concurrency in practice</a></li><li><a href="#summary">Summary</a></li><li><a href="#more_practice">More practice</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="reading_22_locks_and_synchronization"><iframe class="exercises-status" src="https://6031.mit.edu/handx/sp21-java/status.php"></iframe><a class="jump" href="#reading_22_locks_and_synchronization"></a>Reading 22: Locks and Synchronization</h1><div data-outline="reading_22_locks_and_synchronization">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><h4 id="@software_6-031"><a class="jump" href="#@software_6-031"></a>Software in 6.031</h4>
+
+<table class="table table-striped no-markdown" id="@safe_bugseasy_understandready">
+<tbody><tr><th width="33%"><a class="jump" href="#@safe_bugseasy_understandready"></a>Safe from bugs</th><th>Easy to understand</th><th>Ready for change</th></tr>
+<tr><td>
+  Correct today and correct in the unknown future.
+</td><td>
+  Communicating clearly with future programmers, including future you.
+</td><td>
+  Designed to accommodate change without rewriting.
+</td></tr>
+</tbody></table>
+
+<h4 id="@objectives"><a class="jump" href="#@objectives"></a>Objectives</h4>
+
+<ul id="@understand_lock_used">
+<li><a class="jump" href="#@understand_lock_used"></a>Understand how a lock is used to protect shared mutable data</li>
+<li>Be able to recognize deadlock and know strategies to prevent it</li>
+<li>Know the monitor pattern and be able to apply it to a data type</li>
+</ul>
+
+<h2 id="introduction"><a class="jump" href="#introduction"></a>Introduction</h2><div data-outline="introduction">
+
+<p id="@defined_thread_safety"><a class="jump" href="#@defined_thread_safety"></a>We <a href="../21-thread-safety/#what_threadsafe_means">defined thread safety</a> for a data type or a function as <em>behaving correctly when used from multiple threads, regardless of how those threads are executed, without additional coordination</em>.</p>
+
+<p id="@here-s_general_principle"><a class="jump" href="#@here-s_general_principle"></a>Here’s the general principle: the correctness of a concurrent program should not depend on accidents of timing.</p>
+
+<p id="@achieve_correctness_enumerated"><a class="jump" href="#@achieve_correctness_enumerated"></a>To achieve that correctness, we enumerated <a href="../21-thread-safety/">four strategies for making code safe for concurrency</a>:</p>
+
+<ol id="@confinement_don-t_share">
+<li><a class="jump" href="#@confinement_don-t_share"></a><a href="../21-thread-safety/#strategy_1_confinement"><strong>Confinement</strong></a>: don’t share data between threads, by keeping variables and the data they point to accessible from only one thread.</li>
+<li><a href="../21-thread-safety/#strategy_2_immutability"><strong>Immutability</strong></a>: make the shared data immutable, by using final variables and immutable types.</li>
+<li><a href="../21-thread-safety/#strategy_3_using_threadsafe_data_types"><strong>Use existing threadsafe data types</strong></a>: use a data type that does the coordination for you.</li>
+<li><strong>Synchronization</strong>: prevent threads from accessing the shared data at the same time.
+This is what we use to implement a threadsafe type, but we didn’t discuss it at the time.</li>
+</ol>
+
+<p id="@reading_talk_about"><a class="jump" href="#@reading_talk_about"></a>In this reading, we’ll talk about strategy 4, using synchronization to implement your own data type that is safe for shared-memory concurrency.</p>
+
+</div><h2 id="synchronization"><a class="jump" href="#synchronization"></a>Synchronization</h2><div data-outline="synchronization">
+
+<p id="@correctness_concurrent_program"><a class="jump" href="#@correctness_concurrent_program"></a><strong>The correctness of a concurrent program should not depend on accidents of timing.</strong></p>
+
+<p id="@since_race_conditions"><a class="jump" href="#@since_race_conditions"></a>Since race conditions caused by concurrent manipulation of shared mutable data are disastrous bugs — hard to discover, hard to reproduce, hard to debug — we need a way for concurrent modules that share memory to <strong>synchronize</strong> with each other.</p>
+
+<p id="@locks_one_synchronization"><a class="jump" href="#@locks_one_synchronization"></a><mark data-mark-text="lock" data-structure-text="lock" id="^lock"><strong>Locks</strong></mark> are one synchronization technique.
+A lock is an abstraction that allows at most one thread to <em>own</em> it at a time.
+<em>Holding a lock</em> is how one thread informs other threads: “I’m working with this thing, don’t touch it right now.”</p>
+
+<p id="@locks_two_operations"><a class="jump" href="#@locks_two_operations"></a>Locks have two operations:</p>
+
+<ul>
+<li><p id="@acquire_allows_thread"><a class="jump" href="#@acquire_allows_thread"></a><strong><code>acquire</code></strong> allows a thread to take ownership of a lock.
+If a thread tries to acquire a lock currently owned by another thread, it <em>blocks</em> until the other thread releases the lock.
+At that point, it will contend with any other threads that are trying to acquire the lock.
+At most one thread can own the lock at a time.</p></li>
+<li><p id="@release_relinquishes_ownership"><a class="jump" href="#@release_relinquishes_ownership"></a><strong><code>release</code></strong> relinquishes ownership of the lock, allowing another thread to take ownership of it.</p></li>
+</ul>
+
+<p id="@using_lock_also"><a class="jump" href="#@using_lock_also"></a>Using a lock also tells the compiler and processor that you’re using shared memory concurrently, so that registers and caches will be written back correctly to shared storage.
+This avoids the problem of <a href="../20-concurrency/#reordering">reordering</a>, ensuring that the owner of a lock is always looking at up-to-date data.</p>
+
+<span id="blocking"></span>
+
+<p id="@blocking_means_general"><a class="jump" href="#@blocking_means_general"></a><mark data-structure-text="blocking" id="^blocking"><strong>Blocking</strong></mark> means, in general, that a thread waits (without doing further work) until an event occurs.</p>
+
+<p id="@acquire-l_thread_1"><a class="jump" href="#@acquire-l_thread_1"></a>An <code>acquire(l)</code> on thread 1 will block if another thread (say thread 2) is holding lock <code>l</code>.
+The event it waits for is thread 2 performing <code>release(l)</code>.
+At that point, if thread 1 can acquire <code>l</code>, it continues running its code, with ownership of the lock.
+It is possible that another thread (say thread 3) was also blocked on <code>acquire(l)</code>.
+If so, either thread 1 or 3 (the winner is nondeterministic) will take the lock <code>l</code> and continue.
+The other will continue to block, waiting for <code>release(l)</code> again.</p>
+
+<h3 id="bank_account_example"><a class="jump" href="#bank_account_example"></a>Bank account example</h3><div data-outline="bank_account_example">
+
+<div class="panel panel-figure pull-right pull-margin"><img src="figures/shared-memory-bank-account.png" alt="shared memory model for bank accounts" width="500"></div>
+
+<p id="@our_first_example"><a class="jump" href="#@our_first_example"></a>Our first example of shared memory concurrency was a <a href="../20-concurrency/#shared_memory_example">bank with cash machines</a>.
+The diagram from that example is on the right.</p>
+
+<p id="@bank_several_cash"><a class="jump" href="#@bank_several_cash"></a>The bank has several cash machines, all of which can read and write the same account objects in memory.</p>
+
+<p id="@course_without_any"><a class="jump" href="#@course_without_any"></a>Of course, without any coordination between concurrent reads and writes to the account balances, <a href="../20-concurrency/#interleaving">things went horribly wrong</a>.</p>
+
+<span class="clearfix"></span>
+
+<p id="@solve_problem_using"><a class="jump" href="#@solve_problem_using"></a>To solve this problem using locks, we can add a lock that protects each bank account.
+Now, before they can access or update an account balance, cash machines must first acquire the lock on that account.</p>
+
+<div class="panel panel-figure pull-right pull-margin"><img src="figures/locks-bank-account.png" alt="synchronizing bank accounts with locks" width="500"></div>
+
+<p id="@diagram_right_both"><a class="jump" href="#@diagram_right_both"></a>In the diagram to the right, both A and B are trying to access account 1.
+Suppose B acquires the lock first.
+Then A must wait to read or write the balance until B finishes and releases the lock.
+This ensures that A and B are synchronized, but another cash machine C is able to run independently on a different account (because that account is protected by a different lock).</p>
+
+<span class="clearfix"></span>
+
+<p id="@important_thing_understand"><a class="jump" href="#@important_thing_understand"></a>An important thing to understand about locking in general is that it’s a <em>convention</em> — a protocol for good behavior with a shared memory object.
+All participating threads with access to the same shared memory object have to carefully acquire and release the appropriate lock.
+If a badly-written client fails to acquire or release the right lock, then the system isn’t actually threadsafe.</p>
+
+</div></div><h2 id="deadlock"><a class="jump" href="#deadlock"></a>Deadlock</h2><div data-outline="deadlock">
+
+<p id="@used_properly_carefully"><a class="jump" href="#@used_properly_carefully"></a>When used properly and carefully, locks can prevent race conditions.
+But then another problem rears its ugly head.
+Because the use of locks requires threads to wait (<code>acquire</code> blocks when another thread is holding the lock), it’s possible to get into a situation where two threads are waiting <em>for each other</em> — and hence neither can make progress.</p>
+
+<div class="panel panel-figure pull-right pull-margin"><img src="figures/deadlock.png" alt="bank account deadlock" width="250"></div>
+
+<p id="@figure_right_suppose"><a class="jump" href="#@figure_right_suppose"></a>In the figure to the right, suppose A and B are making simultaneous transfers between two accounts in our bank.</p>
+
+<p id="@transfer_between_accounts"><a class="jump" href="#@transfer_between_accounts"></a>A transfer between accounts needs to lock both accounts, so that money can’t disappear from the system.
+A and B each acquire the lock on their respective “from” account first: A acquires the lock on account 1, and B acquires the lock on account 2.
+Now, each must acquire the lock on their “to” account: so A is waiting for B to release the account 2 lock, and B is waiting for A to release the account 1 lock.
+Stalemate!
+A and B are frozen in a “deadly embrace,” and accounts are locked up.</p>
+
+<p><mark data-structure-text="deadlock" id="^deadlock"><strong>Deadlock</strong></mark> occurs when concurrent modules are stuck waiting for each other to do something.
+A deadlock may involve more than two modules, e.g., A may be waiting for B, which is waiting for C, which is waiting for A.
+None of them can make progress.
+The essential feature of deadlock is a <strong>cycle of dependencies</strong> like this.</p>
+
+<p id="@you_can_also"><a class="jump" href="#@you_can_also"></a>You can also have deadlock without using any locks.
+For example, a message-passing system can experience deadlock when message buffers fill up.
+If a client fills up the server’s buffer with requests, and then <em>blocks</em> waiting to add another request, the server may then fill up the client’s buffer with results and then block itself.
+So the client is waiting for the server, and the server waiting for the client, and neither can make progress until the other one does.
+Again, deadlock ensues.</p>
+
+<div class="handout-solo alert alert-warning"><p>In the Java Tutorials, read:</p>
+
+<ul id="@deadlock_1_page">
+<li><a class="jump" href="#@deadlock_1_page"></a><a href="http://docs.oracle.com/javase/tutorial/essential/concurrency/deadlock.html" class="alert-link">Deadlock</a> (1 page)</li>
+</ul></div>
+
+</div><h2 id="developing_a_threadsafe_abstract_data_type"><a class="jump" href="#developing_a_threadsafe_abstract_data_type"></a>Developing a threadsafe abstract data type</h2><div data-outline="developing_a_threadsafe_abstract_data_type">
+
+<p id="@see_use_synchronization"><a class="jump" href="#@see_use_synchronization"></a>Let’s see how to use synchronization to implement a threadsafe ADT.</p>
+
+<p id="@you_can_see"><a class="jump" href="#@you_can_see"></a>You can see <a href="code.html">all the code for this example</a>.
+You are <em>not</em> expected to read and understand all the code.
+All the relevant parts are excerpted below.</p>
+
+<p id="@suppose_building_multi-user"><a class="jump" href="#@suppose_building_multi-user"></a>Suppose we’re building a multi-user editor, like Google Docs, that allows multiple people to connect to it and edit it at the same time.
+We’ll need a mutable datatype to represent the text in the document.
+Here’s the interface; basically it represents a string with insert and delete operations:</p>
+
+<div class="code-container"><span class="handout-solo alert alert-warning"><a href="code.html#editbufferjava" class="alert-link"><code>EditBuffer.java</code></a></span>
+
+<pre id="@editbuffer_represents_threadsafe_mutable_string_characters_text_editor_public"><a class="jump" href="#@editbuffer_represents_threadsafe_mutable_string_characters_text_editor_public"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** 
+ * An EditBuffer represents a threadsafe mutable
+ * string of characters in a text editor.
+ */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * Modifies this by inserting a string.
+     * <span class="hljs-doctag">@param</span> position  position to insert at 
+     *                     (requires 0 &lt;= position &lt;= current buffer length)
+     * <span class="hljs-doctag">@param</span> insertion string to insert
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insert</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, String insertion)</span></span>;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * Modifies this by deleting a substring
+     * <span class="hljs-doctag">@param</span> position starting position of substring to delete 
+     *                     (requires 0 &lt;= position &lt;= current buffer length)
+     * <span class="hljs-doctag">@param</span> len      length of substring to delete
+     *                     (requires 0 &lt;= len &lt;= current buffer length - position)
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">delete</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, <span class="hljs-keyword">int</span> len)</span></span>;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> length of text sequence in this edit buffer
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span></span>;
+
+    <span class="hljs-comment handout-javadoc-comment">/**
+     * <span class="hljs-doctag">@return</span> content of this edit buffer
+     */</span>
+    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">toString</span><span class="hljs-params">()</span></span>;
+}</code></pre></div>
+
+<p id="@very_simple_rep"><a class="jump" href="#@very_simple_rep"></a>A very simple rep for this datatype would just be a string:</p>
+
+<div class="code-container"><span class="handout-solo alert alert-warning"><a href="code.html#simplebufferjava" class="alert-link"><code>SimpleBuffer.java</code></a></span>
+
+<pre id="@public_class_simplebuffer"><a class="jump" href="#@public_class_simplebuffer"></a><code class="language-java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleBuffer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-keyword">private</span> String text;
+    <span class="hljs-comment">// Rep invariant:</span>
+    <span class="hljs-comment">//   true</span>
+    <span class="hljs-comment">// Abstraction function: </span>
+    <span class="hljs-comment">//   represents the sequence text[0],...,text[text.length()-1]</span></code></pre></div>
+
+<p id="@downside_rep_every"><a class="jump" href="#@downside_rep_every"></a>The downside of this rep is that every time we do an insert or delete, we have to copy the entire string into a new string.
+That gets expensive.
+Another rep we could use would be a character array, with space at the end.
+That’s fine if the user is just typing new text at the end of the document (we don’t have to copy anything), but if the user is typing at the beginning of the document, then we’re copying the entire document with every keystroke.</p>
+
+<p id="@more_interesting_rep"><a class="jump" href="#@more_interesting_rep"></a>A more interesting rep, which is used by many text editors in practice, is called a <a href="https://en.wikipedia.org/wiki/Gap_buffer"><em>gap buffer</em></a>.
+It’s basically a character array with extra space in it, but instead of having all the extra space at the end, the extra space is a <em>gap</em> that can appear anywhere in the buffer.
+Whenever an insert or delete operation needs to be done, the datatype first moves the gap to the location of the operation, and then does the insert or delete.
+If the gap is already there, then nothing needs to be copied — an insert just consumes part of the gap, and a delete just enlarges the gap!
+Gap buffers are particularly well-suited to representing a string that is being edited by a user with a cursor, since inserts and deletes tend to be focused around the cursor, so the gap rarely moves.</p>
+
+<style class="no-markdown">
+   .override-comment-coloring .hljs-comment:not(.handout-javadoc-comment) { color: rgb(63,127,95); }
+</style>
+
+<div class="code-container override-comment-coloring"><span class="handout-solo alert alert-warning"><a href="code.html#gapbufferjava" class="alert-link"><code>GapBuffer.java</code></a></span>
+
+<pre id="@gapbuffer_non-threadsafe_editbuffer"><a class="jump" href="#@gapbuffer_non-threadsafe_editbuffer"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** 
+ * GapBuffer is a non-threadsafe EditBuffer that is optimized
+ * for editing with a cursor, which tends to make a sequence of
+ * inserts and deletes at the same place in the buffer.
+ */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GapBuffer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">char</span>[] a;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> gapStart;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> gapLength;
+    <span class="hljs-comment">// Rep invariant:</span>
+    <span class="hljs-comment">//   0 &lt;= gapStart &lt;= a.length</span>
+    <span class="hljs-comment">//   0 &lt;= gapLength &lt;= a.length - gapStart</span>
+    <span class="hljs-comment">// Abstraction function: </span>
+    <span class="hljs-comment">//   represents the sequence a[0],...,a[gapStart-1],</span>
+    <span class="hljs-comment">//                           a[gapStart+gapLength],...,a[a.length-1]</span></code></pre></div>
+
+<p id="@multiuser_scenario_we-d"><a class="jump" href="#@multiuser_scenario_we-d"></a>In a multiuser scenario, we’d want multiple gaps, one for each user’s cursor, but we’ll use a single gap for now.</p>
+
+<h3 id="steps_to_develop_the_datatype"><a class="jump" href="#steps_to_develop_the_datatype"></a>Steps to develop the datatype</h3><div data-outline="steps_to_develop_the_datatype">
+
+<p id="@recall_our_recipe"><a class="jump" href="#@recall_our_recipe"></a>Recall our <a href="../19-programming-with-adts/#recipes_for_programming">recipe for designing and implementing an ADT</a>:</p>
+
+<div class="list-style-sub-lower-alpha"><ol>
+<li><p id="@specify_define_operations"><a class="jump" href="#@specify_define_operations"></a><strong>Specify.</strong>
+Define the operations (method signatures and specs).
+We did that in the <code>EditBuffer</code> interface.</p></li>
+<li><p id="@test_develop_test"><a class="jump" href="#@test_develop_test"></a><strong>Test.</strong>
+Develop test cases for the operations.
+See <a href="code.html#editbuffertestjava"><code>EditBufferTest</code></a> in the provided code.
+The test suite includes a testing strategy based on partitioning the parameter space of the operations.</p></li>
+<li><p id="@rep_choose_rep"><a class="jump" href="#@rep_choose_rep"></a><strong>Rep.</strong>
+Choose a rep.
+We chose two of them for <code>EditBuffer</code>, and this is often a good idea:</p>
+
+<ol><li><p id="@implement_simple_brute-force"><a class="jump" href="#@implement_simple_brute-force"></a><strong>Implement a simple, brute-force rep first.</strong>
+It’s easier to write, you’re more likely to get it right, and it will validate your test cases and your specification so you can fix problems in them before you move on to the harder implementation.
+This is why we implemented <code>SimpleBuffer</code> before moving on to <code>GapBuffer</code>.
+Don’t throw away your simple version, either — keep it around so that you have something to test and compare against in case things go wrong with the more complex one.</p></li>
+<li><p id="@write_down_rep"><a class="jump" href="#@write_down_rep"></a><strong>Write down the rep invariant and abstraction function, and implement <code>checkRep()</code>.</strong>
+<code>checkRep()</code> asserts the rep invariant at the end of every constructor, producer, and mutator method.
+(It’s typically not necessary to call it at the end of an observer, since the rep hasn’t changed.)
+In fact, assertions can be very useful for testing complex implementations, so it’s not a bad idea to also assert the postcondition at the end of a complex method.
+You’ll see an example of this in <code>GapBuffer.moveGap()</code> in the code with this reading.</p></li></ol></li>
+</ol></div>
+
+<p id="@all_these_steps"><a class="jump" href="#@all_these_steps"></a>In all these steps, we’re working entirely single-threaded at first.
+Multithreaded clients should be in the back of our minds at all times while we’re writing specs and choosing reps (we’ll see later that careful choice of operations may be necessary to avoid race conditions in the clients of your datatype).
+But get it working, and thoroughly tested, in a sequential, single-threaded environment first.</p>
+
+<p id="@now_ready_next"><a class="jump" href="#@now_ready_next"></a>Now we’re ready for the next step:</p>
+
+<ol start="4"><li><p id="@synchronize_make_argument"><a class="jump" href="#@synchronize_make_argument"></a><strong>Synchronize.</strong>
+Make an argument that your rep is threadsafe.
+Write it down explicitly as a comment in your class, right by the rep invariant, so that a maintainer knows how you designed thread safety into the class.</p></li></ol>
+
+<p id="@part_reading_about"><a class="jump" href="#@part_reading_about"></a>This part of the reading is about how to do step 4.
+We already saw <a href="../21-thread-safety/#how_to_make_a_safety_argument">how to make a thread safety argument</a>, but this time, we’ll rely on synchronization in that argument.</p>
+
+<p id="@then_extra_step"><a class="jump" href="#@then_extra_step"></a>And then the extra step we hinted at above:</p>
+
+<ol start="5"><li><p id="@iterate_you_may"><a class="jump" href="#@iterate_you_may"></a><strong>Iterate</strong>.
+You may find that your choice of operations makes it hard to write a threadsafe type with the guarantees clients require.
+You might discover this in step 1, or in step 2 when you write tests, or in steps 3 or 4 when you implement.
+If that’s the case, go back and refine the set of operations your ADT provides.</p></li></ol>
+
+</div></div><h2 id="locking"><a class="jump" href="#locking"></a>Locking</h2><div data-outline="locking">
+
+<p id="@locks_so_commonly-used"><a class="jump" href="#@locks_so_commonly-used"></a>Locks are so commonly-used that Java provides them as a built-in language feature.</p>
+
+<p id="@java_every_object"><a class="jump" href="#@java_every_object"></a>In Java, every object has a lock implicitly associated with it — a <code>String</code>, an array, an <code>ArrayList</code>, and every class you create, all of their object instances have a lock.
+Even a humble <code>Object</code> has a lock, so bare <code>Object</code>s are often used for explicit locking:</p>
+
+<pre id="@object_lock_new"><a class="jump" href="#@object_lock_new"></a><code class="language-java hljs">Object lock = <span class="hljs-keyword">new</span> Object();</code></pre>
+
+<p id="@you_can-t_call"><a class="jump" href="#@you_can-t_call"></a>You can’t call <code>acquire</code> and <code>release</code> on Java’s intrinsic locks, however.
+Instead you use the <strong><code>synchronized</code></strong> statement to acquire the lock for the duration of a statement block:</p>
+
+<pre id="@synchronized_lock_thread"><a class="jump" href="#@synchronized_lock_thread"></a><code class="language-java hljs"><span class="hljs-keyword">synchronized</span> (lock) { <span class="hljs-comment">// thread blocks here until lock is free</span>
+    <span class="hljs-comment">// now this thread has the lock</span>
+    balance = balance + <span class="hljs-number">1</span>;
+} <span class="hljs-comment">// exiting the block releases the lock</span></code></pre>
+
+<p id="@synchronized_regions_like"><a class="jump" href="#@synchronized_regions_like"></a>Synchronized regions like this provide <mark data-structure-text="mutual exclusion" id="^mutual_exclusion"><strong>mutual exclusion</strong></mark>: only one thread at a time can be in a synchronized region guarded by a given object’s lock.
+In other words, you are back in sequential programming world, with only one thread running at a time, at least with respect to other synchronized regions that refer to the same object.</p>
+
+<h3 id="locks_guard_access_to_data"><a class="jump" href="#locks_guard_access_to_data"></a>Locks guard access to data</h3><div data-outline="locks_guard_access_to_data">
+
+<p id="@locks_used_guard"><a class="jump" href="#@locks_used_guard"></a>Locks are used to <strong>guard</strong> a shared data variable, like the account balance shown here.
+If all accesses to a data variable are guarded (surrounded by a synchronized block) by the same lock object, then those accesses will be guaranteed to be atomic — uninterrupted by other threads.</p>
+
+<p id="@locks_only_provide"><a class="jump" href="#@locks_only_provide"></a>Locks only provide mutual exclusion with other threads that acquire the same lock.
+All accesses to a data variable must be guarded by the same lock.
+You might guard an entire collection of variables behind a single lock, but all modules must agree on which lock they will all acquire and release.</p>
+
+<p id="@because_every_object"><a class="jump" href="#@because_every_object"></a>Because every object in Java has a lock implicitly associated with it, you might think that owning an object’s lock would automatically prevent other threads from accessing that object.
+<strong>That is not the case.</strong>
+When a thread <em>t</em> acquires an object’s lock using <code>synchronized (obj) { ... }</code>, it does one thing and one thing only: it prevents other threads from entering their own <code>synchronized(</code><em>expression</em><code>)</code> block, where <em>expression</em> refers to the same object as <code>obj</code>, until thread <em>t</em> finishes its synchronized block.
+That’s it.
+Even while <em>t</em> is in its synchronized block, another thread can dangerously mutate the object, simply by neglecting to use <code>synchronized</code> itself.
+In order to use an object lock for synchronization, you have to explicitly and carefully guard every such access with an appropriate <code>synchronized</code> block or method keyword.</p>
+
+</div></div><h2 id="monitor_pattern"><a class="jump" href="#monitor_pattern"></a>Monitor pattern</h2><div data-outline="monitor_pattern">
+
+<p id="@you_writing_methods"><a class="jump" href="#@you_writing_methods"></a>When you are writing methods of a class, the most convenient lock is the object instance itself, i.e. <code>this</code>.
+As a simple approach, we can guard the entire rep of a class by wrapping all accesses to the rep inside <code>synchronized (this)</code>.</p>
+
+<pre class="no-markdown" id="@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_public_simplebuffer_synchronized_text_checkrep"><a class="jump" href="#@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_public_simplebuffer_synchronized_text_checkrep"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** SimpleBuffer is a threadsafe EditBuffer with a simple rep. */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleBuffer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-keyword">private</span> String text;
+    ...
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SimpleBuffer</span><span class="hljs-params">()</span> </span>{
+        <b><span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) {</b>
+            text = <span class="hljs-string">""</span>;
+            checkRep();
+        <b>}</b>
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">insert</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, String insertion)</span> </span>{
+        <b><span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) {</b>
+            text = text.substring(<span class="hljs-number">0</span>, position) + insertion + text.substring(position);
+            checkRep();
+        <b>}</b>
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">delete</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, <span class="hljs-keyword">int</span> len)</span> </span>{
+        <b><span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) {</b>
+            text = text.substring(<span class="hljs-number">0</span>, position) + text.substring(position+len);
+            checkRep();
+        <b>}</b>
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span> </span>{
+        <b><span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) {</b>
+            <span class="hljs-keyword">return</span> text.length();
+        <b>}</b>
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">toString</span><span class="hljs-params">()</span> </span>{
+        <b><span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) {</b>
+            <span class="hljs-keyword">return</span> text;
+        <b>}</b>
+    }
+}
+</code></pre>
+
+<p id="@note_very_careful"><a class="jump" href="#@note_very_careful"></a>Note the very careful discipline here.
+<em>Every</em> method is guarded with the lock — even apparently small and trivial ones like <code>length()</code> and <code>toString()</code>.
+This is because reads must be guarded as well as writes — if reads are left unguarded, then they may be able to see the rep in a partially-modified state.</p>
+
+<p id="@approach_called_monitor"><a class="jump" href="#@approach_called_monitor"></a>This approach is called the <mark data-structure-text="monitor pattern" id="^monitor_pattern"><strong>monitor pattern</strong></mark>.
+A monitor is a class whose methods are mutually exclusive, so that only one thread can be inside an instance of the class at a time.</p>
+
+<p id="@java_provides_some"><a class="jump" href="#@java_provides_some"></a>Java provides some syntactic sugar that helps with the monitor pattern.
+If you add the keyword <code>synchronized</code> to a method signature, then Java will act as if you wrote <code>synchronized (this)</code> around the method body.
+So the code below is an equivalent way to implement the synchronized <code>SimpleBuffer</code>:</p>
+
+<pre class="no-markdown" id="@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_public_simplebuffer_text_checkrep_public"><a class="jump" href="#@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_public_simplebuffer_text_checkrep_public"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** SimpleBuffer is a threadsafe EditBuffer with a simple rep. */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleBuffer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-keyword">private</span> String text;
+    ...
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SimpleBuffer</span><span class="hljs-params">()</span> </span>{
+        text = <span class="hljs-string">""</span>;
+        checkRep();
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> </span><b><span class="hljs-function"><span class="hljs-keyword">synchronized</span></span></b><span class="hljs-function"> <span class="hljs-keyword">void</span> <span class="hljs-title">insert</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, String insertion)</span> </span>{
+        text = text.substring(<span class="hljs-number">0</span>, position) + insertion + text.substring(position);
+        checkRep();
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> </span><b><span class="hljs-function"><span class="hljs-keyword">synchronized</span></span></b><span class="hljs-function"> <span class="hljs-keyword">void</span> <span class="hljs-title">delete</span><span class="hljs-params">(<span class="hljs-keyword">int</span> position, <span class="hljs-keyword">int</span> len)</span> </span>{
+        text = text.substring(<span class="hljs-number">0</span>, position) + text.substring(position+len);
+        checkRep();
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> </span><b><span class="hljs-function"><span class="hljs-keyword">synchronized</span></span></b><span class="hljs-function"> <span class="hljs-keyword">int</span> <span class="hljs-title">length</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> text.length();
+    }
+    <span class="hljs-function"><span class="hljs-keyword">public</span> </span><b><span class="hljs-function"><span class="hljs-keyword">synchronized</span></span></b><span class="hljs-function"> String <span class="hljs-title">toString</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">return</span> text;
+    }
+}
+</code></pre>
+
+<p id="@notice_simplebuffer_constructor"><a class="jump" href="#@notice_simplebuffer_constructor"></a>Notice that the <code>SimpleBuffer</code> constructor doesn’t have a <code>synchronized</code> keyword.
+Java actually forbids it, syntactically, because an object under construction is expected to be confined to a single thread until it has returned from its constructor.
+So synchronizing constructors should be unnecessary.
+You can still synchronize a constructor by wrapping its body in a <code>synchronized(this)</code> block, if you wish.</p>
+
+<div class="handout-solo alert alert-warning"><p>In the Java Tutorials, read:</p>
+
+<ul id="@synchronized_methods_1">
+<li><a class="jump" href="#@synchronized_methods_1"></a><a href="http://docs.oracle.com/javase/tutorial/essential/concurrency/syncmeth.html" class="alert-link">Synchronized Methods</a> (1 page)</li>
+<li><a href="http://docs.oracle.com/javase/tutorial/essential/concurrency/locksync.html" class="alert-link">Intrinsic Locks and Synchronization</a> (1 page)</li>
+</ul></div>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-monitor_pattern"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-monitor_pattern-synchronizing_with_locks" data-target="#ex-monitor_pattern-synchronizing_with_locks" data-toggle="collapse"><a class="jump" href="#@ex-monitor_pattern-synchronizing_with_locks"></a><span class="panel-title">Synchronizing with locks</span></div><div class="panel-collapse collapse exercise-panel" id="ex-monitor_pattern-synchronizing_with_locks" data-outline="synchronizing_with_locks" data-ex-id="monitor_pattern/synchronizing_with_locks" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@if_thread_b"><a class="jump" href="#@if_thread_b"></a>If thread B tries to acquire a lock currently held by thread A:</p>
+
+<p>What happens to thread A?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="blocks until B acquires the lock"><label for="md_converted_choice_3_0"><input type="radio" id="md_converted_choice_3_0" name="md_converted_radio_3">blocks until B acquires the lock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="blocks until B releases the lock"><label for="md_converted_choice_3_1"><input type="radio" id="md_converted_choice_3_1" name="md_converted_radio_3">blocks until B releases the lock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="nothing"><label for="md_converted_choice_3_2"><input type="radio" id="md_converted_choice_3_2" name="md_converted_radio_3">nothing</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<p>What happens to thread B?</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="blocks until A acquires the lock"><label for="md_converted_choice_4_0"><input type="radio" id="md_converted_choice_4_0" name="md_converted_radio_4">blocks until A acquires the lock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="blocks until A releases the lock"><label for="md_converted_choice_4_1"><input type="radio" id="md_converted_choice_4_1" name="md_converted_radio_4">blocks until A releases the lock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="nothing"><label for="md_converted_choice_4_2"><input type="radio" id="md_converted_choice_4_2" name="md_converted_radio_4">nothing</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-monitor_pattern-this_list_is_mine_all_mine" data-target="#ex-monitor_pattern-this_list_is_mine_all_mine" data-toggle="collapse"><a class="jump" href="#@ex-monitor_pattern-this_list_is_mine_all_mine"></a><span class="panel-title">This list is mine, all mine</span></div><div class="panel-collapse collapse exercise-panel" id="ex-monitor_pattern-this_list_is_mine_all_mine" data-outline="this_list_is_mine_all_mine" data-ex-id="monitor_pattern/this_list_is_mine_all_mine" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@suppose_list_instance"><a class="jump" href="#@suppose_list_instance"></a>Suppose <code>list</code> is an instance of <code>ArrayList&lt;String&gt;</code>.</p>
+
+<p id="@true_while_synchronized"><a class="jump" href="#@true_while_synchronized"></a>What is true while A is in a <code>synchronized (list) { ... }</code> block?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="it owns the lock on list"><label for="md_converted_choice_1_0"><input type="checkbox" id="md_converted_choice_1_0">it owns the lock on <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="it does not own the lock on list"><label for="md_converted_choice_1_1"><input type="checkbox" id="md_converted_choice_1_1">it does not own the lock on <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="no other thread can use observers of list"><label for="md_converted_choice_1_2"><input type="checkbox" id="md_converted_choice_1_2">no other thread can use observers of <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="no other thread can use mutators of list"><label for="md_converted_choice_1_3"><input type="checkbox" id="md_converted_choice_1_3">no other thread can use mutators of <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="no other thread can acquire the lock on list"><label for="md_converted_choice_1_4"><input type="checkbox" id="md_converted_choice_1_4">no other thread can acquire the lock on <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="no other thread can acquire locks on elements in list"><label for="md_converted_choice_1_5"><input type="checkbox" id="md_converted_choice_1_5">no other thread can acquire locks on elements in <code>list</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-monitor_pattern-ok_fine_but_this_synchronized_list_is_totally_mine" data-target="#ex-monitor_pattern-ok_fine_but_this_synchronized_list_is_totally_mine" data-toggle="collapse"><a class="jump" href="#@ex-monitor_pattern-ok_fine_but_this_synchronized_list_is_totally_mine"></a><span class="panel-title">OK fine but this synchronized List is totally mine</span></div><div class="panel-collapse collapse exercise-panel" id="ex-monitor_pattern-ok_fine_but_this_synchronized_list_is_totally_mine" data-outline="ok_fine_but_this_synchronized_list_is_totally_mine" data-ex-id="monitor_pattern/ok_fine_but_this_synchronized_list_is_totally_mine" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@suppose_sharedlist_list"><a class="jump" href="#@suppose_sharedlist_list"></a>Suppose <code>sharedList</code> is a <code>List</code> returned by <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/Collections.html#synchronizedList(java.util.List)"><code>Collections.synchronizedList</code></a>.</p>
+
+<p id="@now_safe_use"><a class="jump" href="#@now_safe_use"></a>It is now safe to use <code>sharedList</code> from multiple threads without acquiring any locks… except! Which of the following would require a <code>synchronized(sharedList) { ... }</code> block?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="call isEmpty"><label for="md_converted_choice_2_0"><input type="checkbox" id="md_converted_choice_2_0">call <code>isEmpty</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="call add"><label for="md_converted_choice_2_1"><input type="checkbox" id="md_converted_choice_2_1">call <code>add</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="iterate over the list"><label for="md_converted_choice_2_2"><input type="checkbox" id="md_converted_choice_2_2">iterate over the list</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="call isEmpty, if it returns false, call remove(0)"><label for="md_converted_choice_2_3"><input type="checkbox" id="md_converted_choice_2_3">call <code>isEmpty</code>, if it returns false, call <code>remove(0)</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-monitor_pattern-i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire" data-target="#ex-monitor_pattern-i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire" data-toggle="collapse"><a class="jump" href="#@ex-monitor_pattern-i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire"></a><span class="panel-title">I heard you like locks so I acquired your lock so you can lock while you acquire</span></div><div class="panel-collapse collapse exercise-panel" id="ex-monitor_pattern-i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire" data-outline="i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire" data-ex-id="monitor_pattern/i_heard_you_like_locks_so_i_acquired_your_lock_so_you_can_lock_while_you_acquire" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@suppose_run_code"><a class="jump" href="#@suppose_run_code"></a>Suppose we run this code:</p>
+
+<pre id="@synchronized_obj_synchronized"><a class="jump" href="#@synchronized_obj_synchronized"></a><code class="language-java hljs"><span class="hljs-keyword">synchronized</span> (obj) {
+    <span class="hljs-comment">// ...</span>
+    <span class="hljs-keyword">synchronized</span> (obj) { <span class="hljs-comment">// &lt;-- uh oh, deadlock?</span>
+        <span class="hljs-comment">// ...</span>
+    }
+    <span class="hljs-comment">// &lt;-- do we own the lock on obj?</span>
+}</code></pre>
+
+<p id="@line_uh_oh"><a class="jump" href="#@line_uh_oh"></a>On the line “uh oh, deadlock?”, do we experience deadlock?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="yes"><label for="md_converted_choice_5_0"><input type="radio" id="md_converted_choice_5_0" name="md_converted_radio_5">yes</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="no"><label for="md_converted_choice_5_1"><input type="radio" id="md_converted_choice_5_1" name="md_converted_radio_5">no</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<p id="@if_don-t_deadlock"><a class="jump" href="#@if_don-t_deadlock"></a>If we don’t deadlock, on the line “do we own the lock on obj”, does the thread own the lock on obj?</p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="yes"><label for="md_converted_choice_6_0"><input type="radio" id="md_converted_choice_6_0" name="md_converted_radio_6">yes</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="no"><label for="md_converted_choice_6_1"><input type="radio" id="md_converted_choice_6_1" name="md_converted_radio_6">no</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="we deadlocked"><label for="md_converted_choice_6_2"><input type="radio" id="md_converted_choice_6_2" name="md_converted_radio_6">we deadlocked</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div><h2 id="thread_safety_argument_with_synchronization"><a class="jump" href="#thread_safety_argument_with_synchronization"></a>Thread safety argument with synchronization</h2><div data-outline="thread_safety_argument_with_synchronization">
+
+<p id="@now_protecting_simplebuffer-s"><a class="jump" href="#@now_protecting_simplebuffer-s"></a>Now that we’re protecting <code>SimpleBuffer</code>’s rep with a lock, we can write a thread safety argument:</p>
+
+<pre id="@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_rep_invariant"><a class="jump" href="#@simplebuffer_threadsafe_editbuffer_simple_rep_public_class_simplebuffer_implements_editbuffer_private_string_text_rep_invariant"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** SimpleBuffer is a threadsafe EditBuffer with a simple rep. */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleBuffer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">EditBuffer</span> </span>{
+    <span class="hljs-keyword">private</span> String text;
+    <span class="hljs-comment">// Rep invariant: </span>
+    <span class="hljs-comment">//   true</span>
+    <span class="hljs-comment">// Abstraction function: </span>
+    <span class="hljs-comment">//   represents the sequence text[0],...,text[text.length()-1]</span>
+    <span class="hljs-comment">// Safety from rep exposure:</span>
+    <span class="hljs-comment">//   text is private and immutable</span>
+    <span class="hljs-comment">// Thread safety argument:</span>
+    <span class="hljs-comment">//   all accesses to text happen within SimpleBuffer methods,</span>
+    <span class="hljs-comment">//   which are all guarded by SimpleBuffer's lock</span></code></pre>
+
+<p id="@same_argument_works"><a class="jump" href="#@same_argument_works"></a>The same argument works for <code>GapBuffer</code>, if we use the monitor pattern to synchronize all its methods.</p>
+
+<p id="@note_encapsulation_class"><a class="jump" href="#@note_encapsulation_class"></a>Note that the encapsulation of the class, the absence of rep exposure, is very important for making this argument.
+If text were public:</p>
+
+<pre id="@public_string_text"><a class="jump" href="#@public_string_text"></a><code class="language-java hljs">    <span class="hljs-keyword">public</span> String text;</code></pre>
+
+<p id="@then_clients_outside"><a class="jump" href="#@then_clients_outside"></a>then clients outside <code>SimpleBuffer</code> would be able to read and write it without first acquiring the lock, and <code>SimpleBuffer</code> would no longer be threadsafe.</p>
+
+<h3 id="locking_discipline"><a class="jump" href="#locking_discipline"></a>Locking discipline</h3><div data-outline="locking_discipline">
+
+<p id="@locking_discipline_strategy"><a class="jump" href="#@locking_discipline_strategy"></a>A locking discipline is a strategy for ensuring that synchronized code is threadsafe.
+We must satisfy two conditions:</p>
+
+<ol>
+<li><p id="@every_shared_mutable"><a class="jump" href="#@every_shared_mutable"></a>Every shared mutable variable must be guarded by some lock.
+The data may not be read or written except inside a synchronized block that acquires that lock.</p></li>
+<li><p id="@if_invariant_involves"><a class="jump" href="#@if_invariant_involves"></a>If an invariant involves multiple shared mutable variables (which might even be in different objects), then all the variables involved must be guarded by the <em>same</em> lock.
+Once a thread acquires the lock, the invariant must be reestablished before releasing the lock.</p></li>
+</ol>
+
+<p>The monitor pattern as used here satisfies both rules.
+All the shared mutable data in the rep — which the rep invariant depends on — are guarded by the same lock.</p>
+
+</div></div><h2 id="atomic_operations"><a class="jump" href="#atomic_operations"></a>Atomic operations</h2><div data-outline="atomic_operations">
+
+<p id="@consider_find-and-replace_operation"><a class="jump" href="#@consider_find-and-replace_operation"></a>Consider a find-and-replace operation on the <code>EditBuffer</code> datatype:</p>
+
+<pre id="@modifies_buf_replacing"><a class="jump" href="#@modifies_buf_replacing"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/** 
+ * Modifies `buf` by replacing the first occurrence of `pattern` with `replacement`.
+ * If `pattern` is not found in `buf`, then has no effect.
+ * <span class="hljs-doctag">@return</span> true if and only if a replacement was made
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">findReplace</span><span class="hljs-params">(EditBuffer buf, String pattern, String replacement)</span> </span>{
+    <span class="hljs-keyword">int</span> i = buf.toString().indexOf(pattern);
+    <span class="hljs-keyword">if</span> (i == -<span class="hljs-number">1</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+    }
+    buf.delete(i, pattern.length());
+    buf.insert(i, replacement);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+}</code></pre>
+
+<p id="@method_makes_three"><a class="jump" href="#@method_makes_three"></a>This method makes three different calls to <code>buf</code> — to convert it to a string in order to search for <code>pattern</code>, to delete the old text, and then to insert <code>replacement</code> in its place.
+Even though each of these calls individually is atomic, the <code>findReplace</code> method as a whole is not threadsafe, because other threads might mutate the buffer while <code>findReplace</code> is working, causing it to delete the wrong region or put the replacement back in the wrong place.</p>
+
+<p id="@prevent_findreplace_needs"><a class="jump" href="#@prevent_findreplace_needs"></a>To prevent this, <code>findReplace</code> needs to synchronize with all other clients of <code>buf</code>.</p>
+
+<h3 id="giving_clients_access_to_a_lock"><a class="jump" href="#giving_clients_access_to_a_lock"></a>Giving clients access to a lock</h3><div data-outline="giving_clients_access_to_a_lock">
+
+<p id="@sometimes_useful_make"><a class="jump" href="#@sometimes_useful_make"></a>It’s sometimes useful to make your datatype’s lock available to clients, so that they can use it to implement higher-level atomic operations using your datatype.</p>
+
+<p id="@so_one_approach"><a class="jump" href="#@so_one_approach"></a>So one approach to the problem with <code>findReplace</code> is to document that clients can use the <code>EditBuffer</code>’s lock to synchronize with each other:</p>
+
+<pre class="no-markdown" id="@editbuffer_represents_threadsafe_mutable_string_characters_text_editor_clients"><a class="jump" href="#@editbuffer_represents_threadsafe_mutable_string_characters_text_editor_clients"></a><code class="language-java hljs"><span class="hljs-comment handout-javadoc-comment">/**
+ * An EditBuffer represents a threadsafe mutable string of characters
+ * in a text editor. </span><b><span class="hljs-comment">Clients may synchronize with each other using the
+ * EditBuffer object itself.</span></b><span class="hljs-comment"> 
+ */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">EditBuffer</span> </span>{
+   ...
+}
+</code></pre>
+
+<p id="@then_findreplace_can"><a class="jump" href="#@then_findreplace_can"></a>And then <code>findReplace</code> can synchronize on <code>buf</code>:</p>
+
+<pre class="no-markdown" id="@public_static_boolean"><a class="jump" href="#@public_static_boolean"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">findReplace</span><span class="hljs-params">(EditBuffer buf, String pattern, String replacement)</span> </span>{
+    <b><span class="hljs-keyword">synchronized</span> (buf) {</b>
+        <span class="hljs-keyword">int</span> i = buf.toString().indexOf(pattern);
+        <span class="hljs-keyword">if</span> (i == -<span class="hljs-number">1</span>) {
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+        }
+        buf.delete(i, pattern.length());
+        buf.insert(i, replacement);
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+    <b>}</b>
+}
+</code></pre>
+
+<p id="@effect_enlarge_synchronization"><a class="jump" href="#@effect_enlarge_synchronization"></a>The effect of this is to enlarge the synchronization region that the monitor pattern already put around the individual <code>toString</code>, <code>delete</code>, and <code>insert</code> methods, into a single atomic region that ensures that all three methods are executed without interference from other threads.</p>
+
+</div><h3 id="sprinkling_synchronized_everywhere"><a class="jump" href="#sprinkling_synchronized_everywhere"></a>Sprinkling <code>synchronized</code> everywhere?</h3><div data-outline="sprinkling_synchronized_everywhere">
+
+<p id="@so_thread_safety"><a class="jump" href="#@so_thread_safety"></a>So is thread safety simply a matter of putting the <code>synchronized</code> keyword on every method in your program?
+Unfortunately not.</p>
+
+<p id="@first_you_actually"><a class="jump" href="#@first_you_actually"></a>First, you actually don’t want to synchronize methods willy-nilly.
+Synchronization imposes a large cost on your program.
+Making a synchronized method call may take significantly longer, because of the need to acquire a lock (and manipulate shared storage and communicate with other processors).
+Java leaves many of its mutable datatypes unsynchronized by default exactly for these performance reasons.
+When you don’t need synchronization, don’t use it.</p>
+
+<p id="@second_not_actually"><a class="jump" href="#@second_not_actually"></a>Second, it’s not actually sufficient to sprinkle <code>synchronized</code> everywhere.
+Dropping <code>synchronized</code> onto a method without thinking means that you’re acquiring a lock without thinking about which lock it is, or about whether it’s the right lock for guarding the shared data access you’re about to do.
+Suppose we had tried to solve <code>findReplace</code>’s synchronization problem simply by dropping <code>synchronized</code> onto its declaration:</p>
+
+<pre id="@public_static_synchronized"><a class="jump" href="#@public_static_synchronized"></a><code class="language-java hljs"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">findReplace</span><span class="hljs-params">(EditBuffer buf, ...)</span> </span>{</code></pre>
+
+<p id="@wouldn-t_do_want"><a class="jump" href="#@wouldn-t_do_want"></a>This wouldn’t do what we want.
+It would indeed acquire a lock — because <code>findReplace</code> is a static method, it would acquire a static lock for the whole class that <code>findReplace</code> happens to be in, rather than an instance object lock.
+As a result, only one thread could call <code>findReplace</code> at a time — even if other threads want to operate on <em>different</em> buffers, which should be safe, they’d still be blocked until the single lock was free.
+So we’d suffer a significant loss in performance, because only one user of our massive multiuser editor would be allowed to do a find-and-replace at a time, even if they’re all editing different documents.</p>
+
+<p id="@worse_however_wouldn-t"><a class="jump" href="#@worse_however_wouldn-t"></a>Worse, however, it wouldn’t provide useful protection, because other code that touches the document probably wouldn’t be acquiring the same lock.
+It wouldn’t actually eliminate our race conditions.</p>
+
+<p id="@synchronized_keyword_not"><a class="jump" href="#@synchronized_keyword_not"></a>The <code>synchronized</code> keyword is not a panacea.
+Thread safety requires a discipline — using confinement, immutability, or locks to protect shared data.
+And that discipline needs to be written down, or maintainers won’t know what it is.</p>
+
+</div></div><h2 id="designing_a_datatype_for_concurrency"><a class="jump" href="#designing_a_datatype_for_concurrency"></a>Designing a datatype for concurrency</h2><div data-outline="designing_a_datatype_for_concurrency">
+
+<p id="@findreplace-s_problem_can"><a class="jump" href="#@findreplace-s_problem_can"></a><code>findReplace</code>’s problem can be interpreted another way: that the <code>EditBuffer</code> interface really isn’t that friendly to multiple simultaneous clients.
+It relies on integer indexes to specify insert and delete locations, which are extremely brittle to other mutations.
+If somebody else inserts or deletes before the index position, then the index becomes invalid.</p>
+
+<p id="@so_if_designing"><a class="jump" href="#@so_if_designing"></a>So if we’re designing a datatype specifically for use in a concurrent system, we need to think about providing operations that have better-defined semantics when they are interleaved.
+For example, it might be better to pair <code>EditBuffer</code> with a <code>Position</code> datatype representing a cursor position in the buffer, or even a <code>Selection</code> datatype representing a selected range.
+Once obtained, a <code>Position</code> could hold its location in the text against the wash of insertions and deletions around it, until the client was ready to use that <code>Position</code>.
+If some other thread deleted all the text around the <code>Position</code>, then the <code>Position</code> would be able to inform a subsequent client about what had happened (perhaps with an exception), and allow the client to decide what to do.
+These kinds of considerations come into play when designing a datatype for concurrency.</p>
+
+<p id="@another_example_consider"><a class="jump" href="#@another_example_consider"></a>As another example, consider the <a href="http://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/util/concurrent/ConcurrentMap.html"><code>ConcurrentMap</code></a> interface in Java.
+This interface extends the existing <code>Map</code> interface, adding a few key methods that are commonly needed as atomic operations on a shared mutable map, e.g.:</p>
+
+<ul id="@map-putifabsent-key-value_atomic_version">
+<li><a class="jump" href="#@map-putifabsent-key-value_atomic_version"></a><code>map.putIfAbsent(key,value)</code> is an atomic version of <br>
+  <code>if ( ! map.containsKey(key)) map.put(key, value);</code></li>
+<li><code>map.replace(key, value)</code> is an atomic version of <br>
+  <code>if (map.containsKey(key)) map.put(key, value);</code></li>
+</ul>
+
+</div><h2 id="deadlock_rears_its_ugly_head"><a class="jump" href="#deadlock_rears_its_ugly_head"></a>Deadlock rears its ugly head</h2><div data-outline="deadlock_rears_its_ugly_head">
+
+<p>The synchronization approach to thread safety is powerful, but (unlike confinement and immutability) it introduces blocking into the program.
+Threads must sometimes wait for other threads to get out of synchronized regions before they can proceed.
+And blocking raises the possibility of deadlock.</p>
+
+<p id="@saw_above_deadlock"><a class="jump" href="#@saw_above_deadlock"></a><a href="#deadlock">As we saw above</a>, deadlock happens when threads acquire multiple locks at the same time, and two threads end up blocked while holding locks that they are each waiting for the other to release.
+The monitor pattern unfortunately makes this fairly easy to do.
+Here’s an example.</p>
+
+<p id="@suppose_modeling_social"><a class="jump" href="#@suppose_modeling_social"></a>Suppose we’re modeling the social network of a series of books:</p>
+
+<pre id="@public_class_wizard_private_final_string"><a class="jump" href="#@public_class_wizard_private_final_string"></a><code class="language-java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wizard</span> </span>{
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Set&lt;Wizard&gt; friends;
+    <span class="hljs-comment">// Rep invariant:</span>
+    <span class="hljs-comment">//    friend links are bidirectional: </span>
+    <span class="hljs-comment">//        for all f in friends, f.friends contains this</span>
+    <span class="hljs-comment">// Concurrency argument:</span>
+    <span class="hljs-comment">//    threadsafe by monitor pattern: all accesses to rep </span>
+    <span class="hljs-comment">//    are guarded by this object's lock</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Wizard</span><span class="hljs-params">(String name)</span> </span>{
+        <span class="hljs-keyword">this</span>.name = name;
+        <span class="hljs-keyword">this</span>.friends = <span class="hljs-keyword">new</span> HashSet&lt;Wizard&gt;();
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isFriendsWith</span><span class="hljs-params">(Wizard that)</span> </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.friends.contains(that);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">friend</span><span class="hljs-params">(Wizard that)</span> </span>{
+        <span class="hljs-keyword">if</span> (friends.add(that)) {
+            that.friend(<span class="hljs-keyword">this</span>);
+        } 
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">defriend</span><span class="hljs-params">(Wizard that)</span> </span>{
+        <span class="hljs-keyword">if</span> (friends.remove(that)) {
+            that.defriend(<span class="hljs-keyword">this</span>);
+        } 
+    }
+}</code></pre>
+
+<p id="@like_facebook_social"><a class="jump" href="#@like_facebook_social"></a>Like Facebook, this social network is bidirectional: if <em>x</em> is friends with <em>y</em>, then <em>y</em> is friends with <em>x</em>.
+The <code>friend()</code> and <code>defriend()</code> methods enforce that invariant by modifying the reps of both objects, which because they use the monitor pattern means acquiring the locks to both objects as well.</p>
+
+<p id="@create_couple_wizards"><a class="jump" href="#@create_couple_wizards"></a>Let’s create a couple of wizards:</p>
+
+<pre id="@wizard_harry_new"><a class="jump" href="#@wizard_harry_new"></a><code class="language-java hljs">    Wizard harry = <span class="hljs-keyword">new</span> Wizard(<span class="hljs-string">"Harry Potter"</span>);
+    Wizard snape = <span class="hljs-keyword">new</span> Wizard(<span class="hljs-string">"Severus Snape"</span>);</code></pre>
+
+<p id="@then_think_about"><a class="jump" href="#@then_think_about"></a>And then think about what happens when two independent threads are repeatedly running:</p>
+
+<pre id="@thread_thread_b"><a class="jump" href="#@thread_thread_b"></a><code class="language-java hljs">    <span class="hljs-comment">// thread A                   // thread B</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-keyword">true</span>) {                <span class="hljs-keyword">while</span> (<span class="hljs-keyword">true</span>) {
+      harry.friend(snape);          snape.friend(harry);
+      harry.defriend(snape);        snape.defriend(harry);
+    }                             }</code></pre>
+
+<p id="@deadlock_very_rapidly"><a class="jump" href="#@deadlock_very_rapidly"></a>We will deadlock very rapidly.
+Here’s why.
+Suppose thread A is about to execute <code>harry.friend(snape)</code>, and thread B is about to execute <code>snape.friend(harry)</code>.</p>
+
+<ul id="@thread_acquires_lock">
+<li><a class="jump" href="#@thread_acquires_lock"></a>Thread A acquires the lock on <code>harry</code> (because the friend method is synchronized).</li>
+<li>Then thread B acquires the lock on <code>snape</code> (for the same reason).</li>
+<li>They both update their individual reps independently, and then try to call <code>friend()</code> on the other object — which requires them to acquire the lock on the other object.</li>
+</ul>
+
+<p id="@so_holding_harry"><a class="jump" href="#@so_holding_harry"></a>So A is holding Harry and waiting for Snape, and B is holding Snape and waiting for Harry.
+Both threads are stuck in <code>friend()</code>, so neither one will ever manage to exit the synchronized region and release the lock to the other.
+This is a classic deadly embrace.
+The program simply stops.</p>
+
+<p id="@essence_problem_acquiring"><a class="jump" href="#@essence_problem_acquiring"></a>The essence of the problem is acquiring multiple locks, and holding some of the locks while waiting for another lock to become free.</p>
+
+<p id="@notice_possible_thread"><a class="jump" href="#@notice_possible_thread"></a>Notice that it is possible for thread A and thread B to interleave such that deadlock does not occur: perhaps thread A acquires and releases both locks before thread B has enough time to acquire the first one.
+If the locks involved in a deadlock are also involved in a race condition — and very often they are — then the deadlock will be just as difficult to reproduce or debug.</p>
+
+<h3 id="deadlock_solution_1_lock_ordering"><a class="jump" href="#deadlock_solution_1_lock_ordering"></a>Deadlock solution 1: lock ordering</h3><div data-outline="deadlock_solution_1_lock_ordering">
+
+<p id="@one_way_prevent"><a class="jump" href="#@one_way_prevent"></a>One way to prevent deadlock is to put an ordering on the locks that need to be acquired simultaneously, and ensuring that all code acquires the locks in that order.</p>
+
+<p id="@our_social_network"><a class="jump" href="#@our_social_network"></a>In our social network example, we might always acquire the locks on the <code>Wizard</code> objects in alphabetical order by the wizard’s name.
+Since thread A and thread B are both going to need the locks for Harry and Snape, they would both acquire them in that order: Harry’s lock first, then Snape’s.
+If thread A gets Harry’s lock before B does, it will also get Snape’s lock before B does, because B can’t proceed until A releases Harry’s lock again. The ordering on the locks forces an ordering on the threads acquiring them, so there’s no way to produce a cycle in the waiting-for graph.</p>
+
+<p id="@here-s_code_might"><a class="jump" href="#@here-s_code_might"></a>Here’s what the code might look like:</p>
+
+<pre id="@public_void_friend-wizard"><a class="jump" href="#@public_void_friend-wizard"></a><code class="language-java hljs">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">friend</span><span class="hljs-params">(Wizard that)</span> </span>{
+        Wizard first, second;
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.name.compareTo(that.name) &lt; <span class="hljs-number">0</span>) {
+            first = <span class="hljs-keyword">this</span>; second = that;
+        } <span class="hljs-keyword">else</span> {
+            first = that; second = <span class="hljs-keyword">this</span>;
+        }
+        <span class="hljs-keyword">synchronized</span> (first) {
+            <span class="hljs-keyword">synchronized</span> (second) {
+                <span class="hljs-keyword">if</span> (friends.add(that)) {
+                    that.friend(<span class="hljs-keyword">this</span>);
+                } 
+            }
+        }
+    }</code></pre>
+
+<p id="@note_decision_order"><a class="jump" href="#@note_decision_order"></a>(Note that the decision to order the locks alphabetically by the person’s name would work fine for the situation of this Harry Potter book, but it wouldn’t work in a real life social network.
+Why not?
+What would be better to use for lock ordering than the name?)</p>
+
+<p id="@although_lock_ordering"><a class="jump" href="#@although_lock_ordering"></a>Although lock ordering is useful (particularly in code like operating system kernels), it has a number of drawbacks in practice.</p>
+
+<ul id="@first_not_modular">
+<li><a class="jump" href="#@first_not_modular"></a>First, it’s not modular — the code has to know about all the locks in the system, or at least in its subsystem.</li>
+<li>Second, it may be difficult or impossible for the code to know exactly which of those locks it will need before it even acquires the first one.
+It may need to do some computation to figure it out.
+Think about doing a depth-first search on the social network graph, for example — how would you know which nodes need to be locked, before you’ve even started looking for them?</li>
+</ul>
+
+</div><h3 id="deadlock_solution_2_coarse-grained_locking"><a class="jump" href="#deadlock_solution_2_coarse-grained_locking"></a>Deadlock solution 2: coarse-grained locking</h3><div data-outline="deadlock_solution_2_coarse-grained_locking">
+
+<p id="@more_common_approach"><a class="jump" href="#@more_common_approach"></a>A more common approach than lock ordering, particularly for application programming (as opposed to operating system or device driver programming), is to use coarser locking — use a single lock to guard many object instances, or even a whole subsystem of a program.</p>
+
+<p id="@example_might_single"><a class="jump" href="#@example_might_single"></a>For example, we might have a single lock for an entire social network, and have all the operations on any of its constituent parts synchronize on that lock.
+In the code below, all <code>Wizard</code>s belong to a <code>Castle</code>, and we just use that <code>Castle</code> object’s lock to synchronize:</p>
+
+<pre id="@public_class_wizard_private_final_castle"><a class="jump" href="#@public_class_wizard_private_final_castle"></a><code class="language-java hljs"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wizard</span> </span>{
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Castle castle;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String name;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Set&lt;Wizard&gt; friends;
+    ...
+    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">friend</span><span class="hljs-params">(Wizard that)</span> </span>{
+        <span class="hljs-keyword">synchronized</span> (castle) {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.friends.add(that)) {
+                that.friend(<span class="hljs-keyword">this</span>);
+            }
+        }
+    }
+}</code></pre>
+
+<p id="@coarse-grained_locks_can"><a class="jump" href="#@coarse-grained_locks_can"></a>Coarse-grained locks can have a significant performance penalty.
+If you guard a large pile of mutable data with a single lock, then you’re giving up the ability to access any of that data concurrently.
+In the worst case, having a single lock protecting everything, your program might be essentially sequential — only one thread is allowed to make progress at a time.</p>
+
+<div class="reading-exercises exercises panel-group converted" id="ex-deadlock_rears_its_ugly_head"><h4 class="text-danger">reading exercises</h4><div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-deadlock_rears_its_ugly_head-deadlock" data-target="#ex-deadlock_rears_its_ugly_head-deadlock" data-toggle="collapse"><a class="jump" href="#@ex-deadlock_rears_its_ugly_head-deadlock"></a><span class="panel-title">Deadlock</span></div><div class="panel-collapse collapse exercise-panel" id="ex-deadlock_rears_its_ugly_head-deadlock" data-outline="deadlock" data-ex-id="deadlock_solution_2_coarse-grained_locking/deadlock" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@code_below_three"><a class="jump" href="#@code_below_three"></a>In the code below three threads 1, 2, and 3 are trying to acquire locks on objects <code>alpha</code>, <code>beta</code>, and <code>gamma</code>.</p>
+
+<table><tbody><tr><td><p>Thread 1</p></td><td><p id="@thread_2"><a class="jump" href="#@thread_2"></a>Thread 2</p></td><td><p id="@thread_3"><a class="jump" href="#@thread_3"></a>Thread 3</p></td></tr>
+<tr><td style="vertical-align: top;"><pre id="@synchronized_alpha_using"><a class="jump" href="#@synchronized_alpha_using"></a><code class="hljs java"><span class="hljs-keyword">synchronized</span> (alpha) {
+    <span class="hljs-comment">// using alpha</span>
+    <span class="hljs-comment">// ...</span>
+}
+
+<span class="hljs-keyword">synchronized</span> (gamma) {
+    <span class="hljs-keyword">synchronized</span> (beta) {
+        <span class="hljs-comment">// using beta &amp; gamma</span>
+        <span class="hljs-comment">// ...</span>
+    }
+}
+<span class="hljs-comment">// finished</span></code></pre></td><td style="vertical-align: top;"><pre id="@synchronized_gamma_synchronized_alpha_synchronized_beta"><a class="jump" href="#@synchronized_gamma_synchronized_alpha_synchronized_beta"></a><code class="hljs java"><span class="hljs-keyword">synchronized</span> (gamma) {
+    <span class="hljs-keyword">synchronized</span> (alpha) {
+        <span class="hljs-keyword">synchronized</span> (beta) {
+            <span class="hljs-comment">// using alpha, beta, &amp; gamma</span>
+            <span class="hljs-comment">// ...</span>
+        }
+    }
+}
+<span class="hljs-comment">// finished</span></code></pre></td><td style="vertical-align: top;"><pre id="@synchronized_gamma_synchronized_alpha_using_alpha"><a class="jump" href="#@synchronized_gamma_synchronized_alpha_using_alpha"></a><code class="hljs java"><span class="hljs-keyword">synchronized</span> (gamma) {
+    <span class="hljs-keyword">synchronized</span> (alpha) {
+        <span class="hljs-comment">// using alpha &amp; gamma</span>
+        <span class="hljs-comment">// ...</span>
+    }
+}
+
+<span class="hljs-keyword">synchronized</span> (beta) {
+    <span class="hljs-keyword">synchronized</span> (gamma) {
+        <span class="hljs-comment">// using beta &amp; gamma</span>
+        <span class="hljs-comment">// ...</span>
+    }
+}
+<span class="hljs-comment">// finished</span></code></pre></td></tr></tbody></table>
+
+<p id="@system_susceptible_deadlock"><a class="jump" href="#@system_susceptible_deadlock"></a>This system is susceptible to deadlock.</p>
+
+<p id="@each_scenarios_below"><a class="jump" href="#@each_scenarios_below"></a>For each of the scenarios below, determine whether the system is in deadlock if the threads are currently on the indicated lines of code.</p>
+
+<p><b></b></p><p><b>Scenario A</b></p><p></p>
+
+<p>Thread 1 inside <code>using alpha</code><br>Thread 2 blocked on <code>synchronized (alpha)</code><br>Thread 3 finished</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="radio exercise-choice" data-outline="deadlock"><label for="md_converted_choice_8_0"><input type="radio" id="md_converted_choice_8_0" name="md_converted_radio_8">deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="not deadlock"><label for="md_converted_choice_8_1"><input type="radio" id="md_converted_choice_8_1" name="md_converted_radio_8">not deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p><b></b></p><p><b>Scenario B</b></p><p></p>
+
+<p id="@thread_1_finishedthread"><a class="jump" href="#@thread_1_finishedthread"></a>Thread 1 finished<br>Thread 2 blocked on <code>synchronized (beta)</code><br>Thread 3 blocked on 2nd <code>synchronized (gamma)</code></p>
+
+<div class="form-group exercise-part" data-outline="b"><div class="radio exercise-choice" data-outline="deadlock"><label for="md_converted_choice_9_0"><input type="radio" id="md_converted_choice_9_0" name="md_converted_radio_9">deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="not deadlock"><label for="md_converted_choice_9_1"><input type="radio" id="md_converted_choice_9_1" name="md_converted_radio_9">not deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p><b></b></p><p id="@scenario_c"><a class="jump" href="#@scenario_c"></a><b>Scenario C</b></p><p></p>
+
+<p id="@thread_1_running"><a class="jump" href="#@thread_1_running"></a>Thread 1 running <code>synchronized (beta)</code><br>Thread 2 blocked on <code>synchronized (gamma)</code><br>Thread 3 blocked on 1st <code>synchronized (gamma)</code></p>
+
+<div class="form-group exercise-part" data-outline="c"><div class="radio exercise-choice" data-outline="deadlock"><label for="md_converted_choice_10_0"><input type="radio" id="md_converted_choice_10_0" name="md_converted_radio_10">deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="not deadlock"><label for="md_converted_choice_10_1"><input type="radio" id="md_converted_choice_10_1" name="md_converted_radio_10">not deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<p><b></b></p><p id="@scenario_d"><a class="jump" href="#@scenario_d"></a><b>Scenario D</b></p><p></p>
+
+<p id="@thread_1_blocked"><a class="jump" href="#@thread_1_blocked"></a>Thread 1 blocked on <code>synchronized (beta)</code><br>Thread 2 finished<br>Thread 3 blocked on 2nd <code>synchronized (gamma)</code></p>
+
+<div class="form-group exercise-part" data-outline="d"><div class="radio exercise-choice" data-outline="deadlock"><label for="md_converted_choice_11_0"><input type="radio" id="md_converted_choice_11_0" name="md_converted_radio_11">deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="radio exercise-choice" data-outline="not deadlock"><label for="md_converted_choice_11_1"><input type="radio" id="md_converted_choice_11_1" name="md_converted_radio_11">not deadlock</label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div>
+
+<div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div>
+
+<div class="panel panel-danger"><div class="panel-heading" data-structure-tag="exercise" id="@ex-deadlock_rears_its_ugly_head-locked_out" data-target="#ex-deadlock_rears_its_ugly_head-locked_out" data-toggle="collapse"><a class="jump" href="#@ex-deadlock_rears_its_ugly_head-locked_out"></a><span class="panel-title">Locked out</span></div><div class="panel-collapse collapse exercise-panel" id="ex-deadlock_rears_its_ugly_head-locked_out" data-outline="locked_out" data-ex-id="deadlock_solution_2_coarse-grained_locking/locked_out" data-ex-category="reading-exercises" data-ex-remote="https://6031.mit.edu/handx/sp21-java/submit.php" data-ex-handout="classes-22-locks"><div class="panel-body">
+
+<p id="@examine_code_again"><a class="jump" href="#@examine_code_again"></a>Examine the code again.</p>
+
+<p id="@previous_problem_saw"><a class="jump" href="#@previous_problem_saw"></a>In the previous problem, we saw deadlocks involving <code>beta</code> and <code>gamma</code>.</p>
+
+<p id="@about_alpha"><a class="jump" href="#@about_alpha"></a>What about <code>alpha</code>?</p>
+
+<div class="form-group exercise-part" data-outline="a"><div class="checkbox exercise-choice" data-outline="there is a possible deadlock where thread 1 owns the lock on alpha"><label for="md_converted_choice_7_0"><input type="checkbox" id="md_converted_choice_7_0">there is a possible deadlock where thread 1 owns the lock on <code>alpha</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="there is a possible deadlock where thread 2 owns the lock on alpha"><label for="md_converted_choice_7_1"><input type="checkbox" id="md_converted_choice_7_1">there is a possible deadlock where thread 2 owns the lock on <code>alpha</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="there is a possible deadlock where thread 3 owns the lock on alpha"><label for="md_converted_choice_7_2"><input type="checkbox" id="md_converted_choice_7_2">there is a possible deadlock where thread 3 owns the lock on <code>alpha</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+<div class="checkbox exercise-choice" data-outline="there are no deadlocks involving alpha"><label for="md_converted_choice_7_3"><input type="checkbox" id="md_converted_choice_7_3">there are no deadlocks involving <code>alpha</code></label><span class="exercise-answer exercise-remote" style="display: none;">(missing answer)</span></div>
+</div>
+
+<div class="exercise-explain exercise-remote"><p>(missing explanation)</p></div><div class="form-inline"><div class="form-group"><button class="btn btn-default exercise-submit">check</button> <button class="btn btn-default exercise-reveal" style="display: none;">explain</button></div><div class="exercise-progress progress"><div class="progress-bar progress-bar-danger progress-bar-striped active"></div></div><div class="exercise-error"></div></div></div></div></div></div>
+
+</div></div><h2 id="concurrency_in_practice"><a class="jump" href="#concurrency_in_practice"></a>Concurrency in practice</h2><div data-outline="concurrency_in_practice">
+
+<h3 id="goals"><a class="jump" href="#goals"></a>Goals</h3><div data-outline="goals">
+
+<p id="@now_good_time"><a class="jump" href="#@now_good_time"></a>Now is a good time to pop up a level and look at what we’re doing.
+Recall that our primary goals are to create software that is safe from bugs, easy to understand, and ready for change.</p>
+
+<p id="@building_concurrent_software"><a class="jump" href="#@building_concurrent_software"></a>Building concurrent software is clearly a challenge for all three of these goals.
+We can break the issues into two general classes.
+When we ask whether a concurrent program is <em>safe from bugs</em>, we care about two properties:</p>
+
+<ul>
+<li><p id="@safety_does_concurrent"><a class="jump" href="#@safety_does_concurrent"></a><strong>Safety.</strong>
+Does the concurrent program satisfy its invariants and its specifications?
+Races in accessing mutable data threaten safety.
+Safety asks the question: can you prove that <strong>some bad thing never happens</strong>?</p></li>
+<li><p id="@liveness_does_program"><a class="jump" href="#@liveness_does_program"></a><strong>Liveness.</strong>
+Does the program keep running and eventually do what you want, or does it get stuck somewhere waiting forever for events that will never happen?
+Can you prove that <strong>some good thing eventually happens</strong>?</p></li>
+</ul>
+
+<p id="@deadlocks_threaten_liveness"><a class="jump" href="#@deadlocks_threaten_liveness"></a>Deadlocks threaten liveness.
+Liveness may also require <em>fairness</em>, which means that concurrent modules are given processing capacity to make progress on their computations.
+Fairness is mostly a matter for the operating system’s thread scheduler, but you can influence it (for good or for ill) by setting thread priorities.</p>
+
+</div><h3 id="strategies"><a class="jump" href="#strategies"></a>Strategies</h3><div data-outline="strategies">
+
+<p>What strategies are typically followed in real programs?</p>
+
+<ul>
+<li><p id="@library_data_structures"><a class="jump" href="#@library_data_structures"></a><strong>Library data structures</strong> either use no synchronization (to offer high performance to single-threaded clients, while leaving it to multithreaded clients to add locking on top) or the monitor pattern.</p></li>
+<li><p id="@mutable_data_structures"><a class="jump" href="#@mutable_data_structures"></a><strong>Mutable data structures with many parts</strong> typically use either coarse-grained locking or thread confinement.
+Most graphical user interface toolkits follow one of these approaches, because a graphical user interface is basically a big mutable tree of mutable objects.
+Java Swing, the graphical user interface toolkit, uses thread confinement.
+Only a single dedicated thread is allowed to access Swing’s tree.
+Other threads have to pass messages to that dedicated thread in order to access the tree.</p></li>
+<li><p id="@search_often_uses"><a class="jump" href="#@search_often_uses"></a><strong>Search</strong> often uses immutable datatypes.
+Our <a href="../16-recursive-data-types/#another_example_boolean_formulas">Boolean formula satisfiability search</a> would be easy to make multithreaded, because all the datatypes involved were immutable.
+There would be no risk of either races or deadlocks.</p></li>
+<li><p id="@operating_systems_often"><a class="jump" href="#@operating_systems_often"></a><strong>Operating systems</strong> often use fine-grained locks in order to get high performance, and use lock ordering to deal with deadlock problems.</p></li>
+</ul>
+
+<p id="@we-ve_omitted_one"><a class="jump" href="#@we-ve_omitted_one"></a>We’ve omitted one important approach to mutable shared data because it’s outside the scope of this course, but it’s worth mentioning: <strong>a database</strong>.
+Database systems are widely used for distributed client/server systems like web applications.
+Databases avoid race conditions using <a href="https://en.wikipedia.org/wiki/Database_transaction"><em>transactions</em></a>, which are similar to synchronized regions in that their effects are atomic, but they don’t have to acquire locks, though a transaction may fail and be rolled back if it turns out that a race occurred.
+Databases can also manage locks, and handle locking order automatically.</p>
+
+</div></div><h2 id="summary"><a class="jump" href="#summary"></a>Summary</h2><div data-outline="summary">
+
+<p id="@producing_concurrent_program"><a class="jump" href="#@producing_concurrent_program"></a>Producing a concurrent program that is safe from bugs, easy to understand, and ready for change requires careful thinking.
+Heisenbugs will skitter away as soon as you try to pin them down, so debugging simply isn’t an effective way to achieve correct threadsafe code.
+And threads can interleave their operations in so many different ways that you will never be able to test even a small fraction of all possible executions.</p>
+
+<ul>
+<li><p id="@make_thread_safety"><a class="jump" href="#@make_thread_safety"></a>Make thread safety arguments about your datatypes, and document them in the code.</p></li>
+<li><p id="@acquiring_lock_allows"><a class="jump" href="#@acquiring_lock_allows"></a>Acquiring a lock allows a thread to have exclusive access to the data guarded by that lock, forcing other threads to block — as long as those threads are also trying to acquire that same lock.</p></li>
+<li><p id="@monitor_pattern_guards"><a class="jump" href="#@monitor_pattern_guards"></a>The <em>monitor pattern</em> guards the rep of a datatype with a single lock that is acquired by every method.</p></li>
+<li><p id="@blocking_caused_acquiring"><a class="jump" href="#@blocking_caused_acquiring"></a>Blocking caused by acquiring multiple locks creates the possibility of deadlock.</p></li>
+</ul>
+
+</div><h2 id="more_practice"><a class="jump" href="#more_practice"></a>More practice</h2><div data-outline="more_practice">
+
+<p id="@if_you_would"><a class="jump" href="#@if_you_would"></a>If you would like to get more practice with the concepts covered in this reading, you can visit the <a href="https://qable.mit.edu:8001/practice.html#Locks%20%26%20Synchronization">question bank</a>. The questions in this bank were written in previous semesters by students and staff, and are provided for review purposes only – doing them will not affect your classwork grades.  </p></div></div>
+
+</div></main>
+<footer class="col-sm-2 footer-margin"><div>Collaboratively authored with contributions from: Saman Amarasinghe, Adam Chlipala, Srini Devadas, Michael Ernst, Max Goldman, John Guttag, Daniel Jackson, Rob Miller, Martin Rinard, and Armando Solar-Lezama. This work is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a>.</div></footer>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="classes-22-locks"></script></body><!--
+Handout delivered Fri Jun 04 2021 14:09:05 GMT+0000 (Greenwich Mean Time)
+--></html>

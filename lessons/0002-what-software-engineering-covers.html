@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 2 课 · 软件工程到底包含什么</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 0 · 地图与工作台 · 第 2 课</p>
+  <h1>软件工程到底包含什么</h1>
+  <p class="lede">软件工程不是一门课的名字，而是一组彼此牵制的活动。先看清全貌，再决定这门课怎么走。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 1 课</span>
+  <span><b>产出</b> 一张软件工程全景图 + 一条本课程路线</span>
+  <span><b>主读物</b> SWEBOK 第 1 章（p43–66）；SE-EDU《Software Engineering》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说出软件工程的几个核心活动，以及它们为什么互相牵制。</li>
+    <li>解释这门课为什么从需求开始，而不是从写代码开始。</li>
+    <li>把后面的课程放到这张图上，知道每一段在解决什么问题。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>从一段代码到一件产品</h2>
+  <p>上一课那个周报脚本，如果只是你自己每月跑一次，它就是一个编程问题。可一旦财务、市场、实习生都在用，Excel 一升级就崩，还没人知道当时为什么那么写，它就不再只是代码问题了。你要回答的是另一组问题：谁在用它？它到底该做什么？坏了怎么发现？改完怎么确认没改坏？三个月后谁来接手？</p>
+  <p>这些围绕代码的判断和约定，就是软件工程。它关心的不是把代码写得更漂亮，而是让代码在时间、规模和代价之下仍然成立。换句话说，编程是把行为写出来，软件工程是让这个行为在真实世界里活得下去。</p>
+  <p>所以软件工程的范围比「写代码」大得多。它从想法开始，经过需求、设计、实现、测试、发布、维护，一直到退役。中间每一个环节都有自己要回答的问题，也都有自己的产物。把这些问题拆开看，你会更容易知道自己现在卡在哪一层。</p>
+</section>
+
+<section>
+  <h2>八个核心活动</h2>
+  <p>把围绕代码的工作拆开，大致可以分成八类。它们不是八个严格的阶段，而是八个需要同时照顾的方面。为了数得清，我先用一张表把它们摆开；后面每一门课，都会回到这张表上。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>活动</th><th>它要回答的问题</th><th>典型产物</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="what">需求<br><span class="skill">Requirements</span></td>
+          <td>谁用、解决什么问题、什么算做完、有哪些非功能约束。</td>
+          <td>需求清单、验收标准、用例、spec（规格说明）</td>
+        </tr>
+        <tr>
+          <td class="what">设计与架构<br><span class="skill">Design &amp; Architecture</span></td>
+          <td>系统怎么分、接口是什么、哪些质量属性要优先、代价是什么。</td>
+          <td>模块图、接口、ADR（架构决策记录）、design doc（设计文档）</td>
+        </tr>
+        <tr>
+          <td class="what">构造<br><span class="skill">Construction</span></td>
+          <td>怎么写出一段可验证的代码、依赖怎么管、构建怎么重复。</td>
+          <td>代码、单元测试、构建脚本</td>
+        </tr>
+        <tr>
+          <td class="what">测试与质量<br><span class="skill">Testing &amp; Quality</span></td>
+          <td>怎么知道它真的对、该测哪些、覆盖到什么程度算够。</td>
+          <td>测试用例、覆盖率报告、评审记录</td>
+        </tr>
+        <tr>
+          <td class="what">维护与演进<br><span class="skill">Maintenance &amp; Evolution</span></td>
+          <td>怎么修、怎么改、怎么迁移、什么时候该退役。</td>
+          <td>回归测试、重构、迁移计划</td>
+        </tr>
+        <tr>
+          <td class="what">过程与管理<br><span class="skill">Process &amp; Management</span></td>
+          <td>先做什么、要多久、风险在哪、怎么知道进度是真的。</td>
+          <td>计划、估算、风险清单、度量</td>
+        </tr>
+        <tr>
+          <td class="what">配置与运维<br><span class="skill">Configuration &amp; Operations</span></td>
+          <td>怎么版本化、怎么发布、出事怎么发现和恢复。</td>
+          <td>分支策略、CI/CD（持续集成 / 持续交付）、runbook（运维手册）、postmortem（事故复盘）</td>
+        </tr>
+        <tr>
+          <td class="what">专业实践<br><span class="skill">Professional Practice</span></td>
+          <td>安全、伦理、沟通、责任：哪些事不能只图快。</td>
+          <td>威胁模型、评审记录、责任清单</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>这张表是简化图，不是 SWEBOK（软件工程知识体系）的完整分类。SWEBOK 把软件工程分成十五个知识领域，还单列了计算、数学和工程基础。对这门课来说，记住这八类已经够用；剩下的，你知道它们存在、需要时知道去哪儿查，就可以了。</p>
+  <p>更重要的是，这八类不是瀑布模型的八个阶段。真实项目里，它们会来回跳：测试时发现需求没问清，写代码时发现接口设计错了，上线后才发现运维成本太高。把它们排成一条线，只是为了教学时有个先后；真正做项目时，你要习惯在它们之间来回。</p>
+</section>
+
+<section>
+  <h2>为什么这些活动互相牵制</h2>
+  <p>软件工程真正难的地方，不是每一件事单独做有多难，而是它们互相拉扯。你改一个需求，设计要跟着改，测试要跟着改，发布和运维也要跟着改。一个看起来很小的决定，经常会在别的地方长出成本。</p>
+  <p>举个具体的例子。假设产品提了一个需求：知识库要支持离线使用。这句话听起来只是「加个本地缓存」，但它会同时牵动好几层。架构上，你要决定本地存什么、什么时候同步、冲突怎么解；测试上，你要覆盖断网、半同步、重复写入这些状态；运维上，你要能看见同步失败；维护上，你要考虑数据格式以后怎么迁移；安全上，你要考虑本地数据怎么保护。一个需求，五个活动一起变。</p>
+  <p>这就是为什么软件工程不能是一张检查清单。清单能提醒你别漏，但替代不了判断。你真正要做的，是在范围、时间、成本、质量之间选一个当下能接受的组合，并且把被放弃的那部分说清楚。这个组合没有标准答案，只有适不适合当前项目。</p>
+  <p>所以后面每一节课，我们都会问两个问题：这件事在解决哪个活动的问题？它又给别的活动增加了什么成本？如果只记住一个动作，却不知道它在整张图里的位置，学到的就只是招式，不是工程判断。</p>
+</section>
+
+<section>
+  <h2>这门课怎么走</h2>
+  <p>这门课沿着软件工程的生命周期走，但把它压成一条适合学习的路线。顺序不是随意的：没有需求，设计就没有靶子；没有设计，测试就不知道在测什么；没有测试，维护就只能靠猜。每一段都在给下一段提供依据。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>模块</th><th>对应的活动</th><th>这一段在解决什么</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">0 · 地图与工作台</td><td>全貌 + 方法</td><td>知道软件工程包含什么，以及这门课用什么方式练。</td></tr>
+        <tr><td class="what">1 · 需求与语言</td><td>需求</td><td>把模糊想法问成可验收的需求，并把词对齐。</td></tr>
+        <tr><td class="what">2 · 计划与过程</td><td>过程与管理</td><td>知道先做什么、要多久、风险在哪。</td></tr>
+        <tr><td class="what">3 · 设计与架构</td><td>设计与架构</td><td>决定系统怎么分、接口怎么定、质量属性怎么取舍。</td></tr>
+        <tr><td class="what">4 · 实现与测试</td><td>构造 + 测试</td><td>写出可验证的代码，并用测试和 CI 锁住行为。</td></tr>
+        <tr><td class="what">5 · 验收与维护</td><td>质量 + 维护 + 运维</td><td>审查、诊断、重构、复盘，让系统能继续活下去。</td></tr>
+        <tr><td class="what">6 · 专业实践与 AI</td><td>专业实践</td><td>原型、研究、上下文、责任，以及迁移到真实项目。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>这条路线是学习的顺序，不是项目的唯一流程。真实项目会在模块之间来回跳，课程会在每个模块结束时提醒你：哪些地方会回环，哪些决定会在后面收账。你不需要一次记住整张图，只需要知道当前这一课在图上哪个位置。</p>
+</section>
+
+<section>
+  <h2>这门课怎么练：理论为主，AI + 技能包为证</h2>
+  <p>这门课的主线是软件工程理论。每一节课都会先讲清一个活动在回答什么问题、有哪些经典取舍、前人踩过哪些坑，然后再动手。理论不是装饰，它决定你在遇到没见过的情境时，能不能自己判断。</p>
+  <p>实践方式是 AI 辅助编程，加上 Matt Pocock 的技能包。技能包给了一条很具体的工作流：先逼问，再写 spec，再切成工单，再实现，再审查。它把软件工程里那些抽象的活动，落成了可以一步步执行的动作；agent 又让反馈来得很快，你可以马上看到自己的判断对不对。</p>
+  <p>但技能包是练习场，不是标准答案。我们不会为了学技能而学技能，也不会把技能包里的每一步当成软件工程的唯一做法。当它和经典理论不一致时，我们会停下来讨论：它为什么这么设计？在什么规模、什么团队、什么风险下成立？什么时候该换一种做法？</p>
+  <p>下一课会把这条实践路线展开，并把工作台装好。你会看到技能包的主线、入口和阶段边界，也会在沙盒里跑一遍初始化。那一课之后，我们就从模块 1 开始，正式进入需求。</p>
+</section>
+
+<section>
+  <h2>练习：五个场景，判断瓶颈在哪</h2>
+  <p>先写下你认为卡住的活动，再展开「看判断」。答案不唯一，重要的是你能说出为什么。</p>
+
+  <div class="quiz">
+    <div class="quiz-item">
+      <p class="quiz-q">1. 用户说「搜索太慢」，但没人说清「多慢算慢」。</p>
+      <details><summary>看判断</summary><p class="answer"><b>需求。</b>这不是性能优化问题，而是非功能需求没定义。先约定可接受的延迟和测量方式，再谈怎么优化。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">2. 一个函数 300 行，改一处要动五个地方，谁都不敢碰。</p>
+      <details><summary>看判断</summary><p class="answer"><b>设计与架构。</b>这是模块边界和接口的问题。先找接缝、拆深模块，再谈重构；直接改只会让耦合更深。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">3. 每次发版都靠手工点一遍，没人说得清上次发了什么。</p>
+      <details><summary>看判断</summary><p class="answer"><b>配置与运维。</b>缺的是可重复的构建、发布和回滚。先让 CI 跑起来，再谈发布频率。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">4. 线上 bug 修好了，两周后同样的 bug 又回来了。</p>
+      <details><summary>看判断</summary><p class="answer"><b>测试与维护。</b>修完没有回归测试，等于没修完。把触发 bug 的输入变成一条测试，才算真正关上。</p></details>
+    </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">5. 两个人对「入库完成」是不是包含索引建好，理解不一致。</p>
+      <details><summary>看判断</summary><p class="answer"><b>需求与领域语言。</b>这不是谁对谁错，而是词没定义。先把「入库完成」写进词条，再谈实现和验收。</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>软件工程不是写代码，而是让代码在时间、规模和代价下仍然成立。</li>
+    <li>需求、设计、构造、测试、维护、过程、运维、专业实践，这八类活动互相牵制，不能当清单逐条打勾。</li>
+    <li>这门课以软件工程理论为主线，用 AI 和技能包做实践；技能包是练习场，不是标准答案。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>主读物：</strong>SWEBOK v4 的 Introduction 与第 1 章（本地：<a href="../courseware/swebok/swebok-v4.pdf">courseware/swebok/swebok-v4.pdf</a>，第 1 章 p43–66）；SE-EDU 的 <a href="../courseware/se-education/book/softwareEngineering/print.html">Software Engineering</a> 一章。</p>
+  <p><strong>延伸：</strong>Titus Winters, <a href="https://abseil.io/resources/swe-book/html/ch01.html">“What Is Software Engineering?”</a>，<em>Software Engineering at Google</em> 第 1 章。读时间、规模、权衡三节即可。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong><a href="../lessons/0003-ai-practice-and-workbench.html">第 3 课「为什么用这套技能包，以及怎么用」</a>。你会看到技能包的主线、入口和阶段边界，并在沙盒里把它装好。</p>
+  <p>如果哪个活动你觉得还是抽象，直接问我，我们用你手上的项目举例子。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0002-se-landscape.html">软件工程全景图</a></p>
+</footer>
+
+</main>
+</body>
+</html>

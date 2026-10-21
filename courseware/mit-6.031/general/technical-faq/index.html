@@ -1,0 +1,123 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+
+<title>Technical Tips and Troubleshooting</title>
+
+<link href="../../web/handout-style.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="../../general/icons/6031.ico"><link rel="apple-touch-icon" href="../../general/icons/6031.png"></head>
+<body><header class="chip"><a href="http://web.mit.edu/6.031/www/sp21/">6.031</a></header><header><a href="http://web.mit.edu/6.031/www/sp21/">6.031 — Software Construction</a><div>Spring 2021</div></header><div class="margin col-sm-2"></div>
+<nav class="table-of-contents col-sm-2"><ul class="nav"><li class="active"><a href="#technical_tips_and_troubleshooting">Technical Tips and Troubleshooting</a></li><li><a href="#navigating_in_eclipse">Navigating in Eclipse</a></li><li><a href="#editing_in_eclipse">Editing in Eclipse</a></li></ul></nav>
+<main class="container-fluid"><h1 class="handout-title col-sm-8 col-sm-offset-2" id="technical_tips_and_troubleshooting"><a class="jump" href="#technical_tips_and_troubleshooting"></a>Technical Tips and Troubleshooting</h1><div data-outline="technical_tips_and_troubleshooting">
+
+<div class="markdown col-sm-8 col-sm-offset-2 converted"><div class="well faq"><h3 id="perspectives"><a class="jump" href="#perspectives"></a>I messed up my Eclipse and it doesn’t show all the things it used to show.</h3><div data-outline="perspectives">
+
+<p>First, make sure you are in the Java perspective: in the top right corner of the window, click the Java Perspective toolbar button, which looks like <img src="./java-perspective.png" alt="Java Perspective toolbar button" width="32">.</p>
+
+<p id="@if_your_java"><a class="jump" href="#@if_your_java"></a>If your Java perspective doesn’t look right, go to <em>Window</em>&nbsp;→&nbsp;<em>Perspective</em>&nbsp;→&nbsp;<em>Reset Perspective</em> to return to the Eclipse defaults.</p>
+
+</div><h3 id="login"><a class="jump" href="#login"></a>I can’t log in to a 6.031 web site.</h3><div data-outline="login">
+
+<p>Are you using the MIT GUEST wifi network on campus?  Don’t use that network, <a href="http://kb.mit.edu/confluence/display/istcontrib/The+MIT+GUEST+Wireless+Network">its internet access is very limited</a>.  Remove MIT GUEST from your laptop’s list of approved networks, and use <a href="http://kb.mit.edu/confluence/pages/viewpage.action?pageId=7767018">MIT SECURE</a> instead.</p>
+
+<p id="@6-031_systems_use"><a class="jump" href="#@6-031_systems_use"></a>6.031 systems use Touchstone to log you in, which allows you to either use a browser certificate (the most convenient method) or type your Kerberos password.</p>
+
+<p id="@first_just_try"><a class="jump" href="#@first_just_try"></a>First just try restarting your browser.
+That often fixes a temporary hiccup.</p>
+
+<p id="@next_try_different"><a class="jump" href="#@next_try_different"></a>Next try a different web browser: Chrome, Firefox, Safari.</p>
+
+<p id="@try_deleting_your"><a class="jump" href="#@try_deleting_your"></a>Try deleting your browser’s cookies associated with the site you’re trying to log into.</p>
+
+<p id="@try_using_your"><a class="jump" href="#@try_using_your"></a>Try using your Kerberos password instead of a browser certificate.
+If the password works and the certificate does not, you probably need <a href="https://ist.mit.edu/certificates">fresh certificates</a>.</p>
+
+<p id="@you_using_windows"><a class="jump" href="#@you_using_windows"></a>Are you using Windows with an antivirus checker turned on?
+Sometimes antivirus interferes with SSL connections and causes <code>SSL_PROTOCOL_ERROR</code> in every browser.
+Try turning off your antivirus checking temporarily to see if it fixes the problem.
+If so, then look for a way to add the web server to the “allowed” list in your antivirus configuration. </p>
+
+<p id="@if_all_else"><a class="jump" href="#@if_all_else"></a>If all else fails, please <a href="../#piazza-private">post privately on Piazza</a> and include the URL you tried to visit, whether you were able to log in with 2-factor authentication, and any error information.</p></div></div>
+
+<h2 id="navigating_in_eclipse"><a class="jump" href="#navigating_in_eclipse"></a>Navigating in Eclipse</h2><div data-outline="navigating_in_eclipse">
+
+<div class="well faq"><h3 id="when_i_see_the_name_of_a_variable_or_method_or_class_in_eclipse_how_can_i_jump_straight_to_its_definition"><a class="jump" href="#when_i_see_the_name_of_a_variable_or_method_or_class_in_eclipse_how_can_i_jump_straight_to_its_definition"></a>When I see the name of a variable or method or class in Eclipse, how can I jump straight to its definition?</h3><div data-outline="when_i_see_the_name_of_a_variable_or_method_or_class_in_eclipse_how_can_i_jump_straight_to_its_definition">
+
+<p><code>Command‑click</code> (Mac) or <code>Control‑click</code> (Windows/Linux) on the name, and Eclipse will jump to its definition.
+Right-clicking and choosing <em>Open Declaration</em> does the same thing.</p>
+
+</div><h3 id="after_a_jump_like_that_how_can_i_go_back_to_where_i_was_before"><a class="jump" href="#after_a_jump_like_that_how_can_i_go_back_to_where_i_was_before"></a>After a jump like that, how can I go back to where I was before?</h3><div data-outline="after_a_jump_like_that_how_can_i_go_back_to_where_i_was_before">
+
+<p><em>Navigate&nbsp;→&nbsp;Back</em>, which might have the keyboard shortcut <code>Command&nbsp;[</code> or <code>Alt&nbsp;⟵</code>.</p>
+
+<p id="@eclipse-s_navigate_back"><a class="jump" href="#@eclipse-s_navigate_back"></a>Eclipse’s <em>Navigate Back</em> and <em>Forward</em> are analogous to the back and forward buttons in your web browser.</p>
+
+</div><h3 id="how_can_i_search_for_a_file_or_a_class_by_name"><a class="jump" href="#how_can_i_search_for_a_file_or_a_class_by_name"></a>How can I search for a file or a class by name?</h3><div data-outline="how_can_i_search_for_a_file_or_a_class_by_name">
+
+<p><em>Navigate&nbsp;→&nbsp;Open Resource</em> brings up a dialog for quickly searching for and jumping to a file, which is a <em>resource</em> in Eclipse terminology.
+Its keyboard shortcut is <code>Command‑Shift‑R</code> or <code>Control‑Shift‑R</code>.</p>
+
+<p id="@navigate_open_type"><a class="jump" href="#@navigate_open_type"></a><em>Navigate&nbsp;→&nbsp;Open Type</em> brings up a similar dialog for types (classes and interfaces).
+The shortcut is <code>Command‑Shift‑T</code> or <code>Control‑Shift‑T</code>.</p></div></div>
+
+</div><h2 id="editing_in_eclipse"><a class="jump" href="#editing_in_eclipse"></a>Editing in Eclipse</h2><div data-outline="editing_in_eclipse">
+
+<div class="well faq"><h3 id="what_keyboard_shortcuts_can_i_use"><a class="jump" href="#what_keyboard_shortcuts_can_i_use"></a>What keyboard shortcuts can I use?</h3><div data-outline="what_keyboard_shortcuts_can_i_use">
+
+<p>If you often use your mouse to open the <em>File</em> or <em>Edit</em> menu for common commands like saving a file or copying and pasting, learn and use <a href="https://www.google.com/search?q=best+keyboard+shortcuts">keyboard shortcuts</a> instead.
+You will edit much faster if you make it a habit to keep your fingers on the keyboard.</p>
+
+<p id="@general_you_can"><a class="jump" href="#@general_you_can"></a>In general, you can discover a menu command’s keyboard shortcut, if it has one, by reading the menu.
+Opening the <em>File</em> menu, for example, shows that <em>Save</em> has the shortcut <code>Command-S</code> (Mac OS) or <code>Control-S</code> (Windows and Linux).</p>
+
+</div><h3 id="how_can_i_easily_rename_a_variable_or_method_or_class"><a class="jump" href="#how_can_i_easily_rename_a_variable_or_method_or_class"></a>How can I easily rename a variable or method or class?</h3><div data-outline="how_can_i_easily_rename_a_variable_or_method_or_class">
+
+<div class="panel panel-default panel-figure pull-right"><div class="panel-body"><img width="329" src="./rename.png" alt="Enter new name, press return to refactor"></div></div>
+
+<p id="@right-click_name_use"><a class="jump" href="#@right-click_name_use"></a>Right-click on the name and use <em>Refactor&nbsp;→&nbsp;Rename</em> (or its keyboard shortcut) to rename that variable, method, or class in all the places it appears.</p>
+
+<div class="clearfix"></div>
+
+</div><h3 id="how_can_i_autocomplete_a_class_name_method_name_or_variable_name"><a class="jump" href="#how_can_i_autocomplete_a_class_name_method_name_or_variable_name"></a>How can I autocomplete a class name, method name, or variable name?</h3><div data-outline="how_can_i_autocomplete_a_class_name_method_name_or_variable_name">
+
+<p>Type the first part of the name, then use <code>Control‑Space</code> to see possible completions.</p>
+
+</div><h3 id="how_can_i_generate_a_method_stub_method_signature_and_empty_body_for_an_interface_or_superclass_method"><a class="jump" href="#how_can_i_generate_a_method_stub_method_signature_and_empty_body_for_an_interface_or_superclass_method"></a>How can I generate a method stub (method signature and empty body) for an interface or superclass method?</h3><div data-outline="how_can_i_generate_a_method_stub_method_signature_and_empty_body_for_an_interface_or_superclass_method">
+
+<p>Put your cursor where you would create the method, and use <code>Control‑Space</code> to see a list of methods you might override or implement.</p>
+
+</div><h3 id="how_can_i_automatically_reformat_and_reindent_my_code"><a class="jump" href="#how_can_i_automatically_reformat_and_reindent_my_code"></a>How can I automatically reformat and reindent my code?</h3><div data-outline="how_can_i_automatically_reformat_and_reindent_my_code">
+
+<p>Use <em>Source&nbsp;→&nbsp;Format</em> to clean up your act.</p>
+
+</div><h3 id="how_can_i_replace_tab_characters_with_spaces"><a class="jump" href="#how_can_i_replace_tab_characters_with_spaces"></a>How can I replace tab characters with spaces?</h3><div data-outline="how_can_i_replace_tab_characters_with_spaces">
+
+<p>First, make tab characters visible using <em>Window&nbsp;→&nbsp;Editor&nbsp;→&nbsp;Show Whitespace Characters</em>.
+The editor should now display every space as <code>·</code> and every tab as <code>»</code>.</p>
+
+<p id="@after_you_set"><a class="jump" href="#@after_you_set"></a>After you have <a href="../../getting-started/#config-eclipse">set up Eclipse</a> using the 6.031 configuration, <em>Source&nbsp;→&nbsp;Format</em> will change any tabs you have lying around into spaces.
+You can right-click the package to de-tab all of your classes at once. </p>
+
+<p id="@if_your_6-031"><a class="jump" href="#@if_your_6-031"></a>If your 6.031 Eclipse workspace is misconfigured, then try running <em>Help&nbsp;→&nbsp;Perform Setup Tasks</em> to reapply the configuration to your workspace, then try reformatting your code again.</p>
+
+</div><h3 id="how_can_i_easily_comment_and_uncomment_parts_of_my_code"><a class="jump" href="#how_can_i_easily_comment_and_uncomment_parts_of_my_code"></a>How can I easily comment and uncomment parts of my code?</h3><div data-outline="how_can_i_easily_comment_and_uncomment_parts_of_my_code">
+
+<p>Use <em>Source&nbsp;→&nbsp;Toggle Comment</em>  to quickly toggle on or off some lines of code.
+The keyboard shortcut is <code>Command&nbsp;/</code> or <code>Control&nbsp;/</code>.</p>
+
+</div><h3 id="how_can_i_get_eclipse_to_manage_the_package_import_statements_automatically"><a class="jump" href="#how_can_i_get_eclipse_to_manage_the_package_import_statements_automatically"></a>How can I get Eclipse to manage the package <code>import</code> statements automatically?</h3><div data-outline="how_can_i_get_eclipse_to_manage_the_package_import_statements_automatically">
+
+<p>Use <em>Source&nbsp;→&nbsp;Organize Imports</em> to automatically add and organize Java import statements.
+Just start using a new class, <em>Organize Imports</em>, and you’re good to go.
+The keyboard shortcut is <code>Command‑Shift‑O</code> or <code>Control‑Shift‑O</code>.</p></div></div>
+
+<hr>
+
+<div class="alert alert-info"><p id="@please_post_piazza"><a class="jump" href="#@please_post_piazza"></a>Please post on Piazza to suggest more Eclipse resources or tips and tricks we might include.</p></div>
+
+<h3 id="have_fun_in_6031"><a class="jump" href="#have_fun_in_6031"></a>Have fun in 6.031!</h3><div data-outline="have_fun_in_6031"></div></div></div>
+
+</div></main>
+<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><footer>MIT EECS</footer><footer class="footer-archived"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: text-bottom;"><path fill-rule="evenodd" d="M1.75 2.5a.25.25 0 00-.25.25v1.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-1.5a.25.25 0 00-.25-.25H1.75zM0 2.75C0 1.784.784 1 1.75 1h12.5c.966 0 1.75.784 1.75 1.75v1.5A1.75 1.75 0 0114.25 6H1.75A1.75 1.75 0 010 4.25v-1.5zM1.75 7a.75.75 0 01.75.75v5.5c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25v-5.5a.75.75 0 111.5 0v5.5A1.75 1.75 0 0113.25 15H2.75A1.75 1.75 0 011 13.25v-5.5A.75.75 0 011.75 7zm4.5 1a.75.75 0 000 1.5h3.5a.75.75 0 100-1.5h-3.5z"></path></svg>  spring 2021 course site archive  |  latest&nbsp;site&nbsp;at&nbsp;<a href="http://web.mit.edu/6.031/">mit.edu/6.031</a>  |  <a href="http://accessibility.mit.edu/">accessibility</a></footer><script type="text/javascript" charset="utf-8" src="../../web/handout-run.js" data-handx-url="https://6031.mit.edu/handx/sp21-java/" data-handx-id="general-technical-faq"></script></body><!--
+Handout delivered Fri Jun 04 2021 13:49:46 GMT+0000 (Greenwich Mean Time)
+--></html>

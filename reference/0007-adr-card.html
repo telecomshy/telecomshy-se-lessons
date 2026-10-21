@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADR 参考卡 · 什么决定值得记下来</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 7 课</p>
+  <h1>ADR 参考卡</h1>
+  <p class="lede">需求回答「要什么」，ADR 回答「为什么这样要」。这一课从需求清单里挑出难回滚、会让人意外的、有真取舍的决定，记成一篇带被否方案的 ADR。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>ADR 在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements（需求）</td><td>第 6 课做 analysis + specification + validation；第 7 课做 management（需求会变，把「为什么这么定」留在纸上）。</td></tr>
+      <tr><td class="skill">紧接其后</td><td>第 4 课给了词 → 第 5 课定了做什么 → 第 6 课写成需求 → 第 7 课挑值得记的决定 → 第 8 课发布成 spec。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>什么决定值得记成 ADR（三判据，缺一不记）</h2>
+<ol class="steps">
+  <li><strong>难回滚</strong>：改变主意的代价是有意义的（换库、建索引、选框架）。</li>
+  <li><strong>没有上下文就很怪异</strong>：未来读者看到代码会问「为什么这样」，不解释他以为是 bug。</li>
+  <li><strong>有真实取舍</strong>：当初真有可选方案，你因具体原因选了其中一个。</li>
+</ol>
+<p>容易回滚的、一眼就懂的、没有别的选择的 → 跳过，别写。写太多，文档就变成没人读的废纸。</p>
+
+<h2>ADR 记什么（不是记需求，是记决定和为什么）</h2>
+<ul>
+  <li>需求回答「系统要表现出什么」（what）；ADR 回答「为什么决定这样做」（why）。</li>
+  <li>代码能告诉你「做了什么」；只有 ADR 能告诉你「为什么」。</li>
+  <li>把力气花在 why 上，不要复述代码或写 changelog。</li>
+</ul>
+
+<h2>ADR 怎么写（Nygard 2011，格式无统一标准，主流做法）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>字段</th><th>写什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Context（背景）</td><td>当时处境、为什么走到要决定这一步。三句话讲完。</td></tr>
+      <tr><td class="what">Decision（决策）</td><td>决定怎么做 + 被否掉的方案和否定的理由。</td></tr>
+      <tr><td class="what">Consequences（后果）</td><td>这个决定带来的、不显而易见的后果。</td></tr>
+      <tr><td class="what">Status（状态）</td><td>proposed / accepted / superseded by ADR-NNNN。决定被改过才需要更新。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>被否掉的方案：ADR 里最值钱的那一半</h2>
+<div class="card-rule">
+  <p><strong>只写「我选了 A」不写「否掉 B、为什么」，是 ADR 最常见的漏。被否掉的方案和理由，会防止半年后新人把它当新想法重做一遍。</strong></p>
+</div>
+<p>何时值得记被否方案：当初真考虑过它、也给了机会、只是结论不是它（「非显而易见的否掉」）才记；「根本没想过」不叫被否，不写。</p>
+
+<h2>范例：一句话背景 + 决定 + 被否 + 后果</h2>
+<pre><code># 总结作为派生条目入库，但默认查询排除派生条目
+
+背景：总结命令会把输入压缩成两到三句中文并给引用；第 6 课定了「输出存成条目」，
+      但没定「这条目算不算 Document、要不要进检索」。
+
+决定：总结作为派生条目写进知识库并进入索引，但普通检索默认排除派生条目。
+
+被否方案：① 不落库、用完即弃——简单、零污染，但无法回溯/复用。
+          ② 存进原 Document 的字段——查询自然带上，但污染原文档结构、无法单独检索。
+
+后果：索引里混入派生内容，需要「派生」标记 + 一条过滤规则。</code></pre>
+
+<h2>AI + Matt 怎么落地（domain-modeling）</h2>
+<ul>
+  <li>目录约定：<code>docs/adr/</code>，编号 <code>0001-slug.md</code>；懒创建（第一条需要时才建）。</li>
+  <li>三判据即 <code>ADR-FORMAT.md</code> 的规则；模板极简：一句话背景 + 决定 + 为什么，可选 Status / Considered Options / Consequences。</li>
+  <li>调用类型：模型调用（相关流程里由 agent 拉起，也可手动请它）。</li>
+  <li><strong>你拍板三件事</strong>：① 难难不难回滚（业务/工程成本判断）；② 站在半年后的读者角度，它会不会奇怪；③ 哪些是真被否的、否的真实原因。</li>
+  <li>agent 倾向「多记」——它不为你承担「记太多没人读」的代价。</li>
+</ul>
+<p><strong>怎么判断生效：</strong><code>docs/adr/</code> 有 <code>0001-xxx.md</code>，读了能答「为什么这样定」「被否掉的是什么、为什么」；未来读者翻到代码能说「哦，这就是那条 ADR 定的」。</p>
+
+<h2>三个常见误区</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">什么都记</td><td>命令名、参数、小事全写，<code>docs/adr/</code> 塞满没人读。</td><td>三判据过滤，缺一不进。</td></tr>
+      <tr><td class="what">只记赢家、不记被否的</td><td>只留「选了 A」，B 半年后被当新想法重做。</td><td>被否方案必写，带否的理由。</td></tr>
+      <tr><td class="what">当 changelog</td><td>写「改了哪些地方」而不是「为什么改」。</td><td>git 历史已记改动；ADR 只记为什么。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>写完怎么验</h2>
+<pre><code>读我这条 ADR，再读
+C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md 和 SKILL.md。
+
+逐条检查：
+1. 三判据（难回滚 / 怪异 / 真取舍）成立吗？缺哪一条？
+2. 只写决定没写被否？被否的每个都给了理由吗？
+3. 有没有把「没想过」当成「否掉」？
+4. Context / Decision / Consequences 是可独立读的完整句吗？还是 changelog？
+5. Status / 编号符合 ADR-FORMAT.md 吗？
+6. 有没有把验收标准、接口细节误写进 ADR？
+
+最后给结论：这条值得写成 ADR 吗？值得的话，还缺什么？</code></pre>
+
+<div class="note">
+  <p><strong>跳步要警惕：</strong>agent 可能在你看完前说「我帮你把那条直接实现了吧」。指回 <code>domain-modeling</code>：决定和理由先落盘，再谈开工。ADR 和第 8 课 spec 都是动手之前的产物。</p>
+  <p><strong>被否方案只有一句话、没有理由？</strong>那是决定还没逼细，回第 6 课再问一轮，不是在这里硬补。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章 p43–66（需求管理 / change control p57–62）；Michael Nygard, <em>Documenting Architecture Decisions</em>（2011）。</p>
+  <p><strong>实践工具：</strong><code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>（三判据 + 模板）与 <code>docs/adr/</code> 目录约定。只作落地方式。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0007-adr.html">第 7 课：ADR：什么决定值得记下来</a> · <a href="course-map.html">课程地图</a> · <a href="0006-requirements-card.html">第 6 课：需求工程参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

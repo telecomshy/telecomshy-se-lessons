@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-WVF23W3');
+    </script>
+    
+    
+    <meta charset="utf-8">
+    <meta content="initial-scale=1, minimum-scale=1, width=device-width" name="viewport"><title>Google SRE - Managing Data Processing Pipelines: Challenges</title>
+    <meta name="description" content="Challenges in data processing pipelines, from periodic to continuous models, and discover innovative solutions like the leader-follower model for big data.">
+
+    
+    <meta name="referrer" content="no-referrer" />
+    <link rel="canonical" href="https://sre.google/sre-book/data-processing-pipelines/">
+      <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="icon" type="image/png" sizes="32x32" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="icon" type="image/png" sizes="16x16" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+      <link rel="shortcut icon" href="/img/dynamic/sre-book/5f9eb2a891f8e628eee90de8b7199e3b.webp">
+    
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Google+Sans:400|Roboto:400,400italic,500,500italic,700,700italic|Roboto+Mono:400,500,700|Material+Icons"><link href="/css/sre-book.min.css" rel="stylesheet">
+    <script src="/js/detect.min.js"></script>
+  </head>
+
+  <body>
+    
+    <noscript>
+      <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVF23W3"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    
+    
+    <main>
+      <div>
+  <div id="curtain" class="menu-closed"></div>
+  <div class="header clearfix">
+    <a id="burger-menu" class="expand"></a>
+    <h2 class="chapter-title">
+      Chapter 25 - Data Processing Pipelines
+    </h2>
+  </div>
+  <div id="overlay-element" class="expands">
+    <div class="logo">
+      <a href="https://www.google.com">
+        <img src="/img/dynamic/sre-book/632142839b17938ba5b6f27f37695c51.webp" alt="Google">
+      </a>
+    </div>
+    <ol id="drop-down" class="dropdown-content"><li>
+        <a href="/sre-book/table-of-contents/" class="menu-buttons">Table of Contents</a>
+      </li>
+        <li>
+          <a href="/sre-book/foreword/" class="menu-buttons">
+            
+              Foreword
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/preface/" class="menu-buttons">
+            
+              Preface
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-I-introduction/" class="menu-buttons">
+            
+              Part I - Introduction
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/introduction/" class="menu-buttons">
+            
+              1. Introduction
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/production-environment/" class="menu-buttons">
+            
+              2. The Production Environment at Google, from the Viewpoint of an SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-II-principles/" class="menu-buttons">
+            
+              Part II - Principles
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/embracing-risk/" class="menu-buttons">
+            
+              3. Embracing Risk
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/service-level-objectives/" class="menu-buttons">
+            
+              4. Service Level Objectives
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/eliminating-toil/" class="menu-buttons">
+            
+              5. Eliminating Toil
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/monitoring-distributed-systems/" class="menu-buttons">
+            
+              6. Monitoring Distributed Systems
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/automation-at-google/" class="menu-buttons">
+            
+              7. The Evolution of Automation at Google
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/release-engineering/" class="menu-buttons">
+            
+              8. Release Engineering
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/simplicity/" class="menu-buttons">
+            
+              9. Simplicity
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-III-practices/" class="menu-buttons">
+            
+              Part III - Practices
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/practical-alerting/" class="menu-buttons">
+            
+              10. Practical Alerting
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/being-on-call/" class="menu-buttons">
+            
+              11. Being On-Call
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/effective-troubleshooting/" class="menu-buttons">
+            
+              12. Effective Troubleshooting
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/emergency-response/" class="menu-buttons">
+            
+              13. Emergency Response
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/managing-incidents/" class="menu-buttons">
+            
+              14. Managing Incidents
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/postmortem-culture/" class="menu-buttons">
+            
+              15. Postmortem Culture: Learning from Failure
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/tracking-outages/" class="menu-buttons">
+            
+              16. Tracking Outages
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/testing-reliability/" class="menu-buttons">
+            
+              17. Testing for Reliability
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/software-engineering-in-sre/" class="menu-buttons">
+            
+              18. Software Engineering in SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/load-balancing-frontend/" class="menu-buttons">
+            
+              19. Load Balancing at the Frontend
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/load-balancing-datacenter/" class="menu-buttons">
+            
+              20. Load Balancing in the Datacenter
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/handling-overload/" class="menu-buttons">
+            
+              21. Handling Overload
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/addressing-cascading-failures/" class="menu-buttons">
+            
+              22. Addressing Cascading Failures
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/managing-critical-state/" class="menu-buttons">
+            
+              23. Managing Critical State: Distributed Consensus for Reliability
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/distributed-periodic-scheduling/" class="menu-buttons">
+            
+              24. Distributed Periodic Scheduling with Cron
+            
+          </a>
+        </li>
+      
+        <li class="active">
+          <a href="/sre-book/data-processing-pipelines/" class="menu-buttons">
+            
+              25. Data Processing Pipelines
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/data-integrity/" class="menu-buttons">
+            
+              26. Data Integrity: What You Read Is What You Wrote
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/reliable-product-launches/" class="menu-buttons">
+            
+              27. Reliable Product Launches at Scale
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-IV-management/" class="menu-buttons">
+            
+              Part IV - Management
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/accelerating-sre-on-call/" class="menu-buttons">
+            
+              28. Accelerating SREs to On-Call and Beyond
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/dealing-with-interrupts/" class="menu-buttons">
+            
+              29. Dealing with Interrupts
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/operational-overload/" class="menu-buttons">
+            
+              30. Embedding an SRE to Recover from Operational Overload
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/communication-and-collaboration/" class="menu-buttons">
+            
+              31. Communication and Collaboration in SRE
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/evolving-sre-engagement-model/" class="menu-buttons">
+            
+              32. The Evolving SRE Engagement Model
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/part-V-conclusions/" class="menu-buttons">
+            
+              Part V - Conclusions
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/lessons-learned/" class="menu-buttons">
+            
+              33. Lessons Learned from Other Industries
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/conclusion/" class="menu-buttons">
+            
+              34. Conclusion
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/availability-table/" class="menu-buttons">
+            
+              Appendix A. Availability Table
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/service-best-practices/" class="menu-buttons">
+            
+              Appendix B. A Collection of Best Practices for Production Services
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/incident-document/" class="menu-buttons">
+            
+              Appendix C. Example Incident State Document
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/example-postmortem/" class="menu-buttons">
+            
+              Appendix D. Example Postmortem
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/launch-checklist/" class="menu-buttons">
+            
+              Appendix E. Launch Coordination Checklist
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/production-meeting/" class="menu-buttons">
+            
+              Appendix F. Example Production Meeting Minutes
+            
+          </a>
+        </li>
+      
+        <li>
+          <a href="/sre-book/bibliography/" class="menu-buttons">
+            
+              Bibliography
+            
+          </a>
+        </li>
+      
+    </ol>
+  </div>
+</div>
+
+      
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+    
+    
+      
+    
+  
+
+  
+  
+    
+  
+
+  
+  
+    
+  
+
+  
+  
+  
+    
+  
+
+  
+  
+
+    
+    <div id="maia-main" role="main">
+      <div class="content" id="content">
+        
+          
+          
+          
+          <section data-type="chapter" id="chapter_continuous-pipelines">
+  <h1 class="heading jumptargets">Data Processing Pipelines</h1>
+  <p class="byline author">Written by Dan Dennison</br>Edited by Tim Harvey</p>
+  <p>This chapter focuses on the real-life challenges of managing data processing pipelines of depth and complexity. It considers the frequency continuum between periodic pipelines that run very infrequently through to continuous pipelines that never stop running, and discusses the discontinuities that can produce significant operational problems. A fresh take on the leader-follower model is presented as a more reliable and better-scaling alternative to the periodic pipeline for processing Big Data.</p>
+<section data-type="sect1" id="origin-of-the-pipeline-design-pattern-K7sBhp">
+    <h2 class="heading jumptargets">Origin of the Pipeline Design Pattern</h2>
+<p>The classic approach to data processing is to write a program that reads in data, transforms it in some desired way, and outputs new data. Typically, the program is scheduled to run under the control of a <a href="https://sre.google/sre-book/distributed-periodic-scheduling/">periodic scheduling program</a> such as cron. This design pattern is called a <em>data pipeline</em>. Data pipelines go as far back as co-routines <a data-type="xref" href="/sre-book/bibliography/#Con63">[Con63]</a>, the DTSS communication files <a data-type="xref" href="/sre-book/bibliography/#Bul80">[Bul80]</a>, the UNIX pipe <a data-type="xref" href="/sre-book/bibliography/#McI86">[McI86]</a>, and later, ETL pipelines,<sup><a class="jumptarget" data-type="noteref" id="id-Pj0ubC7F7h4-marker" href="#id-Pj0ubC7F7h4">116</a></sup> but such pipelines have gained increased attention with the rise of "Big Data," or "datasets that are so large and so complex that traditional data processing applications are inadequate."<sup><a class="jumptarget" data-type="noteref" id="id-OdauPsmFvhQ-marker" href="#id-OdauPsmFvhQ">117</a></sup></p>
+  </section>
+<section data-type="sect1" id="initial-effect-of-big-data-on-the-simple-pipeline-pattern-a7swT4">
+    <h1 class="heading jumptargets">Initial Effect of Big Data on the Simple Pipeline Pattern</h1>
+    <p>Programs that perform periodic or continuous transformations on Big Data are usually referred to as "simple, one-phase pipelines."</p>
+    <p>Given the scale and processing complexity inherent to Big Data, programs are typically organized into a chained series, with the output of one program becoming the input to the next. There may be varied rationales for this arrangement, but it is typically designed for ease of reasoning about the system and not usually geared toward operational efficiency. Programs organized this way are called <em>multiphase pipelines</em>, because each program in the chain acts as a discrete data processing phase.</p>
+    <p>The number of programs chained together in series is a measurement known as the <em>depth</em> of a pipeline. Thus, a shallow pipeline may only have one program with a corresponding pipeline depth measurement of one, whereas a deep pipeline may have a pipeline depth in the tens or hundreds of programs.</p>
+  </section>
+<section data-type="sect1" id="challenges-with-the-periodic-pipeline-pattern-00sGcX">
+    <h1 class="heading jumptargets">Challenges with the Periodic Pipeline Pattern</h1>
+    <p>Periodic pipelines are generally stable when there are sufficient workers for the volume of data and execution demand is within computational capacity. In addition, instabilities such as processing bottlenecks are avoided when the number of chained jobs and the relative throughput between jobs remain uniform.</p>
+    <p>Periodic pipelines are useful and practical, and we run them on a regular basis at Google. They are written with frameworks like MapReduce <a data-type="xref" href="/sre-book/bibliography/#Dea04">[Dea04]</a> and Flume <a data-type="xref" href="/sre-book/bibliography/#Cha10">[Cha10]</a>, among others.</p>
+    <p>However, the collective SRE experience has been that the periodic pipeline model is fragile. We discovered that when a periodic pipeline is first installed with worker sizing, periodicity, chunking technique, and other parameters carefully tuned, performance is initially reliable. However, organic growth and change inevitably begin to stress the system, and problems arise. Examples of such problems include jobs that exceed their run deadline, resource exhaustion, and hanging processing chunks that entail corresponding operational load.</p>
+  </section>
+<section data-type="sect1" id="trouble-caused-by-uneven-work-distribution-LEs0iQ">
+    <h1 class="heading jumptargets">Trouble Caused By Uneven Work Distribution</h1>
+    <p>The key breakthrough of Big Data is the widespread application of "embarrassingly parallel" <a data-type="xref" href="/sre-book/bibliography/#Mol86">[Mol86]</a> algorithms to cut a large workload into chunks small enough to fit onto individual machines. Sometimes chunks require an uneven amount of resources relative to one another, and it is seldom initially obvious why particular chunks require different amounts of resources. For example, in a workload that is partitioned by customer, data chunks for some customers may be much larger than others. Because the customer is the point of indivisibility, end-to-end runtime is thus capped to the runtime of the largest customer.</p>
+    <p>The "hanging chunk" problem can result when resources are assigned due to differences between machines in a cluster or overallocation to a job. This problem arises due to the difficulty of some real-time operations on streams such as sorting "steaming" data. The pattern of typical user code is to wait for the total computation to complete before progressing to the next pipeline stage, commonly because sorting may be involved, which requires all data to proceed. That can significantly delay pipeline completion time, because completion is blocked on the worst-case performance as dictated by the chunking methodology in use.</p>
+    <p>If this problem is detected by engineers or cluster monitoring infrastructure, the response can make matters worse. For example, the "sensible" or "default" response to a hanging chunk is to immediately kill the job and then allow the job to restart, because the blockage may well be the result of nondeterministic factors. However, because pipeline implementations by design usually don’t include checkpointing, work on all chunks is restarted from the beginning, thereby wasting the time, CPU cycles, and human effort invested in the previous cycle.</p>
+  </section>
+<section data-type="sect1" id="drawbacks-of-periodic-pipelines-in-distributed-environments-AVsluv">
+    <h1 class="heading jumptargets">Drawbacks of Periodic Pipelines in Distributed Environments</h1>
+    <p>Big Data periodic pipelines are widely used at Google, and so Google’s cluster management solution includes an alternative scheduling mechanism for such pipelines. This mechanism is necessary because, unlike continuously running pipelines, periodic pipelines typically run as lower-priority batch jobs. A lower-priority designation works well in this case because batch work is not sensitive to latency in the same way that Internet-facing web services are. In addition, in order to control cost by maximizing machine workload, Borg (Google’s cluster management system, <a data-type="xref" href="/sre-book/bibliography/#Ver15">[Ver15]</a>) assigns batch work to available machines. This priority can result in degraded startup latency, so pipeline jobs can potentially experience open-ended startup delays.</p>
+    <p>Jobs invoked through this mechanism have a number of natural limitations, resulting in various distinct behaviors. For example, jobs scheduled in the gaps left by user-facing web service jobs might be impacted in terms of availability of low-latency resources, pricing, and stability of access to resources. Execution cost is inversely proportional to requested startup delay, and directly proportional to resources consumed. Although batch scheduling may work smoothly in practice, excessive use of the batch scheduler (<a data-type="xref" href="/sre-book/distributed-periodic-scheduling/">Distributed Periodic Scheduling with Cron</a>) places jobs at risk of preemptions (see section 2.5 of <a data-type="xref" href="/sre-book/bibliography/#Ver15">[Ver15]</a>) when cluster load is high because other users are starved of batch resources. In light of the risk trade-offs, running a well-tuned periodic pipeline successfully is a delicate balance between high resource cost and risk of preemptions.</p>
+    <p>Delays of up to a few hours might well be acceptable for pipelines that run daily. However, as the scheduled execution frequency increases, the minimum time between executions can quickly reach the minimum average delay point, placing a lower bound on the latency that a periodic pipeline can expect to attain. Reducing the job execution interval below this effective lower bound simply results in undesirable behavior rather than increased progress. The specific failure mode depends on the batch scheduling policy in use. For example, each new run might stack up on the cluster scheduler because the previous run is not complete. Even worse, the currently executing and nearly finished run could be killed when the next execution is scheduled to begin, completely halting all progress in the name of increasing executions.</p>
+    <p>Note where the downward-sloping idle interval line intersects the scheduling delay in <a data-type="xref" href="#fig_continuous-pipelines_periodic-pipeline-execution">Figure 25-1</a>. In this scenario, lowering the execution interval much below 40 minutes for this ~20-minute job results in potentially overlapping executions with undesired consequences.</p>
+    <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_periodic-pipeline-execution">
+      <img src="/img/dynamic/sre-book/a466e86f65c927e26d9eb601c95dbea1.webp" alt="Periodic pipeline execution interval versus idle time (log scale)">
+      <figcaption><span class="label">Figure 25-1. </span>Periodic pipeline execution interval versus idle time (log scale)</figcaption>
+    </figure>
+    <p>The solution to this problem is to secure sufficient server capacity for proper operation. However, resource acquisition in a shared, distributed environment is subject to supply and demand. As expected, development teams tend to be reluctant to go through the processes of acquiring resources when the resources must be contributed to a common pool and shared. To resolve this, a distinction between batch scheduling resources versus production priority resources has to be made to rationalize resource acquisition costs.</p>
+<section data-type="sect2" class="pagebreak-before" id="monitoring-problems-in-periodic-pipelines-JMs7ixud">
+      <h2 class="subheaders jumptargets">Monitoring Problems in Periodic Pipelines</h2>
+      <p>For pipelines of sufficient execution duration, having real-time information on runtime performance metrics can be as important, if not even more important, than knowing overall metrics. This is because real-time data is important to providing operational support, including emergency response. In practice, the standard monitoring model involves collecting metrics during job execution, and reporting metrics only upon completion. If the job fails during execution, no statistics are provided.</p>
+      <p>Continuous pipelines do not share these problems because their tasks are constantly running and their telemetry is routinely designed so that real-time metrics are available. Periodic pipelines shouldn’t have inherent monitoring problems, but we have observed a strong association.</p>
+    </section>
+<section data-type="sect2" id="thundering-herd-problems-9ps7uyuL">
+      <h2 class="subheaders jumptargets">"Thundering Herd" Problems</h2>
+      <p>Adding to execution and monitoring challenges is the "thundering herd" problem endemic to distributed systems, also discussed in <a data-type="xref" href="/sre-book/distributed-periodic-scheduling/">Distributed Periodic Scheduling with Cron</a>. Given a large enough periodic pipeline, for each cycle, potentially thousands of workers immediately start work. If there are too many workers or if the workers are misconfigured or invoked by faulty retry logic, the servers on which they run will be overwhelmed, as will the underlying shared cluster services, and any networking infrastructure that was being used will also be overwhelmed.</p>
+      <p>Further worsening this situation, if retry logic is not implemented, correctness problems can result when work is dropped upon failure, and the job won’t be retried. If retry logic is present but it is naive or poorly implemented, retry upon failure can compound the problem.</p>
+      <p>Human intervention can also contribute to this scenario. Engineers with limited experience managing pipelines tend to amplify this problem by adding more workers to their pipeline when the job fails to complete within a desired period of time.</p>
+      <p>Regardless of the source of the "thundering herd" problem, nothing is harder on cluster infrastructure and the SREs responsible for a cluster’s various services than a buggy 10,000 worker pipeline job.</p>
+    </section>
+<section data-type="sect2" id="moire-load-pattern-ZKsaUPuQ">
+      <h2 class="subheaders jumptargets">Moiré Load Pattern</h2>
+      <p>Sometimes the thundering herd problem may not be obvious to spot in isolation. A related problem we call "Moiré load pattern" occurs when two or more pipelines run simultaneously and their execution sequences occasionally overlap, causing them to simultaneously consume a common shared resource. This problem can occur even in continuous pipelines, although it is less common when load arrives more evenly.</p>
+      <p>Moiré load patterns are most apparent in plots of pipeline usage of shared resources. For example, <a data-type="xref" href="#fig_continuous-pipelines_moire-load-pattern">Figure 25-2</a> identifies the resource usage of three periodic pipelines. In <a data-type="xref" href="#fig_continuous-pipelines_moire-load-pattern-shared">Figure 25-3</a>, which is a stacked version of the data of the previous graph, the peak impact causing on-call pain occurs when the aggregate load nears 1.2M.</p>
+      <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_moire-load-pattern">
+        <img src="/img/dynamic/sre-book/72363af10adff9c59af30f698706ba09.webp" alt="Moiré load pattern in separate infrastructure">
+        <figcaption><span class="label">Figure 25-2. </span>Moiré load pattern in separate infrastructure</figcaption>
+      </figure>
+      <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_moire-load-pattern-shared">
+        <img src="/img/dynamic/sre-book/22584fe2ed1101399b0572a91e70104d.webp" alt="Moiré load pattern in shared infrastructure">
+        <figcaption><span class="label">Figure 25-3. </span>Moiré load pattern in shared infrastructure</figcaption>
+      </figure>
+    </section>
+  </section>
+<section data-type="sect1" id="introduction-to-google-workflow-WEsWUz">
+    <h1 class="heading jumptargets">Introduction to Google Workflow</h1>
+    <p>When an inherently one-shot batch pipeline is overwhelmed by business demands for continuously updated results, the pipeline development team usually considers either refactoring the original design to satisfy current demands, or moving to a continuous pipeline model. Unfortunately, business demands usually occur at the least convenient time to refactor the pipeline system into an online continuous processing system. Newer and larger customers who are faced with forcing scaling issues typically also want to include new features, and expect that these requirements adhere to immovable deadlines. In anticipating this challenge, it’s important to ascertain several details at the outset of designing a system involving a proposed data pipeline. Be sure to scope expected growth trajectory,<sup><a class="jumptarget" data-type="noteref" id="id-rq7ueIYFgUv-marker" href="#id-rq7ueIYFgUv">118</a></sup> demand for design modifications, expected additional resources, and expected latency requirements from the business.</p>
+    <p>Faced with these needs, Google developed a system in 2003 called "Workflow" that makes continuous processing available at scale. Workflow uses the leader-follower (workers) distributed systems design pattern <a data-type="xref" href="/sre-book/bibliography/#Sha00">[Sha00]</a> and the system prevalence design pattern.<sup><a class="jumptarget" data-type="noteref" id="id-rq7upFgIgUv-marker" href="#id-rq7upFgIgUv">119</a></sup> This combination enables very large-scale transactional <a href="https://sre.google/workbook/data-processing/">data pipelines</a>, ensuring correctness with exactly-once semantics.</p>
+<section data-type="sect2" id="workflow-as-model-view-controller-pattern-DVsqtwUy">
+    <h2 class="subheaders jumptargets">Workflow as Model-View-Controller Pattern</h2>
+    <p>Because of how system prevalence works, it can be useful to think of Workflow as the distributed systems equivalent of the model-view-controller pattern known from user interface development.<sup><a class="jumptarget" data-type="noteref" id="id-Pj0ukI7FAtMU2-marker" href="#id-Pj0ukI7FAtMU2">120</a></sup> As shown in <a data-type="xref" href="#fig_continuous-pipelines_model-view-controller-ui">Figure 25-4</a>, this design pattern divides a given software application into three interconnected parts to separate internal representations of information from the ways that information is presented to or accepted from the user.<sup><a class="jumptarget" data-type="noteref" id="id-Xe4uXhOFytbUM-marker" href="#id-Xe4uXhOFytbUM">121</a></sup></p>
+    <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_model-view-controller-ui">
+      <img src="/img/dynamic/sre-book/b2e76609cac17dc9e955efa7d4d4c94e.webp" alt="The model-view-controller pattern used in user interface design.">
+      <figcaption><span class="label">Figure 25-4. </span>The model-view-controller pattern used in user interface design</figcaption>
+    </figure>
+    <p>Adapting this pattern for Workflow, the <em>model</em> is held in a server called "Task Master." The Task Master uses the system prevalence pattern to hold all job states in memory for fast availability while synchronously journaling mutations to persistent disk. The <em>view</em> is the workers that continually update the system state transactionally with the master according to their perspective as a subcomponent of the pipeline. Although all pipeline data may be stored in the Task Master, the best performance is usually achieved when only pointers to work are stored in the Task Master, and the actual input and output data is stored in a common filesystem or other storage. Supporting this analogy, the workers are completely stateless and can be discarded at any time. A <em>controller</em> can optionally be added as a third system component to efficiently support a number of auxiliary system activities that affect the pipeline, such as runtime scaling of the pipeline, snapshotting, workcycle state control, rolling back pipeline state, or even performing global interdiction for business continuity. <a data-type="xref" href="#fig_continuous-pipelines_model-view-controller-workflow">Figure 25-5</a> illustrates the design pattern.</p>
+    <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_model-view-controller-workflow">
+      <img src="/img/dynamic/sre-book/9e798c2755e1ef55d57720589e98ceb2.webp" alt="The Model-View-Controller design pattern as adapted for Google Workflow.">
+      <figcaption><span class="label">Figure 25-5. </span>The model-view-controller design pattern as adapted for Google Workflow</figcaption>
+    </figure>
+    </section>
+  </section>
+<section data-type="sect1" id="stages-of-execution-in-workflow-eKsgC7">
+    <h1 class="heading jumptargets">Stages of Execution in Workflow</h1>
+    <p>We can increase pipeline depth to any level inside Workflow by subdividing processing into task groups held in the Task Master. Each task group holds the work corresponding to a pipeline stage that can perform arbitrary operations on some piece of data. It’s relatively straightforward to perform mapping, shuffling, sorting, splitting, merging, or any other operation in any stage.</p>
+    <p>A stage usually has some worker type associated with it. There can be multiple concurrent instances of a given worker type, and workers can be self-scheduled in the sense that they can look for different types of work and choose which type to <span class="keep-together">perform</span>.</p>
+    <p>The worker consumes work units from a previous stage and produces output units. The output can be an end point or input for some other processing stage. Within the system, it’s easy to guarantee that all work is executed, or at least reflected in permanent state, exactly once.</p>
+<section data-type="sect2" id="workflow-correctness-guarantees-4ksrh1Co">
+      <h2 class="subheaders jumptargets">Workflow Correctness Guarantees</h2>
+      <p>It’s not practical to store <em>every</em> detail of the pipeline’s state inside the Task Master, because the Task Master is limited by RAM size. However, a double correctness guarantee persists because the master holds a collection of pointers to uniquely named data, and each work unit has a uniquely held lease.  Workers acquire work with a lease and may only commit work from tasks for which they currently possess a valid lease.</p>
+      <p>To avoid the situation in which an orphaned worker may continue working on a work unit, thus destroying the work of the current worker, each output file opened by a worker has a unique name. In this way, even orphaned workers can continue writing independently of the master until they attempt to commit. Upon attempting a commit, they will be unable to do so because another worker holds the lease for that work unit. Furthermore, orphaned workers cannot destroy the work produced by a valid worker, because the unique filename scheme ensures that every worker is writing to a distinct file. In this way, the double correctness guarantee holds: the output files are always unique, and the pipeline state is always correct by virtue of tasks with leases.</p>
+      <p>As if a double correctness guarantee isn’t enough, Workflow also versions all tasks. If the task updates or the task lease changes, each operation yields a new unique task replacing the previous one, with a new ID assigned to the task. Because all pipeline configuration in Workflow is stored inside the Task Master in the same form as the work units themselves, in order to commit work, a worker must own an active lease <em>and</em> reference the task ID number of the configuration it used to produce its result. If the configuration changed while the work unit was in flight, all workers of that type will be unable to commit despite owning current leases. Thus, all work performed after a configuration change is consistent with the new configuration, at the cost of work being thrown away by workers unfortunate enough to hold the old leases.</p>
+      <p>These measures provide a triple correctness guarantee: configuration, lease ownership, and filename uniqueness. However, even this isn’t sufficient for all cases.</p>
+      <p>For example, what if the Task Master’s network address changed, and a different Task Master replaced it at the same address? What if a memory corruption altered the IP address or port number, resulting in another Task Master on the other end? Even more commonly, what if someone (mis)configured their Task Master setup by inserting a load balancer in front of a set of independent Task Masters?</p>
+      <p>Workflow embeds a server token, a unique identifier for this particular Task Master, in each task’s metadata to prevent a rogue or incorrectly configured Task Master from corrupting the pipeline. Both client and server check the token on each operation, avoiding a very subtle misconfiguration in which all operations run smoothly until a task identifier collision occurs.</p>
+      <p>To summarize, the four Workflow correctness guarantees are:</p>
+      <ul>
+        <li>Worker output through configuration tasks creates barriers on which to predicate work.</li>
+        <li>All work committed requires a currently valid lease held by the worker.</li>
+        <li>Output files are uniquely named by the workers.</li>
+        <li>The client and server validate the Task Master itself by checking a server token on every operation.</li>
+      </ul>
+      <p>At this point, it may occur to you that it would be simpler to forgo the specialized Task Master and use Spanner <a data-type="xref" href="/sre-book/bibliography/#Cor12">[Cor12]</a> or another database. However, Workflow is special because each task is unique and immutable. These twin properties prevent many potentially subtle issues with wide-scale work distribution from occurring.</p>
+      <p>For example, the lease obtained by the worker is part of the task itself, requiring a brand new task even for lease changes. If a database is used directly and its transaction logs act like a "journal," each and every read must be part of a long-running transaction. This configuration is most certainly possible, but terribly inefficient.</p>
+    </section>
+  </section>
+<section data-type="sect1" id="ensuring-business-continuity-G1sasm">
+    <h1 class="heading jumptargets">Ensuring Business Continuity</h1>
+    <p>Big Data pipelines need to continue processing despite failures of all types, including fiber cuts, weather events, and cascading power grid failures. These types of failures can disable entire datacenters. In addition, pipelines that do not employ system prevalence to obtain strong guarantees about job completion are often disabled and enter an undefined state. This architecture gap makes for a brittle business continuity strategy, and entails costly mass duplication of effort to restore pipelines and data.</p>
+    <p>Workflow resolves this problem conclusively for continuous processing pipelines. To obtain global consistency, the Task Master stores journals on Spanner, using it as a globally available, globally consistent, but low-throughput filesystem. To determine which Task Master can write, each Task Master uses the distributed lock service called Chubby <a data-type="xref" href="/sre-book/bibliography/#Bur06">[Bur06]</a> to elect the writer, and the result is persisted in Spanner. Finally, clients look up the current Task Master using internal naming services.</p>
+    <p>Because Spanner does not make for a high-throughput filesystem, globally distributed Workflows employ two or more local Workflows running in distinct clusters, in addition to a notion of reference tasks stored in the global Workflow. As units of work (tasks) are consumed through a pipeline, equivalent reference tasks are inserted into the global Workflow by the binary labeled "stage 1" in <a data-type="xref" href="#fig_continuous-pipelines_distributed-data-flow">Figure 25-6</a>. As tasks finish, the reference tasks are transactionally removed from the global Workflow as depicted in "stage n" of <a data-type="xref" href="#fig_continuous-pipelines_distributed-data-flow">Figure 25-6</a>. If the tasks cannot be removed from the global Workflow, the local Workflow will block until the global Workflow becomes available again, ensuring transactional correctness.</p>
+    <p>To automate failover, a helper binary labeled "stage 1" in <a data-type="xref" href="#fig_continuous-pipelines_distributed-data-flow">Figure 25-6</a> runs inside each local Workflow. The local Workflow is otherwise unaltered, as described by the "do work" box in the diagram. This helper binary acts as a "controller" in the MVC sense, and is responsible for creating reference tasks, as well as updating a special heartbeat task inside of the global Workflow. If the heartbeat task is not updated within the timeout period, the remote Workflow’s helper binary seizes the work in progress as documented by the reference tasks and the pipeline continues, unhindered by whatever the environment may do to the work.</p>
+    <figure class="horizontal vertical jumptarget" id="fig_continuous-pipelines_distributed-data-flow">
+      <img src="/img/dynamic/sre-book/6fbab34e81c44acbb72b207064d027aa.webp" alt="An example of distributed data and process flow using Workflow pipelines.">
+      <figcaption><span class="label">Figure 25-6. </span>An example of distributed data and process flow using Workflow pipelines</figcaption>
+    </figure>
+  </section>
+<section data-type="sect1" id="summary-and-concluding-remarks-DVsZHg">
+    <h1 class="heading jumptargets">Summary and Concluding Remarks</h1>
+    <p>Periodic pipelines are valuable. However, if a data processing problem is continuous or will organically grow to become continuous, don’t use a periodic pipeline. Instead, use a technology with characteristics similar to Workflow.</p>
+    <p>We have found that continuous data processing with strong guarantees, as provided by Workflow, performs and scales well on distributed cluster infrastructure, routinely produces results that users can rely upon, and is a stable and reliable system for the Site Reliability Engineering team to manage and maintain.</p>
+  </section>
+<div class="footnotes" data-type="footnotes"><p data-type="footnote" id="id-Pj0ubC7F7h4"><sup><a class="jumptargets" href="#id-Pj0ubC7F7h4-marker">116</a></sup>Wikipedia: Extract, transform, load, <a href="https://en.wikipedia.org/wiki/Extract,_transform,_load" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Extract,_transform,_load</em></a></p><p data-type="footnote" id="id-OdauPsmFvhQ"><sup><a class="jumptargets" href="#id-OdauPsmFvhQ-marker">117</a></sup>Wikipedia: Big data, <a href="https://en.wikipedia.org/wiki/Big_data" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Big_data</em></a></p><p data-type="footnote" id="id-rq7ueIYFgUv"><sup><a class="jumptargets" href="#id-rq7ueIYFgUv-marker">118</a></sup>Jeff Dean’s lecture on "Software Engineering Advice from Building Large-Scale Distributed Systems" is an excellent resource: <a data-type="xref" href="/sre-book/bibliography/#Dea07">[Dea07]</a>.</p><p data-type="footnote" id="id-rq7upFgIgUv"><sup><a class="jumptargets" href="#id-rq7upFgIgUv-marker">119</a></sup>Wikipedia: System Prevalence, <a href="https://en.wikipedia.org/wiki/System_Prevalence" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/System_Prevalence</em></a></p><p data-type="footnote" id="id-Pj0ukI7FAtMU2"><sup><a class="jumptargets" href="#id-Pj0ukI7FAtMU2-marker">120</a></sup>The "model-view-controller" pattern is an analogy for distributed systems that was very loosely borrowed from Smalltalk, which was originally used to describe the design structure of graphical user interfaces <a data-type="xref" href="/sre-book/bibliography/#Fow08">[Fow08]</a>.</p><p data-type="footnote" id="id-Xe4uXhOFytbUM"><sup><a class="jumptargets" href="#id-Xe4uXhOFytbUM-marker">121</a></sup>Wikipedia: Model-view-controller, <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller" target="_blank" rel="noopener noreferrer"><em class="hyperlink">https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller</em></a></p></div>
+</section>
+        
+      </div>
+    </div>
+
+    
+    <div class="footer">
+      <div class="maia-aux">
+        <div class="previous">
+          
+            
+            
+            
+            
+              
+            
+
+            
+            <a href="/sre-book/distributed-periodic-scheduling/">
+              <p class="footer-caption">Previous</p>
+              <p class="chapter-link">
+                
+                  Chapter 24 - Distributed Periodic Scheduling with Cron
+                
+              </p>
+            </a>
+            
+          
+        </div>
+        <div class="next">
+          
+            
+            
+            
+            
+              
+            
+
+            
+            <a href="/sre-book/data-integrity/">
+              <p class="footer-caption">Next</p>
+              <p class="chapter-link">
+                
+                  Chapter 26 - Data Integrity: What You Read Is What You Wrote
+                
+              </p>
+            </a>
+            
+          
+        </div>
+
+        
+          
+            
+              <p class="footer-link">Copyright © 2017 Google, Inc. Published by O'Reilly Media, Inc. Licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-ND 4.0</a></p>
+            
+          
+        
+      </div>
+    </div>
+
+  
+
+      
+    </main>
+    
+    
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular-animate.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular-touch.min.js"></script><script src="/js/sre-book.min.js"></script><div style="display: none;"><svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <svg id="chevron-left" viewBox="0 0 24 24"><path d="M16.41 5.41L15 4l-8 8 8 8 1.41-1.41L9.83 12"></path></svg>
+    <svg id="chevron-right" viewBox="0 0 24 24"><path d="M7.59 18.59L9 20l8-8-8-8-1.41 1.41L14.17 12"></path></svg>
+    <svg id="expand-less" viewBox="0 0 24 24"><path d="M18.59 16.41L20 15l-8-8-8 8 1.41 1.41L12 9.83"></path></svg>
+    <svg id="expand-more" viewBox="0 0 24 24"><path d="M5.41 7.59L4 9l8 8 8-8-1.41-1.41L12 14.17"></path></svg>
+    <svg id="arrow-back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+    <svg id="arrow-forward" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"></path></svg>
+    <svg id="arrow-upward" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"></path></svg>
+    <svg id="arrow-downward" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"></path></svg>
+    <svg id="arrow-left" viewBox="0 0 24 24"><path d="M14 7l-5 5 5 5V7z"></path></svg>
+    <svg id="arrow-right" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5v10z"></path></svg>
+    <svg id="arrow-drop-up" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5H7z"></path></svg>
+    <svg id="arrow-drop-down" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"></path></svg>
+    <svg id="help" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"></path></svg>
+    <svg id="menu" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+    <svg id="more-vert" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+    <svg id="drive-pdf" viewBox="0 0 24 24"><path d="M7 11.5h1v-1H7v1zM19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5c0 .83-.67 1.5-1.5 1.5H7v2H5.5V9H8c.83 0 1.5.67 1.5 1.5v1zm10-1H17v1h1.5V13H17v2h-1.5V9h4v1.5zm-5 3c0 .83-.67 1.5-1.5 1.5h-2.5V9H13c.83 0 1.5.67 1.5 1.5v3zm-2.5 0h1v-3h-1v3z"></path></svg>
+    <svg id="file-download" viewBox="0 0 24 24"><path d="M4 15h2v3h12v-3h2v3c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2m11.59-8.41L13 12.17V4h-2v8.17L8.41 9.59 7 11l5 5 5-5-1.41-1.41z"></path></svg>
+    <svg id="open-in-new" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"></path></svg>
+    <svg id="phone" viewBox="0 0 24 24"><path d="M16.01 14.46l-2.62 2.62a16.141 16.141 0 0 1-6.5-6.5l2.62-2.62a.98.98 0 0 0 .27-.9L9.13 3.8c-.09-.46-.5-.8-.98-.8H4c-.56 0-1.03.47-1 1.03a17.92 17.92 0 0 0 2.43 8.01 18.08 18.08 0 0 0 6.5 6.5 17.92 17.92 0 0 0 8.01 2.43c.56.03 1.03-.44 1.03-1v-4.15c0-.48-.34-.89-.8-.98l-3.26-.65a.99.99 0 0 0-.9.27z"></path></svg>
+    <svg id="email" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-.8 2L12 10.8 4.8 6h14.4zM4 18V7.87l8 5.33 8-5.33V18H4z"></path></svg>
+    <svg id="instagram" viewBox="0 0 24 24"><path d="M12,0 C15.3,0 15.7,0 17,0 C18.3,0.1 19.1,0.3 19.9,0.6 C20.7,0.9 21.3,1.3 22,2 C22.7,2.7 23.1,3.4 23.3,4.2 C23.6,5 23.8,5.8 23.9,7.1 C24,8.3 24,8.7 24,12 C24,15.3 24,15.7 23.9,16.9 C23.8,18.2 23.6,19 23.3,19.8 C23,20.6 22.6,21.2 21.9,21.9 C21.3,22.6 20.6,23 19.8,23.3 C19,23.6 18.2,23.8 16.9,23.9 C15.7,24 15.3,24 12,24 C8.7,24 8.3,24 7,24 C5.7,23.9 4.9,23.7 4.1,23.4 C3.3,23.1 2.7,22.7 2,22 C1.3,21.3 0.9,20.6 0.7,19.8 C0.4,19 0.2,18.2 0.1,16.9 C0,15.7 0,15.3 0,12 C0,8.7 0,8.3 0.1,7.1 C0.1,5.8 0.3,4.9 0.6,4.1 C0.9,3.4 1.3,2.7 2,2 C2.7,1.3 3.4,0.9 4.1,0.6 C4.9,0.3 5.8,0.1 7.1,0.1 C8.3,0 8.7,0 12,0 Z M12,2.2 C8.8,2.2 8.4,2.2 7.2,2.2 C6,2.3 5.3,2.5 4.9,2.6 C4.4,2.9 4,3.1 3.5,3.5 C3.1,3.9 2.8,4.3 2.6,4.9 C2.5,5.3 2.3,6 2.3,7.2 C2.2,8.4 2.2,8.8 2.2,12 C2.2,15.2 2.2,15.5 2.3,16.8 C2.3,17.9 2.5,18.6 2.7,19 C2.9,19.6 3.2,20 3.6,20.4 C4,20.8 4.4,21.1 5,21.3 C5.4,21.5 6,21.6 7.2,21.7 C8.4,21.8 8.8,21.8 12,21.8 C15.2,21.8 15.5,21.8 16.8,21.7 C17.9,21.7 18.6,21.5 19,21.3 C19.6,21.1 20,20.8 20.4,20.4 C20.8,20 21.1,19.6 21.3,19 C21.5,18.6 21.6,18 21.7,16.8 C21.8,15.6 21.8,15.2 21.8,12 C21.8,8.8 21.8,8.5 21.7,7.2 C21.7,6.1 21.5,5.4 21.3,5 C21.1,4.4 20.8,4 20.4,3.6 C20,3.2 19.6,2.9 19,2.7 C18.6,2.5 18,2.4 16.8,2.3 C15.6,2.2 15.2,2.2 12,2.2 Z M12,5.8 C15.4,5.8 18.2,8.6 18.2,12 C18.2,15.4 15.4,18.2 12,18.2 C8.6,18.2 5.8,15.4 5.8,12 C5.8,8.6 8.6,5.8 12,5.8 Z M12,16 C14.2,16 16,14.2 16,12 C16,9.8 14.2,8 12,8 C9.8,8 8,9.8 8,12 C8,14.2 9.8,16 12,16 Z M18.4,7 C17.6268014,7 17,6.37319865 17,5.6 C17,4.82680135 17.6268014,4.2 18.4,4.2 C19.1731986,4.2 19.8,4.82680135 19.8,5.6 C19.8,6.37319865 19.1731986,7 18.4,7 Z"></path></svg>
+    <svg id="link" viewBox="0 0 24 24"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2z"></path><path d="M8 11h8v2H8z"></path></svg>
+    <svg id="post-blogger" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4 7v1c0 .55.45 1 1 1s1 .45 1 1v3c0 1.66-1.34 3-3 3H9c-1.66 0-3-1.34-3-3V8c0-1.66 1.34-3 3-3h4c1.66 0 3 1.34 3 3v1zm-6.05 1h2.6c.55 0 1-.45 1-1s-.45-1-1-1h-2.6c-.55 0-1 .45-1 1s.45 1 1 1zM14 13H9.95c-.55 0-1 .45-1 1s.45 1 1 1H14c.55 0 1-.45 1-1s-.45-1-1-1z"></path></svg>
+    <svg id="post-facebook" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 2v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v7h-3v-7h-2v-3h2V7.5C13 5.57 14.57 4 16.5 4H19z"></path></svg>
+    <svg id="post-linkedin" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 19H5v-9h3v9zM6.5 8.31c-1 0-1.81-.81-1.81-1.81S5.5 4.69 6.5 4.69s1.81.81 1.81 1.81S7.5 8.31 6.5 8.31zM19 19h-3v-5.3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V19h-3v-9h3v1.2c.52-.84 1.59-1.4 2.5-1.4 1.93 0 3.5 1.57 3.5 3.5V19z"></path></svg>
+    <svg id="share" viewBox="0 0 24 24"><path d="M18 16c-.79 0-1.5.31-2.03.81L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.53.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.48.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.05 4.12c-.05.22-.09.45-.09.69 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3zm0-12c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"></path></svg>
+    <svg id="twitter" viewBox="0 0 24 24"><path d="M7.5,21.8c9.1,0,14-7.5,14-14c0-0.2,0-0.4,0-0.6c1-0.7,1.8-1.6,2.5-2.5c-0.9,0.4-1.8,0.7-2.8,0.8c1-0.6,1.8-1.6,2.2-2.7 c-1,0.6-2,1-3.1,1.2c-0.9-1-2.2-1.6-3.6-1.6c-2.7,0-4.9,2.2-4.9,4.9c0,0.4,0,0.8,0.1,1.1C7.7,8.1,4.1,6.1,1.7,3.1 C1.2,3.9,1,4.7,1,5.6c0,1.7,0.9,3.2,2.2,4.1C2.4,9.7,1.6,9.5,1,9.1c0,0,0,0,0,0.1c0,2.4,1.7,4.4,4,4.8c-0.4,0.1-0.8,0.2-1.3,0.2 c-0.3,0-0.6,0-0.9-0.1c0.6,2,2.4,3.4,4.6,3.4c-1.7,1.3-3.8,2.1-6.1,2.1c-0.4,0-0.8,0-1.2-0.1C2.2,20.9,4.8,21.8,7.5,21.8"></path></svg>
+    <svg id="video-youtube" viewBox="0 0 24 24"><path d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="video-youtube-white" viewBox="0 0 24 24"><path fill="#fff" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="video-youtube-black" viewBox="0 0 24 24"><path fill="#000" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path><polygon fill="#fff" points="9.6,15.5 9.6,8.5 16,12.1 "></polygon></svg>
+    <svg id="video-youtube-red" viewBox="0 0 24 24"><path fill="#f00" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path><polygon fill="#fff" points="9.6,15.5 9.6,8.5 16,12.1 "></polygon></svg>
+    <svg id="video-youtube-white" viewBox="0 0 24 24"><path fill="#fff" d="M23.74 7.1s-.23-1.65-.95-2.37c-.91-.96-1.93-.96-2.4-1.02C17.04 3.47 12 3.5 12 3.5s-5.02-.03-8.37.21c-.46.06-1.48.06-2.39 1.02C.52 5.45.28 7.1.28 7.1S.04 9.05 0 10.98V13c.04 1.94.28 3.87.28 3.87s.24 1.65.96 2.38c.91.95 2.1.92 2.64 1.02 1.88.18 7.91.22 8.12.22 0 0 5.05.01 8.4-.23.46-.06 1.48-.06 2.39-1.02.72-.72.96-2.37.96-2.37s.24-1.94.25-3.87v-2.02c-.02-1.93-.26-3.88-.26-3.88zM9.57 15.5V8.49L16 12.13 9.57 15.5z"></path></svg>
+    <svg id="close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"></path></svg>
+    <svg id="expand-all" viewBox="0 0 24 24"><path d="M16.59 9.41L18 8l-6-6-6 6 1.41 1.41L12 4.83l4.59 4.58zM12 19.17l-4.59-4.58L6 16l6 6 6-6-1.41-1.41L12 19.17z"></path></svg>
+    <svg id="play-circle-filled" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path></svg>
+    <svg id="search" viewBox="0 0 24 24"><path d="M20.49 19l-5.73-5.73C15.53 12.2 16 10.91 16 9.5A6.5 6.5 0 1 0 9.5 16c1.41 0 2.7-.47 3.77-1.24L19 20.49 20.49 19zM5 9.5C5 7.01 7.01 5 9.5 5S14 7.01 14 9.5 11.99 14 9.5 14 5 11.99 5 9.5z"></path></svg>
+    <svg id="google-color-logo" viewBox="0 0 74 24"><path fill="#4285F4" d="M9.24 8.19v2.46h5.88c-.18 1.38-.64 2.39-1.34 3.1-.86.86-2.2 1.8-4.54 1.8-3.62 0-6.45-2.92-6.45-6.54s2.83-6.54 6.45-6.54c1.95 0 3.38.77 4.43 1.76L15.4 2.5C13.94 1.08 11.98 0 9.24 0 4.28 0 .11 4.04.11 9s4.17 9 9.13 9c2.68 0 4.7-.88 6.28-2.52 1.62-1.62 2.13-3.91 2.13-5.75 0-.57-.04-1.1-.13-1.54H9.24z"></path><path fill="#EA4335" d="M25 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52z"></path><path fill="#4285F4" d="M53.58 7.49h-.09c-.57-.68-1.67-1.3-3.06-1.3C47.53 6.19 45 8.72 45 12c0 3.26 2.53 5.81 5.43 5.81 1.39 0 2.49-.62 3.06-1.32h.09v.81c0 2.22-1.19 3.41-3.1 3.41-1.56 0-2.53-1.12-2.93-2.07l-2.22.92c.64 1.54 2.33 3.43 5.15 3.43 2.99 0 5.52-1.76 5.52-6.05V6.49h-2.42v1zm-2.93 8.03c-1.76 0-3.1-1.5-3.1-3.52 0-2.05 1.34-3.52 3.1-3.52 1.74 0 3.1 1.5 3.1 3.54.01 2.03-1.36 3.5-3.1 3.5z"></path><path fill="#FBBC05" d="M38 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52z"></path><path fill="#34A853" d="M58 .24h2.51v17.57H58z"></path><path fill="#EA4335" d="M68.26 15.52c-1.3 0-2.22-.59-2.82-1.76l7.77-3.21-.26-.66c-.48-1.3-1.96-3.7-4.97-3.7-2.99 0-5.48 2.35-5.48 5.81 0 3.26 2.46 5.81 5.76 5.81 2.66 0 4.2-1.63 4.84-2.57l-1.98-1.32c-.66.96-1.56 1.6-2.86 1.6zm-.18-7.15c1.03 0 1.91.53 2.2 1.28l-5.25 2.17c0-2.44 1.73-3.45 3.05-3.45z"></path></svg>
+    <svg id="google-solid-logo" viewBox="0 0 74 24"><path d="M9.24 8.19v2.46h5.88c-.18 1.38-.64 2.39-1.34 3.1-.86.86-2.2 1.8-4.54 1.8-3.62 0-6.45-2.92-6.45-6.54s2.83-6.54 6.45-6.54c1.95 0 3.38.77 4.43 1.76L15.4 2.5C13.94 1.08 11.98 0 9.24 0 4.28 0 .11 4.04.11 9s4.17 9 9.13 9c2.68 0 4.7-.88 6.28-2.52 1.62-1.62 2.13-3.91 2.13-5.75 0-.57-.04-1.1-.13-1.54H9.24zm15.76-2c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52zm28.58-8.03h-.09c-.57-.68-1.67-1.3-3.06-1.3C47.53 6.19 45 8.72 45 12c0 3.26 2.53 5.81 5.43 5.81 1.39 0 2.49-.62 3.06-1.32h.09v.81c0 2.22-1.19 3.41-3.1 3.41-1.56 0-2.53-1.12-2.93-2.07l-2.22.92c.64 1.54 2.33 3.43 5.15 3.43 2.99 0 5.52-1.76 5.52-6.05V6.49h-2.42v1zm-2.93 8.03c-1.76 0-3.1-1.5-3.1-3.52 0-2.05 1.34-3.52 3.1-3.52 1.74 0 3.1 1.5 3.1 3.54.01 2.03-1.36 3.5-3.1 3.5zM38 6.19c-3.21 0-5.83 2.44-5.83 5.81 0 3.34 2.62 5.81 5.83 5.81s5.83-2.46 5.83-5.81c0-3.37-2.62-5.81-5.83-5.81zm0 9.33c-1.76 0-3.28-1.45-3.28-3.52 0-2.09 1.52-3.52 3.28-3.52s3.28 1.43 3.28 3.52c0 2.07-1.52 3.52-3.28 3.52zM58 .24h2.51v17.57H58zm10.26 15.28c-1.3 0-2.22-.59-2.82-1.76l7.77-3.21-.26-.66c-.48-1.3-1.96-3.7-4.97-3.7-2.99 0-5.48 2.35-5.48 5.81 0 3.26 2.46 5.81 5.76 5.81 2.66 0 4.2-1.63 4.84-2.57l-1.98-1.32c-.66.96-1.56 1.6-2.86 1.6zm-.18-7.15c1.03 0 1.91.53 2.2 1.28l-5.25 2.17c0-2.44 1.73-3.45 3.05-3.45z"></path></svg>
+    <svg id="pdf" viewBox="0 0 24 24">
+      <g id="Resources" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SRE-Resources" transform="translate(-588.000000, -1354.000000)" fill-rule="nonzero">
+          <g id="Group-5" transform="translate(189.000000, 1096.000000)">
+            <g id="Group-9" transform="translate(32.000000, 258.000000)">
+              <g id="x-WebAssets-/-Card-Icons-/-PDF" transform="translate(367.000000, 0.000000)">
+                <g>
+                  <rect id="Rectangle-5-Copy" fill-opacity="0" fill="#FFFFFF" x="0" y="0" width="24" height="24"></rect>
+                  <path d="M12,14 L13.3333334,14 L13.3333334,10 L12,10 L12,14 Z M15.3333333,14 C15.3333333,15.1066666 14.44,16 13.3333334,16 L10,16 L10,8 L13.3333334,8 C14.44,8 15.3333333,8.89333337 15.3333333,10 L15.3333333,14 Z M22,10 L18.6666666,10 L18.6666666,11.3333333 L20.6666666,11.3333333 L20.6666666,13.3333334 L18.6666666,13.3333334 L18.6666666,16 L16.6666666,16 L16.6666666,8 L22,8 L22,10 Z M8.66666666,11.3333333 C8.66666666,12.44 7.77333333,13.3333334 6.66666667,13.3333334 L5.33333333,13.3333334 L5.33333333,16 L3.33333333,16 L3.33333333,8 L6.66666667,8 C7.77333333,8 8.66666666,8.89333337 8.66666666,10 L8.66666666,11.3333333 Z M2.66666667,0 C1.19333333,0 0,1.19333333 0,2.66666667 L0,21.3333333 C0,22.8066667 1.19333333,24 2.66666667,24 L21.3333333,24 C22.8066667,24 24,22.8066667 24,21.3333333 L24,2.66666667 C24,1.19333333 22.8066667,0 21.3333333,0 L2.66666667,0 Z M5.33333333,11.3333333 L6.66666667,11.3333333 L6.66666667,10 L5.33333333,10 L5.33333333,11.3333333 Z" id="icon-PDF/one-pager" fill="#1A73E8"></path>
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <svg id="slides_icon" viewBox="0 0 32 32">
+      <g id="Resources" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="SRE-Resources" transform="translate(-221.000000, -1128.000000)" fill="#FFB800" fill-rule="nonzero">
+          <g id="Group-5" transform="translate(189.000000, 1096.000000)">
+            <path d="M60.442468,32 L35.5397443,32 C33.5831017,32 32,33.6 32,35.5555556 L32,60.4444444 C32,62.4 33.5831017,64 35.5397443,64 L60.442468,64 C62.3991106,64 64,62.4 64,60.4444444 L64,35.5555556 C64,33.6 62.3991106,32 60.442468,32 Z M60.442468,55.1111111 L35.5397443,55.1111111 L35.5397443,40.8888889 L60.442468,40.8888889 L60.442468,55.1111111 Z" id="Shape"></path>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <svg id="video_icon" viewBox="0 0 24 24" fill="#1d72e8"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    <svg id="rss-feed" xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 0 24 24" width="32px" fill="#1a73e8"><path d="M0 0h24v24H0V0z" fill="none"/><circle cx="6.18" cy="17.82" r="2.18"/><path d="M5.59 10.23c-.84-.14-1.59.55-1.59 1.4 0 .71.53 1.28 1.23 1.4 2.92.51 5.22 2.82 5.74 5.74.12.7.69 1.23 1.4 1.23.85 0 1.54-.75 1.41-1.59-.68-4.2-3.99-7.51-8.19-8.18zm-.03-5.71C4.73 4.43 4 5.1 4 5.93c0 .73.55 1.33 1.27 1.4 6.01.6 10.79 5.38 11.39 11.39.07.73.67 1.28 1.4 1.28.84 0 1.5-.73 1.42-1.56-.73-7.34-6.57-13.19-13.92-13.92z"/></svg>
+    <svg id="podcast" fill="none" height="32" viewBox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg"><path d="m14 12c0 .74-.4 1.38-1 1.72v8.28h-2v-8.28c-.6-.35-1-.98-1-1.72 0-1.1.9-2 2-2s2 .9 2 2zm-2-6c-3.31 0-6 2.69-6 6 0 1.74.75 3.31 1.94 4.4l1.42-1.42c-.83-.73-1.36-1.79-1.36-2.98 0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.19-.53 2.25-1.36 2.98l1.42 1.42c1.19-1.09 1.94-2.66 1.94-4.4 0-3.31-2.69-6-6-6zm0-4c-5.52 0-10 4.48-10 10 0 2.85 1.2 5.41 3.11 7.24l1.42-1.42c-1.55-1.46-2.53-3.53-2.53-5.82 0-4.41 3.59-8 8-8s8 3.59 8 8c0 2.29-.98 4.36-2.53 5.82l1.42 1.42c1.91-1.83 3.11-4.39 3.11-7.24 0-5.52-4.48-10-10-10z" fill="#1a73e8"></path></svg>
+    <svg id="video-yt" width="64px" height="47px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 47" fill="none">
+      <path d="M62.5778 7.29166C61.92 4.43333 59.744 2.16667 56.8889 1.45833C52 0 32 0 32.7111 0C32 0 12 0 7.11111 1.45833C4.256 2.16667 2.08 4.43333 1.42222 7.29166C0 12.5 0 23.3333 0 23.3333C0 23.3333 0 34.1667 1.42222 39.375C2.08 42.2333 4.256 44.5 7.11111 45.2083C12 46.6667 32 46.6667 32.7111 46.6667C32 46.6667 52 46.6667 56.8889 45.2083C59.744 44.5 61.92 42.2333 62.5778 39.375C64 34.1667 64 23.3333 64 23.3333C64 23.3333 64 12.5 62.5778 7.29166Z" fill="#FF0000"/>
+      <path d="M24 32V13.3333L41.3333 23.3846L24 32Z" fill="white"/>
+    </svg>
+    <svg id="article" xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+      <path d="M23.0833 56.75H46V51.75H23.0833V56.75ZM23.0833 42.5H56.9167V37.5H23.0833V42.5ZM23.0833 28.25H56.9167V23.25H23.0833V28.25ZM15 70C13.6667 70 12.5 69.5 11.5 68.5C10.5 67.5 10 66.3333 10 65V15C10 13.6667 10.5 12.5 11.5 11.5C12.5 10.5 13.6667 10 15 10H65C66.3333 10 67.5 10.5 68.5 11.5C69.5 12.5 70 13.6667 70 15V65C70 66.3333 69.5 67.5 68.5 68.5C67.5 69.5 66.3333 70 65 70H15ZM15 65H65V15H15V65Z" fill="white"/>
+    </svg>
+    <svg id="filter-tick" xmlns="http://www.w3.org/2000/svg" width="18" height="14" viewBox="0 0 18 14" fill="none">
+      <path d="M5.59 11.1698L1.42 6.99984L0 8.40984L5.59 13.9998L17.59 1.99984L16.18 0.589844L5.59 11.1698Z" fill="#1A73E8"/>
+    </svg>
+    <svg id="developer_mode_icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="#041E49"><path d="M344-296 160-480l184-184 42 44-140 140 140 140-42 44Zm-144 30h60v76h440v-76h60v166q0 24-18 42t-42 18H260q-24 0-42-18t-18-42v-166Zm60-440h-60v-154q0-24 18-42t42-18h440q24 0 42 18t18 42v154h-60v-64H260v64Zm0 576v30h440v-30H260Zm0-700h440v-30H260v30Zm356 534-42-44 140-140-140-140 42-44 184 184-184 184ZM260-830v-30 30Zm0 700v30-30Z"/></svg>
+    <svg id="play" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="m17 13h16v23h-16z" fill="#202124"/><g fill="#fff"><path d="m0 0h48v48h-48z" fill-opacity=".01"/><path clip-rule="evenodd" d="m24 4c-11.04 0-20 8.96-20 20s8.96 20 20 20 20-8.96 20-20-8.96-20-20-20zm-4 29v-18l12 9z" fill-rule="evenodd"/></g></svg>
+    <svg id="watch-video" fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="m8 .5c-4.14 0-7.5 3.36-7.5 7.5s3.36 7.5 7.5 7.5 7.5-3.36 7.5-7.5-3.36-7.5-7.5-7.5zm-1.5 10.875v-6.75l4.5 3.375z" fill="#1a73e8" fill-rule="evenodd"/></svg>
+    <svg id="modal-play" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path d="m17 13h16v23h-16z" fill="#202124"/><g fill="#fff"><path d="m0 0h48v48h-48z" fill-opacity=".01"/><path clip-rule="evenodd" d="m24 4c-11.04 0-20 8.96-20 20s8.96 20 20 20 20-8.96 20-20-8.96-20-20-20zm-4 29v-18l12 9z" fill-rule="evenodd"/></g></svg>
+    <svg id="modal-pause" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="m20 38h-8v-28h8zm8 0v-28h8v28z" fill="#fff" fill-rule="evenodd"/></svg>
+    <svg id="circle-1" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#4285F4"/><text x="14" y="20" font-size="14px" text-anchor="middle" fill="#FFFF">1</text></svg>
+    <svg id="circle-2" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#F9AB00"/><text x="14" y="20" text-anchor="middle" fill="#FFFF">2</text></svg>
+    <svg id="circle-3" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#34A853"/><text x="14" y="20" text-anchor="middle" fill="#FFFF">3</text></svg>
+    <svg id="twitter-X" height="24" viewBox="0 0 23 20" width="24" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="m11.902344 8.464844 7.445312-8.464844h-1.765625l-6.464843 7.347656-5.160157-7.347656h-5.957031l7.808594 11.113281-7.808594 8.875h1.765625l6.824219-7.761719 5.453125 7.761719h5.957031zm-2.417969 2.746094-.789063-1.105469-6.296874-8.804688h2.710937l5.082031 7.105469.789063 1.105469 6.605469 9.238281h-2.710938zm0 0" fill="#000"/></svg>
+    <svg id="read-more-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M15 9L13.9425 7.9425L9.75 12.1275V3H8.25V12.1275L4.065 7.935L3 9L9 15L15 9Z" fill="white"/></svg>
+    <svg id="open-in-new-white" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" style=""><path fill-rule="evenodd" clip-rule="evenodd" d="M12.25 12.25H1.75V1.75H7V0.25H1.75C0.9175 0.25 0.25 0.925 0.25 1.75V12.25C0.25 13.075 0.9175 13.75 1.75 13.75H12.25C13.075 13.75 13.75 13.075 13.75 12.25V7H12.25V12.25ZM8.5 0.25V1.75H11.1925L3.82 9.1225L4.8775 10.18L12.25 2.8075V5.5H13.75V0.25H8.5Z" fill="white"/></svg>
+    <svg id="load-more-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M15 9L13.9425 7.9425L9.75 12.1275V3H8.25V12.1275L4.065 7.935L3 9L9 15L15 9Z" fill="#1A73E8"/>
+    </svg>
+    <svg id="show-less-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M3 9L4.0575 10.0575L8.25 5.8725V15H9.75V5.8725L13.935 10.065L15 9L9 3L3 9Z" fill="#1A73E8"/>
+    </svg>
+
+  </defs>
+</svg></div>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 7 课 · ADR：什么决定值得记下来</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 1 · 需求与语言 · 第 7 课</p>
+  <h1>ADR：什么决定值得记下来</h1>
+  <p class="lede">第 6 课把决定写成了一堆可验收的需求，但需求清单只回答「要什么」，不回答「为什么这样要」。这一课从清单里挑出那些「改了回不来、不解释就没人懂」的决定，记成一页带被否方案的 ADR。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 35–45 分钟</span>
+  <span><b>前置</b> 第 6 课</span>
+  <span><b>产出</b> 一篇带被否方案的 ADR + 一张参考卡</span>
+  <span><b>主读物</b> SWEBOK 第 1 章；Nygard《Documenting Architecture Decisions》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清 ADR 落在第 2 课八个活动里的哪一块，以及它和第 6、8 课的关系。</li>
+    <li>说清「什么决定值得记成 ADR」的三条判据：难回滚、没有上下文就很怪异、有真实取舍。</li>
+    <li>说清 ADR 记的是「决定和为什么」，不是需求本身；被否掉的方案也要写进去。</li>
+    <li>在沙盒里写一篇带被否方案的 ADR，并让 agent 按 ADR-FORMAT 检查。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课仍然落在 <strong>Requirements（需求）</strong>。第 5、6 课走过的那条链还在继续：第 4 课给了你一套一致的词，第 5 课把藏在脑里的决定一句句逼出来，第 6 课把决定写成可验收的需求清单。第 7 课做的是这条链的收尾——从那张清单里，挑出「值得单独留下来」的决定，记成一篇 <strong>ADR（Architecture Decision Record，架构决策记录）</strong>。</p>
+  <p>SWEBOK 把需求活动拆成 elicitation（需求获取）、analysis（分析）、specification（规格说明）、validation（验证）、management（管理）五类（SWEBOK v4, ch1, p48–61）。前四类在第 5、6 课用过了：获取、分析、写规格、验证。第 7 课踩的是第五类——<strong>management（管理）</strong>。管理不是「再写一份文档」，而是回答：需求写完之后会变，我们怎么应对「变」这件事。ADR 把「为什么当初这么定」留在纸上，让以后要改的人，先知道原来的理由，再决定要不要改。</p>
+  <p>三课是一条链。第 6 课说清了「系统必须表现出什么」，这一课从里面挑「哪个决定和为什么值得单独留下」；挑完，第 8 课再用 to-spec 把共识发布成 spec，正式开干。所以这一课只解决「哪些决定值得记、怎么记」；spec 交给下一课。</p>
+</section>
+
+<section>
+  <h2>问题与概念：为什么有些决定必须写下来</h2>
+  <p>先回到你那份需求清单。上面写着：「总结命令把当前 Document 压缩成两到三句中文，输出带引用，500 毫秒内返回。」假设你把它往抽屉里一塞，半年后回来看——或者干脆换了个维护者来看。问题来了：为什么是「中文」而不是「英文」？为什么一定要「带引用」？为什么「两到三句」而不是「一段」？清单上统统没有答案。清单只写了<strong>「系统必须表现出什么」</strong>，没写<strong>「为什么这样要求」</strong>。</p>
+  <p>这个缺口不是鸡蛋里挑骨头，它会真的让改需求的成本变高。SWEBOK 在第 1 章把 <strong>change control（变更控制）</strong> 称为管理需求的核心（p57–62）：它要求你有请求变更的途径、一次影响分析、一个拍板「接受 / 拒绝 / 延后」的人、通知受影响方，以及跟踪变更到关闭。为什么这么郑重其事？因为需求会变，而每一次变，都要先知道「原来为什么这么定」，才能判断这次改得对不对、会连带影响什么。如果「为什么」没记下来，改需求的人只能猜，而猜错就是返工。</p>
+  <p>于是有了本课的核心概念。<strong>ADR 记的不是需求，是需求背后的决定和理由</strong>。需求回答「系统要表现出什么」（what）；ADR 回答「为什么决定这样做」（why）。它把「这段代码为什么长这样」背后的推理由你亲手写下：让代码说明它想做什么，让文档说明它为什么这么想。</p>
+  <p>但反过来，不是每个决定都值得写成一篇文档。写太多，文档就变成没人读的废纸。什么样的决定才配进 ADR？三条判据（下面 AI 部分会看到，这三条和 domain-modeling 的规则一字不差）：</p>
+  <ol class="steps">
+    <li><strong>难回滚</strong>：改变主意的代价是有意义的——存进哪个数据库、要不要建索引、用不用某个框架，这类一朝定了就很难翻身的。</li>
+    <li><strong>没有上下文就很怪异</strong>：未来的读者看到代码会一头雾水，「为什么这么绕」，不解释他一定会觉得这是个 bug。</li>
+    <li><strong>有真实取舍</strong>：当初真有不止一个可选方案，你因为具体原因选了其中一个——那些被否掉的原因，正是最值得记的东西。</li>
+  </ol>
+  <p>三条都满足，记下来；缺任何一条，跳过。容易回滚的，你之后还会自己翻；一眼就懂的，没人会问「为什么」；没有别的选择的，记了也只是写了句废话。</p>
+</section>
+
+<section>
+  <h2>行业做法：ADR 记什么、怎么记</h2>
+  <p>ADR 这个词，最初来自 Michael Nygard 2011 年的那篇《Documenting Architecture Decisions》。它的主张很朴素：<strong>代码已经告诉你「做了什么」，ADR 要留下来的是「为什么这样做」</strong>——因为前者能改，后者一旦换人、隔段时间，就彻底丢了。他把这份记录叫「Architecture Decision」，意思是一份能独立阅读、能翻回去查「当初为什么」的小文档。</p>
+  <p>先说清一件事：ADR 的格式<strong>没有统一标准</strong>，它是主流做法，不是规定。不同团队长得不一样：有人写一整页（Context / Decision / Consequences），有人一句话就写完。本课教你一种能让你「遮住标题仍能读出因果」的写法，具体格式以你装的技能包的 <code>ADR-FORMAT.md</code> 为准（见 AI 部分），但常识是相同的。</p>
+  <p>一份常见 ADR，大致回答四个问题：</p>
+  <ul>
+    <li><strong>Context（背景）</strong>：当时处在什么情况下、为什么走到了要决定这一步。三句话讲完，别写成流水账。</li>
+    <li><strong>Decision（决策）</strong>：我们决定怎么做，以及被否掉的方案和否掉的<strong>理由</strong>。</li>
+    <li><strong>Consequences（后果）</strong>：这个决定带来的、不那么容易一眼看到的后果。</li>
+    <li><strong>Status（状态）</strong>：这条 ADR 现在是 accepted（已接受）、proposed（拟议）还是已被另一条 superseded（取代）。不是每次都要写，但决定被改过了，记得回这里更新。</li>
+  </ul>
+  <p>你真正要带走的不是这些字段，而是这一句：<strong>「我们改了什么」不重要，「我们为什么改」才是 ADR 的价值</strong>。代码能告诉你改了什么；只有 ADR 能告诉你「改」的理由。所以写的时候，把力气花在 why 上，不要花在复述代码上。</p>
+</section>
+
+<section>
+  <h2>被否掉的方案：ADR 里最容易漏的一行</h2>
+  <p>这一节单独拿出来，是因为它是 ADR 最容易踩漏的一处，也是这一课最想让你记住的。写 ADR 的人最常犯的错，是只写「我选了 A」，不写「我否掉了 B、C，为什么」。但读者看到「选了 A」，最多知道一个结果；他看到「否掉了 B 因为 XX」，才知道这个决定是<strong>算过的</strong>，不是拍脑袋。</p>
+  <p>为什么漏这么重要？因为被否掉的方案，往往会在你离开后<strong>复活</strong>。半年后新同事接手，看到代码里选了 A，他不懂为什么，觉得 B 更顺眼，就把 A 推翻重做一遍——他不知道 B 当初正是被否掉的，还因为它有明显缺陷。你唯一的防线，就是当初把 B 和否掉的理由写下来。</p>
+  <p>拿沙盒的总结功能填一遍。第 6 课定了「总结输出两到三句中文、带引用」，但没定「总结产物的存不存、怎么进索引」。这正好是一条值得记的决定：</p>
+  <pre><code># 总结作为派生条目入库，但默认查询排除派生条目
+
+背景：总结命令会把输入压缩成两到三句中文并给引用；第 6 课定了「输出存成条目」，
+      但没定「这条目算不算知识库里的 Document、要不要进检索」。
+
+决定：总结作为派生条目（derived entry）写进知识库并进入索引，
+      但普通检索默认排除派生条目；用户可显式打开「只看总结」。
+
+被否方案：① 总结不落库、用完即弃——简单、零污染，但无法回溯、无法复用，丢了就用不起来。
+          ② 总结存进原 Document 的字段——查询自然带上，但派生内容污染原文档结构，
+             也无法单独检索总结。
+
+后果：索引里混入派生内容，需要维护一个「派生」标记，查询逻辑多一条过滤规则。</code></pre>
+  <p>注意这例子里「被否方案」写的不是空话：每个被否的都写了一句为什么。这才能让六个月后的人，不用再把它捡起来重做一遍。<strong>何时值得记被否方案</strong>的判断，和 ADR 本身同一条：如果当初否掉的原因是「非显而易见」的——你认真考虑过 B、也给了 B 机会，只是结论不是它——就写下来；如果当初是「根本没想过」，那也不叫被否，叫没提。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：domain-modeling 的取舍判断</h2>
+  <p>这套技能包里，管 ADR 的是 <code>domain-modeling</code>。它不只在第 4 课管 <code>GLOSSARY.md</code>，它还维护一整套「决策怎么落盘」的约定：ADR 放在 <code>docs/adr/</code>，按 <code>0001-slug.md</code> 顺序编号，目录在第一条 ADR 需要时才创建（懒创建，不空手立规矩）。这些约定你直接照抄，不用重新发明。</p>
+  <p><code>domain-modeling</code> 的规则，恰好就是上面那三条判据，一字不差：<strong>难回滚、没有上下文就很怪异、有真实取舍——三个都满足才 offer 建 ADR</strong>（<code>ADR-FORMAT.md</code>）。它的模板也极简：一句背景，三句决定加为什么；<code>Status</code>、<code>Considered Options</code>、<code>Consequences</code> 都是可选，只在有真实价值时加。这和 Nygard 的「简洁」是一脉相承的——ADR 的价值在「记下了决定和为什么」，不在「把页面填满」。</p>
+  <p><code>domain-modeling</code> 是<strong>模型调用</strong>的技能：在相关流程里由 agent 拉起来，你也可以手动请它。开发者要做的不是写，而是三件事：① 审那条它建议的 ADR，确认三条判据真成立；② 确认被否方案写的是「真被否过」的、否的理由是真的；③ 拍板。它给你看的是「<strong>你决定要不要这一条</strong>」。</p>
+  <p>它不能替你做的，正是本课最值钱的三个判断。第一条，「难不难回滚」是你对业务和工程的成本判断，agent 不知道换一次索引重建要多久、不知道你们后面会不会做别的入口，它只能猜。第二条，「没有上下文会不会很怪异」——你要站到半年后的读者、那个真正会问「为什么这样」的人的角度去替自己看，agent 不为你负责这个读者。第三条，哪些是被真否掉的方案、否掉的真实原因是什么，只有你手上那张讨论里出现过，agent 不在场。它倾向「多记」——多写一份你不会怪它，而「记太多」恰恰是 ADR 最常见的死法。</p>
+  <p>怎么判断生效了？<code>docs/adr/</code> 下出现了一篇 <code>0001-xxx.md</code>，读了它你能答出「为什么这样定」「被否掉的是什么、为什么」；而最该证明的一层，是你未来（或新维护者）翻到代码、看到那个「派生条目」时，能说一句「哦，对，这就是那条 ADR 定的」。这是它存在的唯一理由。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>这一节值得单开，是 ADR 最容易滑进去的三处坑。先认，再去做下面的练习。</p>
+  <p>第一个，是<strong>什么都记</strong>。命令叫 <code>summarize</code> 要记一篇、参数要传 id 也要记一篇，结果 <code>docs/adr/</code> 塞满，没人读。判据就是三件套：难回滚、无上下文会怪、有真实取舍，三条缺一就不值得写。接口细节、小事、还没定的事，都不进。</p>
+  <p>第二个，是<strong>只写决定的赢家、不写被否的</strong>。这是 ADR 最常见的一种「看起来写完了其实没写完」：只留了「选了 A」，六个月后 A 被 B 取代，而没人知道当初为什么否掉 B。<strong>被否掉的方案，是「为什么」里最值钱的那一半。</strong></p>
+  <p>第三个，是<strong>把 ADR 当操作日志</strong>。写「我们改了文档结构、加了那个字段」，读起来像一周小结——那不是 ADR，是 changelog。ADR 是「为什么这么改」，不是「改了哪些地方」。改了哪些，git 历史里长着呢，用不着你记。</p>
+</section>
+
+<section>
+  <h2>练习：写一篇带被否方案的 ADR</h2>
+  <p>下面这个练习，就是从第 6 课的需求清单里挑一个决定，写成 ADR。你只需要一把需求清单、一个沙盒仓库，本课不写代码。</p>
+
+  <ol class="steps">
+    <li><strong>挑一个值得记的决定。</strong>回第 6 课需求清单，找一条「改回头成本高、不说原因会怪、当时有别的选」的决定。如果一时找不出，就用上面那个——「总结产物存不存、怎么进索引」，它就是这类。</li>
+    <li><strong>在沙盒里建 <code>docs/adr/</code> 目录。</strong>这是懒创建的落点：没有 ADR 时不用存在，有第一条时才建。用 <code>0001-你起的slug.md</code> 命名。</li>
+    <li><strong>按 <code>ADR-FORMAT.md</code> 写。</strong>一句话背景 + 决定 + 为什么；至少写两个被否方案，每个都带上否掉的理由。</li>
+    <li><strong>只写有真实价值的 Consequences。</strong>有「非显而易见的后果」才写，比如「索引里混入派生条目、检索多一条过滤规则」；没后果别硬编，别把 ADR 写成一页空话。</li>
+    <li><strong>回套三条判据。</strong>难回滚？不在上下文里会怪？当时有真取舍？——三条都真，留着；缺一条，删掉或合并，别让它躺着。</li>
+  </ol>
+
+  <p>如果写的时候你发现这条决定「其实没什么可写的」——方案明显、能回滚、也没被否过——那它本来就不该进 ADR，把它划掉，去挑下一条。这正是 ADR 存在的另一种价值：它逼你想清楚，这条到底值不值得留下。</p>
+</section>
+
+<section>
+  <h2>反馈回路：让 agent 按 ADR-FORMAT 检查你的记录</h2>
+  <p>ADR 最常见的问题，不是格式错，而是「写都写了但没写到点上」：被否方案没写、三条判据没全、把 changelog 当 ADR。好在判据和格式都写成了清单，让 agent 拿清单来查，最可靠。</p>
+
+  <pre><code>读我这条 ADR，再读
+C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md 和 SKILL.md。
+
+逐条检查：
+1. 三条判据（难回滚 / 没有上下文很怪异 / 有真实取舍）是否真的成立？缺哪一条？
+2. 是否只写了决定，没有写被否方案？被否的每个是否都给了否定的理由？
+3. 被否方案里有没有「其实根本没被否过」的？是否把「没想过」当成「否掉」了？
+4. Context / Decision / Consequences 是不是完整句子、可独立读？还是记成了 changelog（只写改了哪些）？
+5. Status（如果写了）和编号格式是否符合 ADR-FORMAT.md？
+6. 有没有把本该属于需求清单的东西（验收标准、接口细节）误写进 ADR？
+
+逐条指出问题并引用原文。最后给结论：这条值得写成 ADR 吗？值得的话，还缺什么？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是「写漏了」——缺被否方案、理由不充分、该写后果没写，这类直接补。另一类是「不该写」——三条判据不成立，agent 建议删掉或合并，这时候听它的，别因为「都写了半天了」硬留。</p>
+  <p>有一条反馈你要主动警惕：agent 可能会在你看完前说「我帮你把那条总结直接实现了吧」。它是在跳步。把这条指回 <code>domain-modeling</code> 的规则：<strong>决定和理由先落盘，再谈开工。</strong>ADR 和后面第 8 课的 spec，都是「在动手之前」的产物。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>需求回答「要什么」，ADR 回答「为什么这样要」；需求会变（SWEBOK 的 change control 立了据），所以「为什么」要留得住。</li>
+    <li>三条判据决定值不值得记：难回滚、没有上下文会很怪异、有真实取舍——三条缺一，别写。</li>
+    <li>写 ADR 一定要写被否掉的方案和理由，它才是「为什么这样」里最值钱的一半；否则半年后它会被当作新想法重做一遍。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章（Software Requirements），p43–66——需求管理：change control（变更控制）是管理需求的核心、需求的 stability / volatility（p57–62）、tracing 与变更的 footprint（p60）；Michael Nygard, <em>Documenting Architecture Decisions</em>（2011）——ADR 的提出与「记录决定与为什么」的主张（线上文章，无本地全文）。</p>
+  <p><strong>实践工具（以此为准）：</strong><code>domain-modeling</code> 维护 <code>docs/adr/</code> 目录约定与 <code>ADR-FORMAT.md</code> 模板（含三判据、可选 Status / Considered Options / Consequences）；本机路径 <code>C:\Users\admin\.agents\skills\domain-modeling\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>延伸：</strong>ADR 严格说也落在 Design &amp; Architecture（设计记录，见 SWEBOK 第 2 章 p67–82）；本课按需求链收尾来教，是为了接住「需求会变、所以为什么值得留」这条主线。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 8 课「Spec：从共识到可执行」。这一课的 ADR 和前面第 4、6 课的产物——词表、需求清单、这篇 ADR——加在一起，就是你手上攒的「共识」。下一课用 to-spec 把它发布成一份 spec，落到项目 tracker 上，给 agent 当开工依据。</p>
+  <p>这篇 ADR 写好后，贴给我，或直接让 agent 按上面的检查单过一遍。如果你的「被否方案」只有一句话、没有理由，那条正是该回第 6 课、把决定再逼细一点的地方。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0007-adr-card.html">ADR 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>
