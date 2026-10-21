@@ -25,7 +25,7 @@
 | `lessons/` | 课件，每节一个独立 HTML，直接浏览器打开 |
 | `reference/` | 参考卡；`course-map.html` 是 34 节的完整地图 |
 | `learning-records/` | 学习记录 |
-| `courseware/` | 理论来源课件的本机副本（PDF 不进仓库，清单见 `courseware/README.md`） |
+| `courseware/` | 理论来源课件的本机副本，不随仓库分发（来源见 `SOURCE-MAP.md`） |
 | `MISSION.md` | 课程目标、成功标准、约束、范围 |
 | `COURSE-STANDARD.md` | 写作规范：五段结构、来源要求、术语与叙事规则 |
 | `SOURCE-MAP.md` | 八个软件工程活动各自对应的课件章节/页码 |
@@ -42,4 +42,4 @@
 
 ## 来源与版权
 
-课件 PDF（CMU 17-313、SWEBOK v4、*A Philosophy of Software Design*、Google SRE Workbook、MIT 6.031、SE-EDU 等）仅作本地理论来源，未随仓库分发；需要时按 `courseware/README.md` 的清单自行获取。课程正文引用处均标注文件名与章节/页码。
+课件 PDF 与抓取的课程页面（CMU 17-313、SWEBOK v4、*A Philosophy of Software Design*、Google SRE Workbook、MIT 6.031、SE-EDU 等）仅作本地理论来源，未随仓库分发；每节课引用的文件与章节/页码见 `SOURCE-MAP.md`。
