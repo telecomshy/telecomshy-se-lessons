@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 15 课 · 接缝与适配器：测试的地基</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 3 · 设计与架构 · 第 15 课</p>
+  <h1>接缝与适配器：测试的地基</h1>
+  <p class="lede">上一课给存储模块定了形状：接口上只留调用者必须知道的事，JSONL 格式和 id 规则藏进实现，承诺写成不变量。草图要落成代码时，第一个拦路的不是实现，是测试——你想验证那条承诺，可测试一跑就往 <code>kb.jsonl</code> 里追加一行。这一课回答的问题是：这个接口该放在哪、谁来实现它。答案是三个词：seam（接缝）——行为可以被替换的地方；port（端口）——缝上的接口；adapter（适配器）——满足接口的具体物。把存储迁成「一个 port、两个 adapter」，测试就能拿一个内存假件走缝测行为。这就是「测试的地基」：先有可替换的缝，才有一跑再跑的测试。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 8 课（spec 里的接缝草图）、第 14 课（接口草图与不变量）</span>
+  <span><b>产出</b> 一个 port，加两个 adapter</span>
+  <span><b>主读物</b> MIT 6.031《Testing》（Unit and integration testing）</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清接缝落在第 2 课八个活动的哪一块，以及它和第 14 课模块形状、第 17 课架构的关系。</li>
+    <li>用 seam / port / adapter 三个词分析一处真实代码：哪里是行为可替换的地方，缝上的契约是什么，谁在满足它。</li>
+    <li>判断一条缝值不值得开：说出第二个真实的 adapter 是谁；只有一个就承认那是间接层。</li>
+    <li>解释测试为什么要「走缝测行为、替换不要叠加」，以及 fake 漂移靠什么防。</li>
+    <li>在沙盒里把 <code>KnowledgeStore</code> 迁成一个存储 port，加 JSONL 和 in-memory 两个 adapter。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：从「接口长什么样」到「接口放在哪」</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课继续待在 <strong>Design &amp; Architecture（设计与架构）</strong>里，是模块 3 的第二站。上一站第 14 课回答「一个模块长什么样」：module（模块）等于 interface（接口）加 implementation（实现），接口是调用者必须知道的一切，秘密藏进实现，不变量写在表示旁边。但那张接口草图只说了形状，没说落点——接口该开在哪个位置、谁来提供它的实现、调用者拿到的东西是哪个具体类。这三件事分别叫 seam、port、adapter，它们共同决定一个更实际的问题：<strong>这块行为能不能被替换，从而能不能被测试</strong>。</p>
+  <p>为什么「能不能测试」值得单开一课？因为它是设计的验收方式。第 14 课的不变量写得再漂亮，也要有人一遍遍验证它守得住；验证的成本如果高到没人愿意付，不变量就退化成了愿望。反过来，一块行为如果能被干净地替换（真文件换成内存、真时钟换成假时钟），测试就能一跑再跑、跑到 CI 里去——模块 4 的全部测试技术都建在这块地基上。所以本站既是设计课，也是在给第 19 至 22 课的测试课备料。</p>
+  <p>这一站的理论立足点还在 SWEBOK 的设计一章。它把 <strong>separation of interface and implementation（接口与实现分离）</strong>列为 encapsulation（封装）的一种应用，措辞值得逐字读：「用公共接口定义一个组件——公共接口是客户已知且可达的；<strong>把『对组件的使用』和『组件如何构造的细节』隔离开</strong>」（SWEBOK v4, ch.3, p86）。这句话里已经藏了一个位置问题：「隔离」发生在哪一行代码上？给它命名的是 Michael Feathers 的《Working Effectively with Legacy Code》（2004）——seam（接缝）这个概念的正源。该书本地没有全文，本课照第 7 课引 Nygard 的办法做经典转引并标注。第 8 课里 <code>to-spec</code> 画接缝草图时，你已经用过它的通俗版（「测试从哪一层插进去」）；本课给它正式定义，顺便修正那句直觉。</p>
+</section>
+
+<section>
+  <h2>问题与概念：测试想验证行为，却被迫穿过一个文件</h2>
+  <p>先看这个拦路的测试长什么样。第 14 课练习之后，你想给 <code>KnowledgeStore</code> 写第一个断言，验证「add 之后 search 能找到这条」——这是那条不变量（store 里的条目和 <code>kb.jsonl</code> 永远一致）最直接的邻居。照最自然的写法，测试要创建一个 <code>KnowledgeStore(Path("kb.jsonl"))</code>，调 <code>add()</code>，再调 <code>search()</code> 断言命中。跑第一次，绿了。跑第二次，红了：库里多了一条上次测试留下的「第一条知识」，「恰好搜到一条」不成立了。于是你开始给测试配仪式——用临时目录、跑前删文件、算每条数据的行偏移。一周后，测试代码里长出的那套「文件摆位」逻辑比被测的行为本身还复杂。</p>
+  <p>更难受的是另一类用例。你想测「文件里混进一行损坏的 JSON 时，加载会怎样」，就得手工往文件里写坏数据；想测「搜索不区分大小写」，也得先攒出一个内容已知的文件。<strong>测试想验证的行为，离测试自己越来越远</strong>：为了触达逻辑，它被迫知道了文件格式、id 规则、摆位规则——上一课刚说过这些是调用者不必知道的秘密，测试作为调用者，却把它们全学了。根因很清楚：行为（增删查的逻辑）和它的载体（那个 JSONL 文件）焊死在一起，SWEBOK 要求隔离的「使用」和「构造细节」在这里没有被隔开——使用 <code>KnowledgeStore</code>，就等于使用那个文件。</p>
+
+  <h3>seam：不改那处代码，就能换行为的地方</h3>
+  <p>Feathers 给这种「焊死」开的药方，就是 <strong>seam（接缝）</strong>。他的定义是：<strong>接缝是程序里一处「不修改这处代码，就能改变程序行为」的地方</strong>（Feathers,《Working Effectively with Legacy Code》, 2004；书不在本地，此处为经典转引，定义与 <code>codebase-design</code> 词汇表一致）。这个定义比第 8 课那句「测试从哪一层插进去」更准，差别在一个字眼：<strong>接缝不是为测试而生的，它为「替换」而生</strong>。测试只是替换的一种用途——把真文件换成内存、把真时钟换成假时钟、把真 HTTP 换成桩件，走的是同一条缝。今天换上假件为了测，明天换上 SQLite 是为了性能，后天换上远程存储是为了部署——缝开对了，这些都不用动缝旁边的逻辑。</p>
+  <p>Feathers 还给接缝配了一个搭档概念：<strong>enabling point（启用点）</strong>——决定「这条缝上换哪种行为」的那一处代码（同上，经典转引）。它通常就是创建对象、做装配的地方：<code>kb/cli.py</code> 里那行 <code>store = KnowledgeStore(STORE_PATH)</code>，今天看不出重要性，迁完你就会发现它是整条缝唯一的开关。有缝没有开关，替换就只能靠改代码；有开关没有缝，开关换出来的都是同一个东西。</p>
+
+  <h3>port 与 adapter：缝上的接口，缝上的具体物</h3>
+  <p>接缝只是位置，位置上要立东西。这里需要两个来自 ports &amp; adapters 架构的说法。<strong>port（端口）</strong>是缝上的接口：「存储这件事对外长什么样」——<code>add</code> / <code>search</code> 的签名、不变量、错误模式，一行 JSONL 都不许出现。你上一课画的接口草图，补上错误模式和顺序约束，就是 port 的初稿。<strong>adapter（适配器）</strong>是满足 port 契约的具体物：现有 JSONL 逻辑迁过去叫 <code>JsonlStore</code>，测试用的内存版叫 <code>InMemoryStore</code>。注意 adapter 说的是<strong>角色</strong>不是体量（<code>codebase-design</code> 词汇表）：它可以有庞大实现（一个真的 Postgres 仓库），也可以只有几十行（一个内存假件）——判断它是不是 adapter，看它填的是不是缝上的那个位置。</p>
+  <p>落地到 Python，port 有两种常见写法，这是个真取舍：<code>typing.Protocol</code>（协议）写结构化接口，实现类不必显式继承，代价是约束只在类型检查时生效；<code>ABC</code>（Abstract Base Class，抽象基类）能写默认实现、能在运行时查，代价是逼实现方继承。本课练习选 Protocol，理由是它离「契约文档」最近——port 首先是一份给调用者和 adapter 作者读的合同，类型检查器只是顺带的执行者。</p>
+
+  <h3>一个 adapter 是假想缝，两个才是真缝</h3>
+  <p>那么是不是每个类都该配一个 port？技能包的 <strong>seam discipline（缝纪律）</strong>给了一条很硬的判据：<strong>一个 adapter 是假想缝，两个 adapter 才是真缝</strong>——只有一个实现的 port 只是 <strong>indirection（间接层）</strong>：多一层转发，没换来任何可替换性。这条判据要求你在开缝前回答一个问题：<strong>第二个真实的 adapter 是谁？</strong>答案不必是想象中的「将来也许用数据库」，可以就是手边这个：生产要 JSONL，测试要内存，测试用的 in-memory 版就是合法的第二个 adapter。反过来，如果连测试都不打算换实现，那这个类老实当一个实现就好，别抽。</p>
+  <p>这条判据同时解释了上一课那个「接口缺口」该怎么堵。<code>add()</code> / <code>search()</code> 返回内部 dict，调用方拿到就能改破不变量；迁到 port 时，契约里写死「返回条目副本，不给内部引用」，两个 adapter 都照办。一个人实现时可以靠自觉，<strong>两个实现同契约时，含糊的地方会被逼出来</strong>——这是双 adapter 的第二个好处，比可替换性还值钱。</p>
+
+  <h3>走缝测行为：替换，不要叠加</h3>
+  <p>缝开好了，测试怎么写？技能包的测试策略叫 <strong>replace, don't layer（替换，不要叠加）</strong>：测试在 port 这一层断言行为，穿真文件的旧写法被取代后就删掉，不要两套都养着。断言的内容是可观察的结果——add 之后 search 命中、查不到返回空列表、id 唯一——不是内部状态；这样实现怎么重写，测试都不用动。MIT 6.031 的《Testing》里有一段推理正好是它的上游论证：测高层模块 <code>index</code> 时，「不要在测试用例里真的调用 <code>load</code>，因为 <code>load</code> 可能有 bug」；隔离它的办法是给被调模块写 <strong>stub（桩件）</strong>版本——「一个 <code>load</code> 的 stub 完全不碰文件系统，无论传进什么文件都返回假的文件内容」，而类的 stub 常被称为 <strong>mock object（模拟对象）</strong>（MIT 6.031, Testing, “Isolating a higher-level module”）。我们缝上的 <code>InMemoryStore</code> 就是这类替身：测试术语里它更常被叫作 <strong>fake（假件）</strong>，属于 <strong>test double（测试替身）</strong>家族；fake / stub / mock 的分工和边界是第 22 课的正题，这里只需要记住一句：<strong>它是替身，不是玩具，必须守同一份 port 契约</strong>。</p>
+</section>
+
+<section>
+  <h2>行业做法：六边形、依赖注入、假件与契约测试</h2>
+  <p>先立标尺：接缝与适配器<strong>没有统一标准</strong>——没有任何规范规定「存储必须注入」。这里有的是主流做法和取舍，理论那一层是 SWEBOK 的接口与实现分离（ch.3, p86）加 Feathers 的接缝；其余是二十年积累的工程惯例。下面三个是主流做法，最后两个是取舍。</p>
+
+  <h3>主流做法一：ports &amp; adapters，把缝开成一种架构样式</h3>
+  <p>把「缝 + 端口 + 适配器」推到架构高度的是 Alistair Cockburn 2005 年的 <strong>hexagonal architecture（六边形架构）</strong>，也叫 <strong>ports &amp; adapters（端口与适配器）架构</strong>（线上文章，本地无全文，此处经典转引）。它的主张是：核心逻辑坐在中间，外围细节（存储、网络、时钟、界面）各通过一个 port 注入 adapter，核心代码不 import 任何外围的具体类。具体怎么做：先写 port（只含行为契约），再为每种环境写 adapter（生产的、测试的、演示的），最后在唯一一处装配决定注入哪个。什么时候用：依赖随环境变化，或者核心逻辑要脱离框架跑测试。产物是 port 加 N 个 adapter 加一处装配代码。代价有两笔：多一层间接，以及 port 的契约要有人维护——契约写糊了，几个 adapter 会各说各话，测试绿得毫无意义。</p>
+
+  <h3>主流做法二：依赖注入，让缝真的能被换掉</h3>
+  <p>有缝还得有开关，机械装置是 <strong>dependency injection（依赖注入）</strong>：被调用方不自己造依赖，而是从外面收。常见两种形式：构造函数注入（创建时收一个 port 实现）和参数注入（每个方法收）。对 <code>kb</code> 来说就是：命令函数收一个 <code>store</code>，测试传 <code>InMemoryStore</code>，生产传 <code>JsonlStore</code>。什么时候用：任何「测试要换实现」的依赖。产物是构造签名加一处装配点。代价是调用点多一个参数、装配点要有人管；放任到处 <code>new</code> 具体类，缝就名存实亡——第 14 课技能三形状里的「收依赖，不造依赖」说的就是它。</p>
+
+  <h3>主流做法三：替身走缝测行为，用契约测试防漂移</h3>
+  <p>有了注入，测试就照 MIT 那段推理写：创建 fake、注入、断言行为，从头到尾不碰文件。什么时候用：依赖有 I/O、慢、或者不确定（比如时钟、随机数）。产物是测试加一个 fake。代价是 <strong>fake 会漂移</strong>：它和真 adapter 的行为悄悄不一致，测试全绿、生产翻车——最典型的漂移是 fake 比真物聪明，比如内存版默默做了去重，而 JSONL 版不会。防漂移的主流做法是 <strong>contract test（契约测试）</strong>：把 port 上的行为断言写成一批可复用的测试，对每个 adapter 都跑一遍；<code>JsonlStore</code> 过、<code>InMemoryStore</code> 也过，才算 port 说清了。它多养一批测试，只在「adapter 超过一个」时划算——而这恰好就是「两个 adapter 才是真缝」那条判据。</p>
+
+  <h3>取舍一：旧测试删不删，替换还是共存</h3>
+  <p>技能包的立场很明确：replace, don't layer——port 层面的新测试一站稳，穿真文件的旧测试就删掉，两套并存意味着两套维护成本和两套互相矛盾的期望。但也有保守路线值得摆出来：迁移期新旧共存一段时间，等新测试在 CI 里红过几次、抓过真 bug，再删旧的。两边的代价对称：立刻删，赌新测试写得对；慢慢删，赌自己记得回头删。我的建议是折中（经验判断）：给旧测试写一条「删除截止条件」——比如「下一个迭代开始前」，写进工单，而不是靠记性。</p>
+
+  <h3>取舍二：什么时候根本不开缝</h3>
+  <p>另一头的取舍更常见：别开。纯计算、无 I/O 的模块不需要缝，直接测；只有一个真实用途的依赖，先老实写死，等第二个使用者真来了再抽——这条「先写实现、后抽接口」的路线在小项目里完全站得住，代价是到时要迁调用点、要补契约文档。和它对着干的是「先抽接口、再写实现」：好处是第一天就可测，代价是第一天就要赌对接口形状的判断。<strong>这一对取舍没有标准答案，判据是你对「它会变」的预期</strong>——这也是第 16 课「设计两次」要专门练的判断。</p>
+  <p>五个做法摆完，共同线很清楚：<strong>功夫都花在「行为从哪进出」上</strong>。接口定小是上一课的事，这一课决定它立在哪、谁来兑现、以及怎么证明它被兑现了。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：codebase-design 的缝纪律</h2>
+  <p>这套语言在技能包里由 <code>codebase-design</code> 承载，还是<strong>模型调用</strong>（第 14 课用过它的模块词汇，这里不重复总览）。这次要用的是它的第二份文档 <code>DEEPENING.md</code>：把一簇浅模块安全加深的流程，其中有一套「缝开多大、测试怎么走」的判断工具。要注意它的适用前提——它是为「加深既有模块群」写的，我们从零迁存储，借的是它的缝纪律，不是整条流程。</p>
+
+  <h3>它给的第一件工具：四类依赖，决定缝开多大</h3>
+  <p>动手前先看这张对照表，它回答「这个依赖值不值得开 port、测试怎么跨过去」。表后会说它改变了什么判断。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>依赖类别</th><th>是什么</th><th>缝怎么开、测试怎么走</th></tr></thead>
+      <tbody>
+        <tr><td class="what">in-process（进程内）</td><td>纯计算、内存状态、无 I/O</td><td>不需要缝，直接测新接口</td></tr>
+        <tr><td class="what">local-substitutable（有本地替身）</td><td>有现成替身的依赖，如内存文件系统</td><td>用替身即可，缝可以是内部的，不必立 port</td></tr>
+        <tr><td class="what">remote but owned（自有远程）</td><td>自己拥有的服务：微服务、内部 API、存储</td><td>立 port，注入 adapter：生产走 HTTP / 队列 adapter，测试走 in-memory adapter</td></tr>
+        <tr><td class="what">true external（真外部）</td><td>不受你控制的第三方服务，如支付、短信</td><td>把外部依赖当注入的 port，测试给 mock adapter</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表改变的判断是：<strong>分类不是仪式，「会不会真的变」才是判据</strong>。拿 <code>kb</code> 的存储对号入座：本地文件 I/O，看着像第二类；但「测试要换内存、以后可能换 SQLite」意味着它会真的变，所以按第三类立 port 加两个 adapter 是稳妥选择——这里是我的经验判断：四类是启发式，不是法律，同一个依赖在不同项目里可以落进不同类。</p>
+
+  <h3>它给的第二、三件工具：缝纪律与替换式测试</h3>
+  <p>缝纪律两条：「两个 adapter 才是真缝」（上一节讲过，一句话回指）；以及<strong>内部缝与外部缝分开</strong>——深模块内部可以有自己的接缝（比如把「生成 id」和「写文件」分开，方便它自己的测试），但内部缝是实现的私事，不要因为测试要用就把它提到 port 上。第三件工具就是 replace, don't layer：接口即测试面，测试断言可观察结果，实现改了测试不该动；一条测试非得跟着实现改，说明它测到了接口背后去。</p>
+
+  <h3>你做什么，agent 做什么</h3>
+  <p>开发者具体怎么配合？把三样东西丢给 agent：第 14 课的接口草图、那份「接口缺口」清单、以及 <code>kb/cli.py</code> 的调用点，让它按 <code>DEEPENING.md</code> 出迁移方案（port 草图 + 两个 adapter 的骨架 + 装配点位置）。然后你拍板三件它拍不了的板。<strong>缝开在哪一层</strong>：是只把「文件读写」换成 <code>JsonlStore</code>，还是连「条目怎么摆」也一起藏进去——缝的位置是设计决定，决定调用者和测试看到多大一片地。<strong>port 上的契约认不认</strong>：不变量、错误模式、返回副本，这些是签出去的合同，签错了 adapter 作者和调用者都会依赖错。<strong>第二个 adapter 是不是真需要</strong>：测试用途是真实的，但如果有人提议「再抽一层给不知道会不会来的数据库」，用两个 adapter 的判据把它挡回去。</p>
+  <p>产物三样：<strong>一个 port</strong>（接口草图升级版，含不变量与错误模式）、<strong>两个 adapter</strong>（<code>JsonlStore</code>、<code>InMemoryStore</code>）、<strong>一处装配</strong>（<code>kb/cli.py</code> 里唯一的启用点）。怎么判断生效？三个动作：测试从头到尾不碰 <code>kb.jsonl</code> 也能绿；同一批断言对两个 adapter 都过；再跑一次删除测试——想象删掉 port，两个 adapter 各自长出一份逻辑，说明它挣到了位置。还有一处差异要明说：「两个 adapter 才是真缝」是技能包的纪律，不是行业标准，行业里「先写实现、后抽接口」同样常见（上一节的取舍二）；把它当纪律用，是因为它把「要不要多一层」的争论变成了一个能回答的问题。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>概念和做法都到位了，动手前认三个坑。它们的共同点是：看起来在「做架构」，其实只是把绕路铺得更长。</p>
+  <ul>
+    <li><strong>把 seam 理解成「测试文件放哪」。</strong>接缝是行为可替换的地方，测试只是它的第一个客户。缝开对了，换 SQLite、加 HTTP 入口、喂演示数据都从同一条缝走，缝旁边的核心逻辑一行不改；只为测试开的缝，往往换个需求就得拆掉重开。</li>
+    <li><strong>只有一个 adapter 也抽 port。</strong>那是间接层，不是缝——多一层转发，没换来任何可替换性。但警惕反向误用：本例测试用的 in-memory 版就是合法的第二个 adapter，别拿这条判据当「什么都不用抽」的借口；判据问的是「第二个真实用途是谁」，测试算真实用途。</li>
+    <li><strong>fake 比真物聪明。</strong>在 <code>InMemoryStore</code> 里加真物没有的行为（自动去重、自动排序、悄悄修坏数据），测试绿得毫无意义——绿的是 fake 的想象力，不是产品的行为。替身必须守同一份 port 契约，含不变量和错误模式；漂移靠契约测试兜底：同一批断言对两个 adapter 都跑。</li>
+  </ul>
+  <p>三个坑的解药是同一个动作：把 port 当合同读一遍，问每个 adapter 作者「你照这份合同实现了吗」。</p>
+</section>
+
+<section>
+  <h2>练习：把存储迁成一个 port、两个 adapter</h2>
+  <p>本课练习在沙盒里真做，对象是 <code>kb/storage.py</code> 和 <code>kb/cli.py</code>。产出三样：一个存储 port、两个 adapter、一处装配。它们也是第 16 课比较设计候选的起点。</p>
+
+  <ol class="steps">
+    <li><strong>先跑现状，认出缺口。</strong>在 <code>D:\code\my_projects\se-course-sandbox</code> 下执行 <code>python -m kb add "第一条知识" "存储模块把条目存进 JSONL 文件"</code> 和 <code>python -m kb search "JSONL"</code>；再打开 <code>kb/storage.py</code>，确认第 14 课练习标出的缺口还在——<code>add()</code> / <code>search()</code> 返回内部 dict。</li>
+    <li><strong>定 port。</strong>把接口草图升级成代码：用 <code>typing.Protocol</code>（或抽象基类，取舍见正文）写一个存储 port，两个方法的签名之外，把不变量、错误模式、顺序约束写进 docstring；契约里写死「返回条目副本，不给内部引用」——顺手堵掉那个缺口。</li>
+    <li><strong>迁 JSONL adapter。</strong>把 <code>KnowledgeStore</code> 的文件逻辑搬进 <code>JsonlStore</code>，照 port 实现，改掉调用点；<code>kb.jsonl</code> 的格式和 id 规则仍然是它的秘密，不出现在 port 上。</li>
+    <li><strong>写 in-memory adapter。</strong>同一个 port，一个纯内存实现（dict 或 list），不 import <code>json</code> / <code>pathlib</code>，不许出现任何文件逻辑；<strong>所有行为照 port 契约抄，不许多做</strong>。</li>
+    <li><strong>走缝验证。</strong>写一批只用 port 操作的断言草图（真测试是第 19 课的事，现在用一段临时 Python 脚本跑就行）：add 之后 search 命中、查不到返回空列表、id 唯一、返回值改了不影响 store。对两个 adapter 各跑一遍——两条都绿，port 说清了；一条绿一条红，红的那个违约了，或者 port 有歧义。</li>
+    <li><strong>留一处装配。</strong>在 <code>kb/cli.py</code> 里留唯一一处「创建哪个 adapter」的决定（启用点），其它代码只认 port。</li>
+  </ol>
+
+  <p>跑第 5 步时留意一个信号：如果两个 adapter 生成 id 的规则对不上，别急着改测试蒙混过关——这说明 id 规则其实属于 port 的契约（或者该上移成两个 adapter 共享的模块）。第 14 课把它当秘密藏了，是两个 adapter 逼它现了形；这正是「同一个契约、两种实现」最值钱的产出。把它写进 port 的文档。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这条缝「开得值吗」</h2>
+  <p>把你的 port、两个 adapter 和装配点交给 agent，让它按下面这份检查单过一遍。它查的不是架构图画得好不好，是这条缝有没有换来可替换性和一份说清了的契约。</p>
+
+  <pre><code>读我沙盒里的存储 port 与两个 adapter（kb/ 下，写在哪就指哪），对照 kb/cli.py，
+再读 C:\Users\admin\.agents\skills\codebase-design\SKILL.md 与 DEEPENING.md。
+
+逐条检查：
+1. port 只含行为契约吗？签名之外，不变量、错误模式、顺序约束、id 规则有没有漏？
+2. 两个 adapter 真同契约吗？逐条对照返回值形状、空结果、错误模式、id 规则；
+   有没有哪个 adapter 有多余行为（自动去重、自动排序之类真物没有的动作）？
+3. 上一课的缺口堵了吗？add/search 返回的是副本还是内部引用？调用方还能改破不变量吗？
+4. 断言只走 port 吗？有没有伸手进 store.entries 或直接读 kb.jsonl？
+5. 装配是单点吗？kb/cli.py 里还有别处创建具体 adapter 吗？
+6. 复跑删除测试：想象删掉 port——两个 adapter 会各自长出一份逻辑吗？这条缝挣到位置了吗？
+
+逐条引用指出问题，最后给结论：这条缝现在开得值吗？哪一处是「契约没说清」，
+哪一处是「缝开错了地方」？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是<strong>契约没说清</strong>——port 漏了 id 规则、错误模式含糊，补文档、改签名就行。另一类是<strong>缝开错了地方</strong>——要么多余的间接层（只有一个 adapter 还立 port），要么缝开得太低（测试被迫知道了文件摆位），这不是补文档能解决的，要把缝挪位置、把多余的一层删掉。真正的检查单不查你架构画得多好看，查这条缝换回来了什么。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>seam 是「不改那处代码就能改变行为」的地方；port 是缝上的接口，adapter 是缝上的具体物。接缝为「替换」而生，测试只是替换的第一个客户。</li>
+    <li>一个 adapter 是假想缝，两个才是真缝：开缝前先答「第二个真实用途是谁」——测试用的 in-memory 版就是合法答案；只有一个就老实当实现。</li>
+    <li>测试走缝测行为：替换不要叠加，断言只看可观察结果；fake 必须守同一份契约，同一批断言对两个 adapter 都过，port 才算说清了。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 3 章 p83–98（设计基本概念一节 p86：separation of interface and implementation 是 encapsulation 的应用——「把对组件的使用和组件如何构造的细节隔离开」，同页另有 coupling / cohesion 的定义）；MIT 6.031《Testing》（Unit and integration testing，“Isolating a higher-level module”：不许在测 <code>extract</code> 时调用 <code>load</code> 的隔离论证、stub 定义——「stub 完全不碰文件系统」、类的 stub 常称 mock object；本地路径 <code>courseware/mit-6.031/classes/03-testing/index.html</code>）。</p>
+  <p><strong>经典来源：</strong>Michael Feathers,《Working Effectively with Legacy Code》（2004）——seam（「不修改那处代码就能改变行为的地方」）与 enabling point 的出处（书不在本地，此处经典转引，seam 定义与 <code>codebase-design</code> 词汇表一致）；Alistair Cockburn,《Hexagonal Architecture》（2005）——ports &amp; adapters / 六边形架构（线上文章，本地无全文，经典转引）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）——<code>SKILL.md</code> 词汇表（seam / adapter 的定义、「收依赖不造依赖」等可测形状）与 <code>DEEPENING.md</code>（四类依赖、「一个 adapter 是假想缝、两个是真缝」、内部缝与外部缝、replace don't layer）；本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>（只作实践方式，不作理论来源）。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 16 课「设计两次：先造两个候选再选」。这一课你在一条缝上放了两个 adapter，见过「同一个契约、两种实现」怎么互相逼出契约里的含糊；下一课往前一步：<strong>同一个问题，造两个不同的接口候选</strong>，用深度、局部性和缝的位置当判据，选出更好的那个，并说清为什么不选另一个。你练习里的 port——以及那个被两个 adapter 逼出来的 id 规则问题——就是候选之一的起点。</p>
+  <p>你的 port、两个 adapter 和装配点，贴给我，或让 agent 按上面的检查单过一遍。如果 <code>InMemoryStore</code> 里出现了文件操作，别急着交——先问自己：这个替身是不是比真物聪明了？</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0015-seams-adapters-card.html">接缝与适配器参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

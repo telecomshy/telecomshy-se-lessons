@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 19 课 · pytest 与测试设计：划分、边界、覆盖率</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 4 · 实现与测试 · 第 19 课</p>
+  <h1>pytest 与测试设计：划分、边界、覆盖率</h1>
+  <p class="lede">沙盒里的 <code>kb</code> 已经能跑：<code>add</code> 写一条，<code>search</code> 按关键词找回来。但仓库里一个测试都没有，所有「它能用」的证据都是你手敲的几条命令。设想你把补测试的活交给 agent，它半小时交了四十个测试，全绿。两周后，有人嫌搜索结果太杂，agent 把标题匹配收窄成前缀匹配，四十个测试还是全绿；直到你搜「入门」，想找那条标题为「PyTest 入门」的笔记，结果空手而归。这一课解决的就是这件事：测试不是越多越好，先得选对样本。对着第 15 课的 <code>Store</code> 契约做输入划分、挑边界值，用 pytest 写成一组小、但抓得住 bug 的测试，再让覆盖率指出漏掉的分支。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 40–50 分钟</span>
+  <span><b>前置</b> 第 14 课（不变量）、第 15 课（端口与两个适配器）、第 18 课（design doc，设计文档）</span>
+  <span><b>产出</b> 一组按输入划分和边界值设计的 pytest 测试</span>
+  <span><b>主读物</b> MIT 6.031《Testing》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清测试在八个活动里的位置，以及为什么测试要站在 <code>Store</code> 这个 port 上，而不是伸手进 JSONL 文件。</li>
+    <li>用 correct（正确）、thorough（彻底）、small（小）三条标准判断一组测试，而不是看数量。</li>
+    <li>对一个方法做输入划分：每个参与者都要分，子域互不重叠、合起来盖满输入空间。</li>
+    <li>把边界值单列成子域，并用组合策略让少量用例覆盖多个子域，而不是做笛卡尔积。</li>
+    <li>用 pytest 的 fixture（测试夹具）和 parametrize（参数化）把同一批契约测试跑在两个 adapter 上。</li>
+    <li>读覆盖率报告，分清「代码没跑到」和「断言没写对」，说清覆盖率证明不了什么。</li>
+    <li>让 agent 列用例、写骨架、做变异检查；自己拍板契约空洞和预期值。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：设计产物第一次被证据检验</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课进入 <strong>Testing &amp; Quality（测试与质量）</strong>，也是模块 4「实现与测试」的开篇。走到这里，你手里有一叠设计产物：第 14 课的接口草图和不变量，第 15 课的 <code>Store</code> port（端口）和两个 adapter（适配器），第 17 课的组件职责，第 18 课的 design doc。它们都在回答「应该怎么造」；测试是第一次拿证据回答「造出来的东西真的按合同工作吗」。这两件事不是一回事。设计说得再清楚，代码仍可能在某个边界上写错一个比较符。</p>
+  <p>测试站在哪一侧，第 15 课已经定过：站在 port 上。调用者只认 <code>Store</code> 的 <code>add</code> 和 <code>search</code>，测试也应该只认这两个方法。这样同一批断言可以对 <code>JsonlStore</code> 和 <code>InMemoryStore</code> 两个 adapter 各跑一遍——第 15 课说的 contract test（契约测试），这一课把它写出来。测试不该读 <code>kb.jsonl</code> 里 JSONL（JSON Lines）的行格式，也不该摸 <code>store._entries</code>；一旦这么做，测试就绑死在某个 adapter 的实现上，换存储格式时测试会跟着碎一地。第 14 课还留了一条线：不变量要能在测试里守住。这一课就是把「守住」写成断言。</p>
+  <p>模块 4 的路线也在这里排定。第 19 课先做循环之前的案头工作：测什么、用哪些输入、预期结果从哪来。第 20 课把这份用例表放进 TDD（Test-Driven Development，测试驱动开发）的红绿循环；第 21 课修测试的形状，让它只测行为、不测实现；第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界；第 23 课用 <code>/implement</code> 把一个工单真正做完；第 24 课才让 CI（Continuous Integration，持续集成）自动跑。这一课不写红绿循环，也不提前上 CI；先把「一组测试该长什么样」想清楚。</p>
+</section>
+
+<section>
+  <h2>问题与概念：四十个绿测试，可能什么都没证明</h2>
+  <p>把开头那个场景拆开看。agent 写的四十个测试，每个都合法：创建 store，<code>add</code> 一条，<code>search</code> 一个词，断言结果里有那条。它们没有语法错误，也没有断言错东西；问题在于样本。<strong>四十个用例都在测同一小块输入空间</strong>：标题开头、大小写相同、仓库里只有一条。它们把同一件事验证了四十遍，没碰标题中间、标题结尾、只在正文命中、空仓库、多条命中这些地方。测试数量给了你安全感，覆盖面没有。</p>
+  <p>SWEBOK 给测试的定义是：在有限的一组测试用例上动态验证系统，这组用例从通常无限的执行域里选出来（SWEBOK v4, ch.5, p5-1~5-2）。定义里有四个关键词：dynamic（动态）、finite（有限）、selected（选出来）、expected（有预期）。前三个是重点。动态，意味着真的把程序跑起来；有限，意味着穷举不可能；选出来，意味着测试设计就是选样本。第四个「有预期」放在 oracle 那段讲。Dijkstra 那句老话说得更绝：测试能证明 bug 的存在，不能证明 bug 的不存在（SWEBOK v4, ch.5, p5-5；SE-EDU 的《Test Case Design》也引了同一句）。所以一组测试的价值，不取决于它跑了多少次，而取决于它选中的样本能不能代表那些会出错的输入。</p>
+  <p>先把三个词定清。一个 <strong>test case（测试用例）</strong>是「一组输入 + 预期结果」；一组用例叫 <strong>test suite（测试套件）</strong>。预期结果由 <strong>oracle（判定器）</strong>给出：它可以是人、规格、行为模型，也可以是另一个独立实现，负责对每次执行说「过」或「不过」（SWEBOK v4, ch.5, p5-4~5-5 举了规格、行为模型、代码注解；CMU 17-313《11-oracles》p18 把「另一个实现」叫 differential testing（差分测试））。没有 oracle 的测试只是把程序跑了一遍——它看到输出，但不知道输出对不对。第 15 课的 port 契约就是本课的 oracle：条目恰好四个键、id 按顺序递增、<code>created_at</code> 是 UTC（协调世界时）、搜索大小写不敏感、返回副本。每一条预期都要能指回这几句话；指不回去的，先补契约，再写预期。</p>
+
+  <h3>一组好测试的三条标准：正确、彻底、小</h3>
+  <p>MIT 6.031 的《Testing》给好测试套件列了三条标准，比「覆盖率越高越好」好用得多。<strong>correct（正确）</strong>：测试套件是规格的合法客户端，接受所有合法实现，不要求规格没承诺的行为。这条标准管的是「测试别越界」——它允许你换实现而不用改测试。<strong>thorough（彻底）</strong>：套件能抓到程序员真会犯的 bug。<strong>small（小）</strong>：用例少，写起来快、跑起来快、规格变了改起来也快（MIT 6.031, Testing, “Systematic testing”）。三条会互相拉扯：穷举很彻底但不可能小，随手写两个很小但不彻底。测试设计就是在三者之间找平衡。</p>
+  <p>拿这三条量那四十个测试：correct 占了，thorough 没占；四十个用例跑得快，但重复让它们在规格变化时不好改，所以也谈不上 small。问题在样本重复，不在数量不够。修法是换样本——把「标题开头、同大小写、一条条目」这一小块，换成能代表整个契约的几块。下面要讲的划分和边界值，就是干这件事的。</p>
+  <p>还有一处心态要换。写代码时你想让程序工作；设计测试时，你想让它失败。MIT 把这叫「make it fail」：好的测试者会故意去戳程序可能脆弱的地方，而不是轻轻跑一遍看它没报错（MIT 6.031, Testing, “Systematic testing”）。这不是破坏欲，是把自己的假设逼出来——你以为「搜索」很简单，直到你写下「中间命中」这条用例，才发现实现只匹配开头。第 20 课会把这种心态放进 TDD 的红绿循环；这一课先把它用在挑用例上。</p>
+</section>
+
+<section>
+  <h2>行业做法：先划分，再挑边界，最后用覆盖率补漏</h2>
+  <p>先立标尺：测试设计没有统一标准。ISO/IEC/IEEE 29119 是测试过程与文档的标准族，SWEBOK 说它给测试用例的书写、执行自动化和维护提供支持（SWEBOK v4, ch.5, p5-16），但它不规定你这个函数的输入空间该怎么切。下面这套是主流技术：等价类划分、边界值分析、组合策略、覆盖率。它们在 SWEBOK、MIT 6.031 和 SE-EDU 里都有，但切多细、测到哪停，靠判断。</p>
+
+  <h3>先把输入切成几块</h3>
+  <p><strong>equivalence partitioning（等价类划分，EP）</strong>的做法是：把输入空间切成若干子域（subdomain），每个子域里的输入会被程序以相似的方式处理，然后每个子域挑一个代表。所有子域合起来叫一个 <strong>partition（划分）</strong>，它要满足两条：子域互不重叠（disjoint），合起来盖满整个输入空间（complete）。MIT 用 <code>max(a, b)</code> 解释过：先分 <code>a &lt; b</code> 和 <code>a &gt; b</code>，发现漏了 <code>a = b</code>，补上才是一个完整的划分（MIT 6.031, Testing, “Choosing test cases by partitioning”）。SWEBOK 的说法更短：按某个准则把输入域切成等价类，每个类挑一个代表（SWEBOK v4, ch.5, §3.1.1, p5-10~5-11）。</p>
+  <p>拿 <code>search</code> 试第一刀。最粗的划分是「命中 / 不命中」，它确实互不重叠、也盖满了。但它没用：标题命中、正文命中、大小写不同，全被塞进「命中」这一个格子里，测一个代表证明不了另外两个。划分的粗细由契约决定。契约说「搜标题和正文，大小写不敏感」，这三件事就是三种不同行为，得拆开。再往下，标题命中还分开头、中间、结尾——这是边界值那一步要补的。先把行为维度列出来：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>输入划分</th><th>子域</th><th>契约依据</th></tr></thead>
+      <tbody>
+        <tr><td class="what">一条条目与 query 的关系</td><td>标题开头命中 / 标题中间或结尾命中 / 只在正文命中 / 不命中</td><td>「搜标题和正文」</td></tr>
+        <tr><td class="what">大小写关系</td><td>同大小写 / 不同大小写 / 不适用（未命中）</td><td>「大小写不敏感」</td></tr>
+        <tr><td class="what">仓库状态与命中数</td><td>空仓库 / 1 条命中 / 多条命中 / 有条目但 0 命中</td><td>「返回命中的副本列表」</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表只放输入划分。边界值和返回值不变量不是输入子域，另外列：边界是「某个子域里的极端点」，不变量是「不管输入是什么都必须成立的性质」。把它们混进同一张表，读的人会以为「副本」也是一种输入。</p>
+  <p>这张表不是一次成型的。你先写一版，写测试时发现某个格子里的行为其实不一样，再拆；拆完可能反过来发现契约有歧义，回去改契约。MIT 把这种来回叫 iterative test-first programming：写测试会暴露规格的错误、遗漏和歧义，这本来就是测试的收益之一（MIT 6.031, Testing, “Iterative test-first programming”）。对 <code>search</code>，这里就暴露了两处契约空洞，后面「AI + Matt」一节会让人来拍板：第一，「关键词」是子串匹配还是整词匹配？第二，空字符串算不算关键词？这两个问题不决定，测试就没法写预期。</p>
+  <p>还有一件容易漏的事：<strong>每个参与者都要分</strong>。<code>search(query)</code> 的参与者是 query 和仓库里的条目；条目的标题和正文又是两种不同的匹配面。只给 query 分、不给仓库状态分，就会漏掉空仓库和多条命中；只给标题分、不给正文分，就会漏掉只在正文命中的条目。<code>add(title, text)</code> 也有两个参与者，但本课的用例集中在 search，add 只测返回值和 id 规则。SE-EDU 把这些叫「data participants（数据参与者）」，并提醒它们不止参数，还包括被方法读写的外部数据（SE-EDU, Test Case Design, “Equivalence Partitions”）。对 <code>Store</code> 来说，仓库本身就是那个「外部数据」。</p>
+
+  <h3>边界值单独拿出来</h3>
+  <p>边界是两个子域交界的地方，也是 bug 爱待的地方。这种技术叫 <strong>boundary value analysis（边界值分析，BVA）</strong>。程序员常在这里写错比较符（<code>&lt;=</code> 写成 <code>&lt;</code>）、把计数器从 0 开始而不是 1、忘了空集合、或者把第一个和最后一个元素当特例处理（MIT 6.031, Testing, “Include boundaries in the partition”）。SWEBOK 说得更直接：很多故障集中在输入的极端值附近（SWEBOK v4, ch.5, §3.1.2, p5-11）。所以边界值不该混在普通代表里碰运气，要作为单独的子域，让测试套件必然会挑到它。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>边界</th><th>为什么值得测</th></tr></thead>
+      <tbody>
+        <tr><td class="what">空仓库</td><td>0 条是集合的边界；应该返回空列表，而不是抛错或返回 <code>None</code></td></tr>
+        <tr><td class="what">1 条 / 多条</td><td>0、1、多是集合的三个典型状态；多条还要看顺序</td></tr>
+        <tr><td class="what">空 query</td><td>关键词的 0 长度边界；契约没写，先决定再测</td></tr>
+        <tr><td class="what">单字符 query</td><td>最短的非空关键词；前缀匹配和子串匹配在这里最容易分不清</td></tr>
+        <tr><td class="what">query 等于整个标题</td><td>命中长度等于被搜文本的边界</td></tr>
+        <tr><td class="what">命中在标题第一个 / 最后一个字符</td><td>前缀、后缀匹配的分界；<code>startswith</code> 这类 bug 就藏在这</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>边界要从契约来，不要从代码来。契约说 <code>created_at</code> 精确到秒，那「秒」就是边界：把字符串解析成 <code>datetime</code>，断言时区是 UTC、微秒为 0，但不要断言字符串是 <code>+00:00</code> 还是 <code>Z</code>——那是格式选择，不是契约。契约没规定 id 到 10000 条之后还是不是四位，那 <code>e9999 → e10000</code> 就不是你该擅自断言的边界，记进未决问题，别替契约做决定。还有一条组合纪律：边界要一个一个测。空 query、空仓库、不命中三个边界塞进同一个用例，红了你不知道是哪个边界坏了；SE-EDU 对非法输入的建议也是「先一个一个测，再考虑组合」（SE-EDU, Test Case Design, “Heuristic: Test invalid inputs individually before combining them”）。</p>
+  <p>最后是返回值不变量：副本（改了返回值不影响仓库）、条目恰好四个键、顺序与加入顺序一致。它们不是输入，是每次调用都要成立的性质；单独写测试，名字直接说明守的是哪条承诺。顺序在第 8 条用例里已经有一个代表，独立测试再写一条会更直白，不写也不算漏。</p>
+
+  <h3>组合用例，别做笛卡尔积</h3>
+  <p>划分完，每个子域挑一个代表，测试套件就能覆盖整个输入空间。多个划分同时存在时，最直觉的做法是笛卡尔积：每个划分的每个子域都组合一遍。MIT 的 <code>BigInteger.multiply</code> 例子说明了代价：a 和 b 各有 6 个格子，笛卡尔积 36 个用例；换成 6 个精心挑的用例，三个划分的所有子域都能覆盖（MIT 6.031, Testing, “Using multiple partitions”）。CMU 的 <strong>pairwise testing（成对组合测试）</strong>是同一个思路的折中：不追所有组合，保证任意两个参数的组合都出现过；讲义说能抓到大约 50% 到 90% 的缺陷（CMU 17-313《09-testing》, p20）。</p>
+  <p>对 <code>search</code>，划分不多，一个用例可以同时覆盖好几个格子。下面这张表是十一个用例的骨架；它示范的是「少量用例覆盖大量子域」，不是让你照抄。每加一个用例，问它新覆盖了哪个格子；答不出，就删掉。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>场景</th><th>覆盖的子域</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>标题「PyTest 入门」，查「PyTest」</td><td>标题开头、同大小写、1 条命中</td></tr>
+        <tr><td class="num">2</td><td>同一标题，查「pytest」</td><td>标题开头、不同大小写、1 条命中</td></tr>
+        <tr><td class="num">3</td><td>同一标题，查「Test」</td><td>标题中间命中、同大小写</td></tr>
+        <tr><td class="num">4</td><td>同一标题，查「入门」</td><td>标题结尾命中、同大小写</td></tr>
+        <tr><td class="num">5</td><td>标题「笔记」，正文「用 pytest 写测试」，查「pytest」</td><td>只在正文命中、1 条命中</td></tr>
+        <tr><td class="num">6</td><td>标题「笔记」，正文「正文」，查「pytest」</td><td>不命中、有条目但 0 命中</td></tr>
+        <tr><td class="num">7</td><td>空仓库，查「pytest」</td><td>空仓库、0 命中</td></tr>
+        <tr><td class="num">8</td><td>三条条目，两条命中，查「pytest」</td><td>多条命中、顺序与加入顺序一致</td></tr>
+        <tr><td class="num">9</td><td>标题「PyTest 入门」，查「P」</td><td>单字符 query 边界</td></tr>
+        <tr><td class="num">10</td><td>同一标题，查「PyTest 入门」</td><td>query 等于整个标题</td></tr>
+        <tr><td class="num">11</td><td>同一标题，查「」</td><td>空 query 边界（契约先定）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>十一格之外，另测三条不变量：副本、恰好四个键、顺序；顺序在第 8 条已有代表，独立测试可留可并。再加一条 <code>JsonlStore</code> 专有测试：重开已有仓库还能搜到，并且 id 接着排。它们不是输入划分，是契约里的承诺，单独测更清楚。十一条用例加上两三条不变量测试，再配上两个 adapter，跑起来是二三十个测试用例，仍然是秒级。这就是「小」和「彻底」可以同时成立的原因：小不等于随便少写，每个用例都要有明确分工；也不等于越多越好。</p>
+  <p>还有一件低成本的事：把这张表写进测试文件顶部。MIT 建议把划分、子域、每条用例覆盖了哪些子域记在测试套件开头，每条用例上方注明它覆盖的子域（MIT 6.031, Testing, “Documenting your testing strategy”）。这不是文档洁癖。它让「彻底」从感觉变成可检查的东西：哪一格没人认领，一眼就能看见；下一个人也知道你故意没测什么。</p>
+
+  <h3>黑盒先写，白盒补漏</h3>
+  <p>只读契约、不看实现来选用例，叫 <strong>black-box testing（黑盒测试）</strong>，也叫 specification-based testing（基于规格的测试）；读了实现再选用例，叫 <strong>glass-box testing（白盒测试）</strong>，也叫 structure-based testing（基于结构的测试）（SWEBOK v4, ch.5, §3 与 §3.2, p5-10~5-13；MIT 6.031, Testing, “Black box and glass box testing”）。顺序很重要：先黑盒。这样写出的测试是契约的合法客户端，实现怎么换都不用改。第 15 课说「replace, don't layer」，测试能站住的前提就是它只认 port。</p>
+  <p>黑盒写完，再用白盒补漏。补漏的信号来自覆盖率：哪些分支没跑过。比如 <code>search</code> 的实现是 <code>q in entry["title"].lower() or q in entry["text"].lower()</code>。这句话的短路不是 coverage.py 的 branch coverage 能标出来的：它按行和弧段算分支，不拆同一行里的 <code>or</code>。所以「正文匹配没跑过」这件事，要靠变异检查发现——把 <code>or</code> 右边删掉，看有没有测试红；或者把实现改成 <code>if/elif</code>，让两条分支各占一行。<code>JsonlStore</code> 的 <code>if path.exists()</code> 则是标准的 branch：每个测试都用新的临时文件，「打开已有仓库」那条分支永远不走，<code>--cov-branch</code> 会把它标成 partial；加一个重开测试，这条分支才完整。</p>
+  <p>白盒补漏有一条边界：只补契约行为，不补实现细节。MIT 提醒过，如果契约说「格式错误就抛异常」，测试不该断言具体抛 <code>NullPointerException</code>，因为那是当前实现的选择，不是契约的承诺（MIT 6.031, Testing, “Black box and glass box testing”）。同理，测试不该断言 JSONL 的行格式、私有字段、<code>created_at</code> 的字符串长相；这些是 adapter 的秘密，不是 port 的合同。</p>
+
+  <h3>覆盖率：它告诉你跑了什么，不告诉你对不对</h3>
+  <p>覆盖率有三种常见口径。<strong>statement coverage（语句覆盖）</strong>问每条语句是否被跑到；<strong>branch coverage（分支覆盖）</strong>问每个 <code>if</code> / <code>while</code> 的真假两边是否都走到；<strong>path coverage（路径覆盖）</strong>问每条分支组合是否都走到。分支覆盖比语句覆盖强，路径覆盖又比分支覆盖强，但路径覆盖通常不可行——循环会让路径数爆炸。业内的常见目标是 100% 语句覆盖，分支覆盖更值钱，路径覆盖基本追不到（MIT 6.031, Testing, “Coverage”；SWEBOK v4, ch.5, §3.2.1, p5-13）。</p>
+  <p>但覆盖率只回答「这行代码跑过吗」，不回答「断言对吗」。一个只有一行 <code>return query in title</code> 的函数，一个测试就能 100% 覆盖它，哪怕断言写的是 <code>assert result is not None</code>。那四十个测试也可以做到 100% 语句覆盖 <code>search</code>，同时漏掉「中间命中」——因为覆盖率只看代码路径，不看输入空间的格子。SWEBOK 说得直白：覆盖率和缺陷密度这类彻底性度量「本身并不充分」，停不停测试还要看剩余失败的成本和风险（SWEBOK v4, ch.5, p5-20）。</p>
+  <p>读报告时要问问题，别盯数字。<code>--cov-report=term-missing</code> 会列出没执行的行，<code>--cov-branch</code> 会把只走了一边的 <code>if</code> 标出来。对每个缺口问一句：这是契约行为没测，还是防御性、不可达的代码？前者补用例；后者删代码，或者记下来接受。别把 100% 当 KPI（Key Performance Indicator，关键绩效指标）——为了凑数写的测试，通常是在测实现。还有一条更贴近「测试有没有用」的检查：<strong>mutation（变异）</strong>。手动改一处代码，看测试红不红；SWEBOK 把改出来的版本叫 mutant（突变体），测试能发现差异叫 killed（杀死）（SWEBOK v4, ch.5, §3.4 与 §4.2.2, p5-14~5-15、p5-18）。具体的三次变异检查放在「AI + Matt」一节，因为那正是 agent 适合干的活。</p>
+
+  <h3>pytest：把这张表变成能跑的文件</h3>
+  <p>pytest 是 Python 里最常用的测试运行器之一。它胜在把本课最需要的三件事做得很轻：普通 <code>assert</code>、参数化、fixture。功能最多不是选它的理由。它只负责跑测试，不负责告诉你该测什么；测试设计还是上面那几步。它的局限也说清：覆盖率要另装 <code>pytest-cov</code>，mock 要另找 <code>unittest.mock</code> 或插件；它不会替你想 oracle。</p>
+  <p>约定很少：测试文件放在 <code>tests/</code> 下，文件名匹配 <code>test_*.py</code>；测试函数以 <code>test_</code> 开头；用普通 <code>assert</code> 断言。从沙盒根目录跑 <code>python -m pytest -q</code>，pytest 会自己找到测试。用 <code>python -m pytest</code> 而不是直接敲 <code>pytest</code>，是因为前者把当前目录放进 <code>sys.path</code>，<code>kb</code> 才能被 import；直接敲 <code>pytest</code> 在有些环境会报 <code>ModuleNotFoundError</code>。下面这段把「两个 adapter、七种查询」压进一个 fixture 和一个参数化测试：</p>
+  <pre><code># tests/test_storage.py
+import pytest
+
+from kb.storage import InMemoryStore, JsonlStore
+
+
+@pytest.fixture(params=["memory", "jsonl"])
+def store(request, tmp_path):
+    if request.param == "memory":
+        return InMemoryStore()
+    return JsonlStore(tmp_path / "kb.jsonl")
+
+
+@pytest.mark.parametrize(
+    "entries, query, expected",
+    [
+        ([], "pytest", []),  # 空仓库
+        ([("PyTest 入门", "")], "PyTest", ["e0001"]),  # 标题开头、同大小写
+        ([("PyTest 入门", "")], "pytest", ["e0001"]),  # 标题开头、不同大小写
+        ([("PyTest 入门", "")], "入门", ["e0001"]),  # 标题结尾
+        ([("笔记", "用 pytest 写测试")], "pytest", ["e0001"]),  # 只在正文
+        ([("笔记", "正文")], "pytest", []),  # 不命中
+        (
+            [("PyTest 一", ""), ("笔记", "正文"), ("PyTest 二", "")],
+            "pytest",
+            ["e0001", "e0003"],
+        ),  # 多条命中、保持顺序
+    ],
+)
+def test_search_matches_title_or_text_ignoring_case(store, entries, query, expected):
+    for title, text in entries:
+        store.add(title, text)
+    assert [entry["id"] for entry in store.search(query)] == expected</code></pre>
+  <p>逐行看。fixture 是一个普通函数，<code>@pytest.fixture(params=[...])</code> 让 pytest 对每个参数各调一次；<code>request.param</code> 是当前参数，<code>tmp_path</code> 是 pytest 自带的 fixture，给每个测试一个临时目录。于是 <code>JsonlStore</code> 每次拿到一个新文件，测试之间不会串；<code>InMemoryStore</code> 完全不碰文件。测试函数只要写一个名为 <code>store</code> 的参数，pytest 就按名字把 fixture 注入进来——这就是「fixture」的全部魔法，没有隐藏的全局状态。<code>@pytest.mark.parametrize</code> 把用例表变成数据，失败时 pytest 会告诉你哪一组参数、哪一行断言；普通 <code>assert</code> 会被 pytest 重写，失败信息里带着两边的实际值。每一行是「条目列表 + query + 预期 id」：空列表就是空仓库，三个元组就是多条命中。示例只演示七种场景，十一格剩下的标题中间命中（Test）、单字符、整标题、空 query 按同样方式加。</p>
+  <p>跑起来是 <code>python -m pytest -q</code>，输出一行 <code>14 passed</code> 之类。覆盖率用 <code>python -m pytest -q --cov=kb.storage --cov-branch --cov-report=term-missing</code>，前提是装过 <code>pytest-cov</code>；如果还没装，先跑 <code>python -m pip install pytest pytest-cov</code>。这些命令先记住，练习里会真跑。</p>
+
+  <h3>测试站在哪一层：单元测试与金字塔</h3>
+  <p>SWEBOK 把测试按目标分成四级：<strong>unit testing（单元测试）</strong>测一个可单独测试的模块，<strong>integration testing（集成测试）</strong>测模块之间的交互，<strong>system testing（系统测试）</strong>测整个系统，<strong>acceptance testing（验收测试）</strong>测它是否满足用户需求（SWEBOK v4, ch.5, §2.1, p5-6~5-7）。这一课写的是单元测试：对着 <code>Store</code> 这个模块，尽量隔离。<code>JsonlStore</code> 碰文件，但测试用临时文件，不碰你的 <code>kb.jsonl</code>；<code>InMemoryStore</code> 完全不碰文件。集成测试（命令行界面加 store）和端到端测试（真命令行）以后再加，第 23、24 课会碰到。</p>
+  <p>CMU 的讲义把这种分布画成 testing pyramid（测试金字塔）：单元测试多，端到端测试少（p11）；集成测试放中间是金字塔的常见画法，具体比例靠判断。理由是单元测试快、便宜、定位准，端到端测试慢、贵、脆。这是主流做法，不是标准。金字塔不是法律：有的系统会反过来，CMU 自己也把「测试依赖上下文」列为一条原则（p32）。对 <code>kb</code> 这种 CLI（命令行界面），单元测试打底是合适的；等你有了 HTTP（超文本传输协议）adapter，再补集成测试。</p>
+  <p>还有一处和第 14 课的呼应。CMU 给「好测的设计」列了四条：纯、确定、输入输出集合小、输入输出定义清楚（p23）。<code>Store</code> 的接口形状符合后两条：两个方法，输入是字符串，输出是列表；但 <code>created_at</code> 读时钟、<code>JsonlStore</code> 碰文件，是两处不确定源，所以测试用 <code>tmp_path</code>、不比较具体时刻。前两条（纯、确定）它做不到，也不必假装做到——测试设计要承认这些不确定源，再决定怎么隔离。第 14 课把接口做小，回报之一就是测试面小。反过来，如果测试必须拼一个 JSONL 文件才能验证搜索，说明接口漏了——这是第 14 课「接口即测试面」的判据，也是第 15 课开缝的理由。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：agent 列用例，人定预期</h2>
+  <p>课程地图第 19 课的技能栏是「—」。这不是遗漏：测试设计里最值钱的三件事——契约怎么定、预期值从哪来、覆盖率停在哪——都是判断，没有哪个技能能替你拍。下一课 <code>tdd</code> 才出现，它管的是红绿循环；循环里写哪些用例，还是这一课的本事。所以这一节的落法是：agent 干三件体力活，人做四个决定。</p>
+  <p><strong>第一件，列划分和边界候选。</strong>把 <code>Store</code> 的 docstring、两个 adapter 的公开行为、以及你发现的契约空洞一起丢给 agent，让它按「每个参与者、每个子域、每个边界」列一张候选表，并标出每条依据是契约原文还是它从实现里猜的。它会把表列得很长，这有用；你要做的是删掉那些契约没承诺的格子，补上它没想到的边界。它猜错的地方往往很有信息量：比如它可能把「空 query 返回全部」写成预期，因为代码现在就是这么干的——这正是下一段要防的事。</p>
+  <p><strong>第二件，写 pytest 骨架。</strong>fixture 怎么参数化、<code>parametrize</code> 的表怎么排、临时目录怎么建，这些是机械活，agent 写得比你快。但预期值必须由你给：从契约里抄，或者手算一个具体例子。不要让 agent 调用 <code>search</code> 算出预期再写进断言——那是同义反复，代码错它也错。CMU 的 oracle 讲义有一句警告：AI 生成的测试常常变成 golden master（黄金基准），断言代码当前的行为，而不是规格要求的行为（CMU 17-313《11-oracles》, p19）。它会让你的测试全绿，因为它是照着实现写的。最有效的防法是：预期值从契约或手算例子来；拿不准就停下来问契约，不要问代码。</p>
+  <p><strong>第三件，做变异检查。</strong>覆盖率那一节说过，覆盖率只看代码跑没跑；变异检查看测试会不会红。让 agent 在 <code>kb/storage.py</code> 里一次只改一个 adapter 的一处，另一个 adapter 保持正确，跑一次 pytest，记录哪条测试变红，然后还原。改之前先确认第 2 步的契约改动已经提交，还原用 <code>git checkout -- kb/storage.py</code>，别把契约改动一起冲掉。三次就够：第一，<code>search</code> 只看标题、不看正文；第二，标题匹配改成 <code>startswith</code>；第三，<code>search</code> 返回内部 dict、不返回副本。三次都至少有一条红，说明这组测试抓得住这三类 bug；有一次全绿，说明那个子域还空着。做这件事之前要立一条硬规矩：<strong>不许改测试</strong>。agent 很容易为了让测试变绿去改断言，那就把检查变成了作弊。</p>
+  <p>随后做四个决定，都是 agent 做不了的。<strong>匹配语义</strong>：「关键词」是子串匹配，还是整词匹配？现在的代码是子串，但契约只写了「按关键词搜」。选子串，就把「query 作为子串出现在标题或正文里」写进 docstring；选整词，代码和用例表都要改。这是契约决定，不是测试细节。<strong>空 query 的语义</strong>：空串不是关键词，建议返回空列表；如果你更想要「列出全部」，那就明确写进契约，并考虑是不是该另开一个 <code>list</code> 命令。两种都能自洽，怕的是不决定，让测试去追代码的现状。<strong>哪些是契约、哪些是实现</strong>：标题加正文、大小写不敏感、顺序、副本、四个键是契约；JSONL 行格式、私有字段、文件的摆放、<code>created_at</code> 的字符串长相是实现。测试只对前者下断言。<strong>覆盖率停在哪</strong>：契约行为都有代表、两个 adapter 都被跑到、三次变异都被杀死，就可以停；剩下的防御性代码记下来，不追 100%。</p>
+  <p>怎么判断生效？四个动作：<code>python -m pytest -q</code> 全绿；测试 ID 里同时出现 <code>memory</code> 和 <code>jsonl</code>，说明两个 adapter 都跑了；覆盖率报告里 <code>JsonlStore</code> 的持久化分支不再整片缺失；三次变异每次都有测试变红。再加一条软的：把测试文件给一个没读过实现的人，他只看测试名和断言，能不能说出「这个 store 保证了什么」。说不出来，说明测试名或断言还欠清楚。</p>
+  <p>和理论的差异也要说清。技能包没有测试设计技能，<code>pytest</code> 和覆盖率工具只是仪表，不是裁判；agent 擅长枚举和写骨架，不擅长知道「这个行为是不是我们承诺的」。第 21 课会展开好测试的标准（行为、边界、可读性）；<code>tdd</code> 技能从公开接口和反同义反复两个角度补了判据，下一课先把红绿循环走通，这一课先把样本选对。把 agent 当快速的候选生成器和变异执行者，把 oracle 留在人手里，这个分工就不会跑偏。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>概念和做法都齐了，动手前认三个坑。它们的共同点是用数量或跑绿代替对样本的判断。</p>
+  <ul>
+    <li><strong>把覆盖率当目标。</strong>为了让报告变绿，给每个没跑到的行补一个「调用一下、断言不抛异常」的测试。覆盖率上去了，断言还是空的。防法：覆盖率只用来找缺口，补的每个用例都要能说出它守的是哪条契约；再用变异检查看测试会不会红。</li>
+    <li><strong>测实现细节。</strong>断言 <code>store._entries</code> 的长度、JSONL 的第二行是什么、<code>created_at</code> 是不是以 <code>+00:00</code> 结尾、<code>search</code> 内部调了几次 <code>lower()</code>。这些测试在重构时会碎，而且碎了也不代表行为变了。防法：只通过 <code>Store</code> 的 <code>add</code> / <code>search</code> 断言；adapter 专有的测试单独放，别混进契约套件。</li>
+    <li><strong>用例越多越好，或者反过来只写两三个。</strong>前者做笛卡尔积，几十个用例测同一批格子，跑得慢、改起来痛；后者只测「正常路径」，边界和错误分支全空着。防法：先画划分，一个子域一个代表；边界单列；每加一个用例问它新覆盖了哪个格子，答不出就删。</li>
+  </ul>
+  <p>三个坑的解药是同一句话：<strong>每条断言都要能回答「它在替哪条契约作证」</strong>。答不上来的测试，删掉比留着更安全。</p>
+</section>
+
+<section>
+  <h2>练习：给 Store 写一组小而彻底的测试</h2>
+  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 里的 <code>Store</code> 契约。第 15 课的迁移已经做完，<code>Store</code>、<code>JsonlStore</code>、<code>InMemoryStore</code> 都在；这一课不做 CI。产出是一个 <code>tests/test_storage.py</code>，带测试策略注释、两个 adapter 的契约测试、不变量测试，以及一条 <code>JsonlStore</code> 专有的重开测试。</p>
+
+  <ol class="steps">
+    <li><strong>读契约，写测试策略注释。</strong>打开 <code>kb/storage.py</code>，把 <code>Store</code> 的 docstring 逐条读一遍。在 <code>tests/test_storage.py</code> 顶部写一段注释，列出你打算用的划分、每个划分的子域、以及边界值。先别写代码；这一步的产物是一张表，表里每个格子都要指得回契约的某句话。</li>
+    <li><strong>先补两处契约空洞。</strong>「关键词」是子串还是整词？空 query 返回什么？两个问题各选一个答案，写进 <code>Store</code> 的 docstring；如果决定要改行为（比如空 query 返回空列表），两个 adapter 一起改，再手敲一遍验证：<code>python -m kb add "PyTest 入门" "正文"</code> 之后，<code>python -m kb search "pytest"</code> 应该命中；再查一次空串，确认你选的行为。顺序不能反：先定契约，再写测试。测试追着代码现状写，只会把 bug 固化成预期。</li>
+    <li><strong>搭 fixture，跑两个 adapter。</strong>按正文那段代码建 <code>store</code> fixture：<code>params=["memory", "jsonl"]</code>，<code>jsonl</code> 用 <code>tmp_path / "kb.jsonl"</code>。先写一个最小的 <code>test_search_matches_title_or_text_ignoring_case</code>，跑 <code>python -m pytest --collect-only -q</code>，确认两个 adapter 都被收集到（测试 ID 里能看到 <code>memory</code> 和 <code>jsonl</code>），再跑 <code>python -m pytest -q</code> 看绿。</li>
+    <li><strong>把表填成用例。</strong>按正文的十一格表补参数。参数用 <code>entries</code> 列表，不要用单个 <code>title, text</code>——空仓库要零个条目，多条命中要三个条目，单条目签名写不出来。补完十一格，再加两条独立测试：返回值是副本、条目恰好四个键。顺序在第 8 条已有代表，想更直白可以单列。最后加一条 <code>JsonlStore</code> 专有的重开测试。下面两段可以直接起步：
+      <pre><code>def test_search_returns_copies(store):
+    store.add("PyTest", "正文")
+    result = store.search("pytest")[0]
+    result["title"] = "改过"
+    assert store.search("pytest")[0]["title"] == "PyTest"
+
+
+def test_jsonl_store_reopens(tmp_path):
+    path = tmp_path / "kb.jsonl"
+    first = JsonlStore(path)
+    first.add("PyTest", "正文")
+    second = JsonlStore(path)
+    assert [e["id"] for e in second.search("pytest")] == ["e0001"]
+    assert second.add("另一条", "")["id"] == "e0002"</code></pre>
+      <p><code>add</code> 也承诺返回副本和四个键，直接对 <code>add</code> 的返回值写这两条；<code>created_at</code> 解析成 <code>datetime</code> 后断言 UTC、微秒为 0，不比较具体时刻。</p>
+    </li>
+    <li><strong>先跑一遍，读红也读绿。</strong>红了，每条失败都要判：是代码违约，还是预期写错？代码违约就修代码；预期写错就改预期；契约没说清就回到第 2 步。全绿也正常——说明这组用例把现有行为固定住了，接下来用变异检查证明它们真的会红。不要为了让测试变绿去改断言，除非你能指着契约说「这里本来就该这样」。</li>
+    <li><strong>读覆盖率，补一个漏。</strong>如果还没装：<code>python -m pip install pytest pytest-cov</code>。跑 <code>python -m pytest -q --cov=kb.storage --cov-branch --cov-report=term-missing</code>。找出一个「契约行为没跑到」的缺口，补一个用例；找出一个「防御性或不可达」的缺口，写一行注释说明为什么不补。比如 <code>JsonlStore</code> 读文件时跳过空行的那条分支，只有文件里真有空白行才会走到；它算契约行为还是容错实现，你来判。如果你用 <code>--cov=kb</code>，<code>cli.py</code> 会显示 0%，那是本课没测集成层，不是漏了单元测试。</li>
+    <li><strong>做三次变异检查。</strong>先把第 2 步的契约改动提交：<code>git add tests kb/storage.py docs</code>（没有 <code>docs</code> 改动就只加前两个），再 <code>git commit -m "test: pin Store contract"</code>；提交前用 <code>git status</code> 确认没把 <code>.coverage</code>、<code>.pytest_cache/</code> 带进去，需要的话先把它们加进 <code>.gitignore</code>。然后让 agent 按正文那三个 bug 各改一次，每次只改一个 adapter 的一处，另一个保持正确；改完用 <code>git diff</code> 确认只有这一处，跑 <code>python -m pytest -q</code>，记录哪条测试变红，用 <code>git checkout -- kb/storage.py</code> 还原，再 <code>git diff</code> 确认干净，才做下一个。三次都要有红；如果有一次全绿，回到第 1 步看是哪个子域漏了，补用例，不是补一个针对这个 bug 的特判。</li>
+  </ol>
+
+  <p>做完的标准是这五条，测试很多不算：<code>python -m pytest -q</code> 全绿；测试 ID 里同时有 <code>memory</code> 和 <code>jsonl</code>；测试策略注释里每个子域都能指到一个用例；覆盖率报告里两个 adapter 的契约行为都有代表；三次变异都被杀死。第 2 步的契约决定，没定的写进 design doc 的「风险与未决问题」，定下来的写进「架构」并同步 docstring，别只留在会话里。如果你选了整词语义，第 3 条「Test」和第 9 条「P」的预期要从命中改成空；但第 3 条一改，表里就没有「标题中间命中」的代表了，所以把第 3 条的标题改成「Py Test 入门」、查「Test」，保留中间命中。第 10 条「PyTest 入门」里有空格，按你的分词规则定：按空格切词就命中，整体当一个词就不命中，别照抄。中文没有空格分词，整词规则要先定义；本沙盒建议选子串，省掉这层定义。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这组测试抓得住 bug 吗</h2>
+  <p>把契约和测试文件交给 agent，让它按下面这份检查单过一遍。它查的是这组样本有没有代表性，不数测试写得多不多。</p>
+
+  <pre><code>读 kb/storage.py 的 Store docstring 和 tests/test_storage.py。
+除了第 5 条要求的临时改动，不要改代码或测试；第 5 条每次改完必须还原。
+开始前确认契约改动已提交（git status 干净；没有就先 commit）；未提交时不要运行 git checkout。
+只审查，不重写。
+
+逐条检查：
+1. 测试策略注释里列了哪些划分？每个子域至少有一个用例吗？边界值单列了吗？
+2. 哪些断言依赖了实现细节（私有字段、JSONL 行格式、具体时刻或时间字符串、文件路径）？
+3. 预期值是手算/契约给的，还是调用被测代码算出来的？
+4. 覆盖率报告里哪些契约行为没跑到？哪些是防御/不可达代码？分别怎么处理？
+5. 逐个制造三个 bug：search 只看标题、标题匹配改成 startswith、
+   search 返回内部 dict。每次只改一个 adapter 的一处，另一个保持正确，
+   用 git diff 确认只有这一处；跑 python -m pytest -q，确认至少一条红；
+   用 git checkout -- kb/storage.py 还原；再 git diff 确认干净，才做下一个。
+   哪个 bug 活下来了？
+6. 测试名和断言能让没读过实现的人知道这个 store 保证了什么吗？
+
+结论：这组测试现在能抓住哪类 bug，抓不住哪类？下一步该补哪个子域？</code></pre>
+
+  <p>读反馈时分三类。第一类是<strong>分区缺口</strong>：某个变异活下来、某个契约行为没用例、某个边界没代表。解法是回第 1 步补格子，别加一个只针对这个 bug 的测试。第二类是<strong>断言越界</strong>：测试断言了实现细节，或者预期值是从代码里算出来的。解法是把断言改回契约行为，预期值重算。第三类是<strong>契约空洞</strong>：写不出预期，因为契约没说。解法是停下来决定、写进 docstring，再回来写测试；别用测试去猜。三种意见分开处理，才不会把「测试写得不对」和「契约没想清」混成一团。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>测试是从几乎无限的输入里选出的有限样本；判断一组测试看三条——correct（合法客户端）、thorough（抓得住真 bug）、small（少而快），数量不是标准。</li>
+    <li>先划分再挑边界：每个参与者切成互不重叠、合起来盖满的子域，边界值单列；一个用例可以覆盖多个子域，不要做笛卡尔积。</li>
+    <li>覆盖率只说明代码跑过，不说明断言对；同一批契约测试跑两个 adapter，再用变异检查证明测试会红，才算把「它能用」变成了证据。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 5 章 p117–136（printed 5-1~5-20）——测试定义与有限/选择/预期（5-1~5-2）、oracle（5-4~5-5）、Dijkstra 与不可行路径（5-5）、测试四级（5-6~5-7）、等价类划分（5-10~5-11）、边界值分析（5-11）、结构测试与语句/分支/路径覆盖（5-13）、测试过程度量与 ISO 29119（5-16）、变异测试（5-14~5-15、5-18）、彻底性度量不充分（5-20）。MIT 6.031《Testing》（本地 <code>courseware/mit-6.031/classes/03-testing/index.html</code>）——“Systematic testing”（correct / thorough / small、make it fail）、“Choosing test cases by partitioning”、“Include boundaries in the partition”、“Using multiple partitions”、“Black box and glass box testing”、“Coverage”、“Documenting your testing strategy”、“Unit and integration testing”、“Iterative test-first programming”。SE-EDU《Test Case Design》（本地 <code>courseware/se-education/book/testCaseDesign/print.html</code>）——等价类、边界值、组合策略、两条组合启发式。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《09-testing》（本地 <code>courseware/cmu-17-313/pdfs/09-testing.pdf</code>）：p9 基于规格的测试、p11 测试金字塔、p16 等价类、p18–19 边界值、p20 pairwise 与 50%–90% 的说法、p23 可测性四原则、p25–33 七条测试原则（无缺陷谬误、穷举不可能、尽早测试、缺陷聚集、农药悖论、上下文依赖、验证不等于确认）。CMU 17-313《11-oracles》p7 基于例子的 oracle、p18 differential testing、p19 golden master 与「AI 生成的测试常变成断言当前行为」。测试设计没有统一标准；ISO/IEC/IEEE 29119 是测试过程与文档的标准族，本课只借 SWEBOK p5-16 的一句概述，不展开条款。</p>
+  <p><strong>实践方式：</strong><code>pytest</code> / <code>pytest-cov</code> 官方文档（只作工具用法，不作理论来源）；沙盒 <code>kb/storage.py</code> 的 <code>Store</code> 契约；<code>tdd</code> 技能是下一课的红绿循环，本课不展开。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 20 课「TDD 红绿重构：先写失败测试买到了什么」。这一课把「测什么」设计清楚了：划分、边界、预期值、覆盖率缺口。下一课把这份用例表放进循环——先写一个会红的测试，再写刚好让它绿的实现；重构属于 review（评审）阶段，不在 <code>tdd</code> 的循环里，第 20 课会讲这个分工。你留下的 <code>tests/test_storage.py</code> 既是新循环的起点，也是旧行为的回归网；<code>tdd</code> 技能会在那一课正式出场。</p>
+  <p>如果第 2 步的契约决定还没落盘，先补进 <code>Store</code> 的 docstring；还没定的写进 design doc 的「风险与未决问题」，定下来的写进「架构」，再进下一课。契约没定，红绿循环只会把含糊固定成代码。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0019-testing-card.html">测试设计参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec 参考卡 · 从共识到可执行</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 8 课</p>
+  <h1>Spec 参考卡</h1>
+  <p class="lede">需求清单回答「系统要表现出什么」，ADR 回答「为什么这样定」；spec 把词表、需求、决定合写成一份能开工的契约——可执行、可评审、不是又一份需求文档。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>spec 在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Requirements（需求）</td><td>specification（规格说明）的收口：把第 4 课词表、第 5 课决定、第 6 课需求、第 7 课 ADR 合写成一份开工文件。</td></tr>
+      <tr><td class="skill">紧接其后</td><td>第 9 课用过程模型排它；第 10 课用 to-tickets 把它拆成工单。spec 是模块 1 的收束产物。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>spec 是什么（CMU 07-specs）</h2>
+<div class="card-rule">
+  <p><strong>spec 是「客户和软件工程师之间，就该软件产品应如何运作达成一致」的基础，也建立估算成本、风险、进度的现实基础。</strong></p>
+</div>
+<p>三件事：可执行（agent 读完能开工）、可评审（动手前人能先点头）、不是又一份需求文档（针对一项功能、被组织好的开工契约）。</p>
+
+<h2>spec 与需求清单的区别</h2>
+<ul>
+  <li>需求清单：记录「系统要表现出什么」（what）；spec：把它针对一项功能、按固定结构组织成能开工的依据。</li>
+  <li>spec 多了 <strong>Testing Decisions</strong>（怎么算对）和 <strong>Out of Scope</strong>（边界在哪）——这两节是需求清单通常没有的。</li>
+</ul>
+
+<h2>一份 spec 的六节结构（to-spec 模板）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>一节</th><th>回答的问题</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Problem Statement（问题陈述）</td><td>用户正遇到什么问题（用户视角）</td></tr>
+      <tr><td class="what">Solution（方案）</td><td>我们打算怎么解决（用户视角）</td></tr>
+      <tr><td class="what">User Stories（用户故事）</td><td>「As a &lt;角色&gt;，I want &lt;功能&gt;，so that &lt;好处&gt;」的极长清单，覆盖所有方面</td></tr>
+      <tr><td class="what">Implementation Decisions（实现决定）</td><td>已定下的模块 / 接口 / 架构 / schema / API 契约；不写文件路径和代码片段</td></tr>
+      <tr><td class="what">Testing Decisions（测试决定）</td><td>怎么算对：只测外部行为；测哪些模块；可参照的同类测试</td></tr>
+      <tr><td class="what">Out of Scope（范围外）</td><td>明确不做的东西——最容易被漏、最值钱的一节</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>为什么要 Out of Scope</h2>
+<p>需求清单想把要的都写上；spec 必须反过来，把「明确不做」写死。原因：① 边界不清是返工主因——不写「不做 X」，agent 会顺手做一个你以为没做的事；② 写下来，评审一眼就能发现 scope 蔓延。SWEBOK：面向读者——Out of Scope 是写给「未来会替我们加需求的人」看的边界。</p>
+
+<h2>to-spec 怎么落地（用户调用）</h2>
+<ol class="steps">
+  <li><strong>探索仓库</strong>：用 <code>GLOSSARY.md</code> 词汇、遵守已落盘的 ADR（既定事实，不重新吵）。</li>
+  <li><strong>画接缝（seam）</strong>：先定「在哪一层测试」，优先已存在的、用尽量高的、全仓库越少越好（理想一个）；草图给你确认。</li>
+  <li><strong>写 spec + 发布</strong>：按六节模板写，发布到 issue tracker（本地是 <code>.scratch/&lt;feature&gt;/spec.md</code>），标 <code>Status: ready-for-agent</code>。</li>
+</ol>
+<p><strong>关键：to-spec 不访谈你</strong>，只综合你已讨论过的。你前几课没问清的，会原样进 spec——所以 spec 是 grilling 有没有问够的照妖镜。</p>
+
+<h2>你（人）拍板三件事</h2>
+<ul>
+  <li>① 接缝的位置对不对（to-spec 会先给你看草图）。</li>
+  <li>② User Stories 和 Out of Scope 的边界——哪些算进、哪些明确不做。</li>
+  <li>③ 已定实现决定有没有写进去（第 6 课验收标准、第 7 课 ADR）。</li>
+</ul>
+<p><strong>怎么判断生效：</strong><code>.scratch/&lt;feature&gt;/spec.md</code> 有 <code>Status: ready-for-agent</code>；通读一遍能答「agent 能照它开工、动手前该先看哪几处」；丢给一个新 agent，它读完能开工、不再问「你要什么」。</p>
+
+<h2>写完怎么验</h2>
+<pre><code>读我这份 spec，再读 to-spec/SKILL.md、GLOSSARY.md、docs/adr/。
+
+逐条检查：
+1. 能不能只靠自己开工？有没有依赖 spec 外、没写进去的约定？
+2. User Stories 覆盖已知需求（验收标准、ADR）吗？
+3. 有没有把「要不要做、为什么」留给了 agent 去猜？
+4. 接缝是否稳定、高层？有没有写死的文件路径或代码片段？
+5. Out of Scope 明确写了吗？
+6. 有没有用了 GLOSSARY 之外的词、或没遵守 ADR？
+
+最后给结论：现在能开工吗？能的话，缺什么？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把 spec 当需求文档</td><td>只堆「要什么」，缺 Testing Decisions 和 Out of Scope</td><td>记得 spec 比需求清单多两节：怎么算对、边界在哪</td></tr>
+      <tr><td class="what">把实现细节写死</td><td>spec 里写文件路径、代码片段</td><td>只写模块 / 接口 / 决策；细节交给实现阶段，spec 会过期</td></tr>
+      <tr><td class="what">跳步开工</td><td>agent 说「我直接帮你实现」</td><td>拉回 to-spec：spec 先落盘、你拍板、再开工</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>seam（接缝）：</strong>本课只是 to-spec 的一个动作，第 15 课「接缝与适配器」才正式展开。这里只要理解成「测试从哪一层插进去、让被测代码能稳定独立被调用」即可。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章 p43–66（requirements specification p50、结构化自然语言 / user story p1-12、ISO/IEC/IEEE 29148 模板）；CMU 17-313《Software Specifications》p5（spec 是契约与估算基础）。</p>
+  <p><strong>实践工具：</strong><code>to-spec</code>（用户调用；画 seam → 写模板 → 发布 tracker → <code>ready-for-agent</code>）。只作落地方式。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0008-spec.html">第 8 课：Spec：从共识到可执行</a> · <a href="course-map.html">课程地图</a> · <a href="0007-adr-card.html">第 7 课：ADR 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

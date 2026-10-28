@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工单参考卡 · 纵向切片与阻塞边</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 10 课</p>
+  <h1>工单参考卡</h1>
+  <p class="lede">spec 是「要做出什么」，不是「先做哪块」。拆工单别按层拆，要纵向切片——每张工单穿透全链路、可独立验收；再用阻塞边（blocking edge）取 frontier，回答「先做哪个」。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>拆工单在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Process &amp; Management（过程与管理）</td><td>模块 2 第二站：第 9 课定了过程取向 → 本课把 spec 拆成带阻塞边的工单 → 第 11 课给这些工单估算。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>计划与过程（SWEBOK ch.9 p9-8 一带，回指第 9 课）；拆解 + 依赖是计划的基本功。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>核心概念：先做哪个，不是按层拆</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>切法</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td class="what">横向切片 horizontal slice</td><td>只切一层（建表 / 写 API / 画 UI / 补测试）。前几张做完系统都不能跑，唯一能跑的东西要到最后一张才出现——方向错了全部作废。</td></tr>
+      <tr><td class="what">纵向切片 vertical slice</td><td>每张切一条窄但完整的路，穿透 schema / API / 存储 / UI / 测试。一张做完就有一条能跑、能演示、能单独验收的闭环。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>两个经典「先做最小闭环」</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>出处</th><th>强调什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">tracer bullet 追踪弹</td><td>Hunt &amp; Thomas《The Pragmatic Programmer》(1999)</td><td>先打一条穿透整条弹道的真实路径，证明整个技术栈能通。</td></tr>
+      <tr><td class="what">walking skeleton 行走骨架</td><td>Freeman &amp; Pryce《GOOS》(2009)</td><td>先让一个端到端能跑的最小骨架站起来，再往骨头上长肉。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>阻塞边与 frontier</h2>
+<ul>
+  <li><strong>blocking edge（阻塞边）</strong>：一张工单依赖哪些其他工单；没有未完成阻塞的工单可立即开工。</li>
+  <li><strong>frontier（前沿）</strong>：所有阻塞都完成的工单集合＝现在就能干的活。做完一张，它的阻塞解除，下游工单可能跟着进 frontier。</li>
+  <li>注意：第 5 课 grilling 的 frontier 是「设计树前沿」（还没问清的决定）；这里的 frontier 是「可开工工单」。同一个英文词，两种含义，别混。</li>
+</ul>
+
+<h2>行业做法</h2>
+<ul>
+  <li><strong>WBS（工作分解结构）</strong>：SE-EDU《Project Planning》——把全部工作拆成更小、更明确的单元，可带前置任务和工时，每单元清楚何时算做完。拆小 + 可验收 + 依赖，就是 to-tickets 落地的那三件事。</li>
+  <li><strong>milestone（里程碑）</strong>：阶段结束的标志；交付哪些特性参考依赖与优先级；不确定的项目用「高层计划 + 近几个里程碑详设」，不必一次排满全项目。</li>
+  <li>拆多细、用不用 WBS 表、里程碑粒度，都是主流做法 + 取舍，没有标准。标尺：<strong>一张工单完成时，有没有一件「能跑、能演示、能验收」的东西出来</strong>。</li>
+</ul>
+
+<h2>什么时候别用纵向切片：wide refactor</h2>
+<p><strong>wide refactor（宽重构，大范围重构）</strong>＝一次机械改动（改列名、改共享类型）在千百个调用点同时报错，任何一张切片都不能单独绿。标准做法是 <strong>expand-contract（先扩后缩）</strong>：先加新形式并存（扩）→ 按 blast radius 分批迁移调用点（每批一张工单、阻塞于扩、旧形式还在、逐批绿）→ 最后删旧形式（阻塞于所有迁移批）。拆工单时遇「竖着切不开」，改用 expand-contract，别硬塞。</p>
+
+<h2>to-tickets 落地</h2>
+<ul>
+  <li>调用：<strong>用户调用</strong>；前置是仓库已 setup（第 3 课）。</li>
+  <li>流程：收集上下文（读 spec）→ 探索代码库（用 GLOSSARY、尊重 ADR、找 prefactor 机会）→ 起草纵向切片（vertical-slice-rules：穿透所有层、可独立演示、能装进一个上下文窗口、prefactor 先行）→ 问你四问（粒度 / 阻塞边 / 合并拆分）→ 按阻塞顺序发布（本地一张一文件、01 起依赖序、Blocked by 列清、打 ready-for-agent；或真实 tracker 原生阻塞关系）。</li>
+  <li>自动化：拆解、验收标准、阻塞边、依赖排序、发布。</li>
+  <li>人拍板四件：粒度；阻塞边是否真实 gate；合并/拆分；wide refactor 要不要 expand-contract。</li>
+</ul>
+<div class="card-rule">
+  <p><strong>差异提醒：</strong>to-tickets 把「小」从形容词具体成「能装进一个全新上下文窗口」——经典 WBS 由人翻文档所以只写「拆小」，agent 一次只见有限上下文，所以这是可落地的工作约束。</p>
+</div>
+
+<h2>练习怎么验</h2>
+<pre><code>读 .scratch/&lt;feature&gt;/issues/ 下所有工单，
+再读 to-tickets/SKILL.md、SE-EDU Project Planning（WBS / Milestones）。
+
+逐条检查：
+1. 每个工单是纵向切片，还是有人拆横了（只做一层、最后才拼起来）？
+2. 验收标准是「能跑、能演示、能单独验证」的端到端行为，而不是层级实现清单？
+3. 阻塞边只依赖真正 gate 它的工单？漏了该依赖、或多了不该依赖的？
+4. 有没有「只有等最后一张拼完才能跑」的序列？
+5. 遇到 wide refactor 有没有用 expand-contract？
+6. 每张都能装进一个上下文窗口？太粗的话在哪切开？
+
+最后给结论：可以开工吗？先做哪张、为什么？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">按层拆（横向切片）</td><td>「先建表 → 再 API → 再 UI → 最后测试」</td><td>每张都穿透所有层、能单独演示；一张完了就该有一件能跑的东西</td></tr>
+      <tr><td class="what">阻塞边画假了</td><td>随手写上 Blocked by，实际并不 gate</td><td>逐个问「这张没它真的会坏吗」，只留真依赖</td></tr>
+      <tr><td class="what">硬塞纵向切片</td><td>遇到 wide refactor 也要拆成一张绿</td><td>改列名/共享类型这类，换 expand-contract</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>vertical slice 纵向切片、horizontal slice 横向切片、blocking edge 阻塞边、frontier 前沿、tracer bullet 追踪弹、walking skeleton 行走骨架、WBS（Work Breakdown Structure，工作分解结构）、milestone 里程碑、wide refactor 宽重构、expand-contract 先扩后缩。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SE-EDU《Project Planning》WBS / Milestones 两节；SWEBOK v4 第 9 章（计划与过程，回指第 9 课）。</p>
+  <p><strong>实践方式：</strong><code>to-tickets</code>（用户调用）——vertical-slice-rules、四个确认问题、依赖序发布、frontier；只作落地方式。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0010-vertical-slice.html">第 10 课：纵向切片与阻塞边：先做哪个</a> · <a href="course-map.html">课程地图</a> · <a href="0009-process-card.html">第 9 课：过程模型参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

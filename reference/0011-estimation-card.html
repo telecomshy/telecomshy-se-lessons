@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>估算参考卡 · 计划、估算与度量</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 11 课</p>
+  <h1>估算参考卡</h1>
+  <p class="lede">估算是「区间 + 假设 + 依据」的一段话，不是一个假装精确的单点数字。buffer 显式地留在里程碑一行，不灌进单张；用 GQM 给自己配一个 actual/estimate 台账，让估算随完成自我校准——并记住度量一旦变成考核目标就失真。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>估算在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Process &amp; Management（过程与管理）</td><td>模块 2 第三站：第 9 课定过程取向 → 第 10 课拆出带阻塞边的工单 → 本课给工单估时、配度量 → 第 12 课处理拆不出工单的模糊大项目。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>估算是迭代活动，干系人间协商修订至共识（ch.9 p9-9）；工程决策基于估算、精度有限、用区间（ch.15 p15-7）；度量过程「计划/执行/评估」（ch.9 p9-15~9-17）。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>为什么总偏乐观：三股力</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>力</th><th>表现</th><th>药</th></tr></thead>
+    <tbody>
+      <tr><td class="what">估的是顺利路径</td><td>脑内只演 spec 写了的那条线，不演环境、接口不一致、测试改第二轮</td><td>假设清单：把「没写死的前提」写出来</td></tr>
+      <tr><td class="what">anchoring（锚定）</td><td>锚在记得清的那次——而不顺的那些没做完、没记住（幸存样本）</td><td>问「有无可比经验」；没有就拉宽区间、写「无类比」</td></tr>
+      <tr><td class="what">conformity bias（顺从偏差）</td><td>被「对面想听的数」拖着走；对 agent 说「应该很快吧」也一样</td><td>先独立写完区间，再考虑交给谁</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>Hofstadter's Law（霍夫施塔特定律）：「它总是比你预期的久——即使你已经把霍夫施塔特定律算进去了」（CMU 06-Metrics）。连「把数放大」这个修补本身也会被乐观化，所以要换形状，不是放大数字。</p>
+
+<h2>三段式估算 + 显式 buffer</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>段</th><th>回答什么</th><th>怎么写</th></tr></thead>
+    <tbody>
+      <tr><td class="what">区间</td><td>顺利到不顺利差多少</td><td>「0.5–1.5 天」；不取中、不给单点</td></tr>
+      <tr><td class="what">假设</td><td>区间成立的前提</td><td>「假设存储接口与 spec 一致」；塌了就重估，不闷头继续</td></tr>
+      <tr><td class="what">依据</td><td>凭什么这么估</td><td>像哪次（类比）；无类比就写「无类比，首次估」并拉宽</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="card-rule">
+  <p><strong>buffer 规则（SE-EDU）：</strong>单张按诚实区间估，里程碑一行「buffer：N 天」写进计划。<strong>不要把水灌进单张造 hidden buffer</strong>——显式 buffer 才能事后分清「估错了」和「缓冲被用了」，这个证据是改进下一批估算的反馈。N 是对「假设会塌几条」的押注，不是科学。</p>
+</div>
+
+<h2>两个经典估法</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>估法</th><th>怎么做</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">decomposition 分解估算（自底向上，SWEBOK ch.15 p15-15）</td><td>拆到「最小可合理估算的单元」，逐个估，再加总。第 10 课 to-tickets 的「一个上下文窗口」就是它在 agent 语境的尺寸。</td><td>拆得越细，估算工作本身越多</td></tr>
+      <tr><td class="what">estimation by analogy 类比估算（同页）</td><td>找「实际结果已知」的类似的事做底 → 列差异 → 调量级 → 得出估算。</td><td>必须真有一个结果已知的类比；没有就如实标注</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>PERT 图与关键路径：阻塞边的另一张脸</h2>
+<ul>
+  <li><strong>PERT chart（计划评审技术图）</strong>：节点=任务工时估算，箭头=先后（SE-EDU PERT charts）——箭头就是第 10 课的 blocking edge（阻塞边）。</li>
+  <li><strong>critical path（关键路径）</strong>：决定最短完成时间的那条路径，上面任何延迟都直接推迟整个项目——就是工单图里最长的那条阻塞链。</li>
+  <li>依赖图 + 工时 = 日程工具；buffer 和加急优先砸在关键路径上，砸在可并行的支线上是白花。</li>
+  <li>Gantt chart（甘特图）：时间轴上的任务条形图，菱形标里程碑——常见排期视图。</li>
+</ul>
+
+<h2>不骗人的度量</h2>
+<ul>
+  <li><strong>「完成 90%」是假度量</strong>：工单状态天然二元（done / not done），「90%」分子分母都说不清。诚实进度＝已完成工单数 / 总数 + 剩余估算；图形化是 burndown chart（燃尽图）（SWEBOK ch.9 p9-17 把进度、backlog 图表列为沟通工具）。</li>
+  <li><strong>度量先问目的</strong>（Fenton &amp; Bieman）：每个度量动作必须由明确目标驱动；度量的目的是减少不确定性（Hubbard），不是生产好看的数字。</li>
+  <li><strong>GQM 模板（本课可抄）</strong>：Goal＝从开发者本人视角，评价并改进本工作流的估算准确度（P 评价/改进、I 估算准确度、Object 工作流、Viewpoint 你）；Q1 我的估算平均偏多少 → M1 每张完成工单的 actual/estimate 比值；Q2 我在变准吗 → M2 比值随时间的趋势。</li>
+  <li><strong>台账</strong>：一张 Markdown 表——工单号、估算区间、实际值、比值、塌掉的假设。</li>
+</ul>
+<div class="card-rule">
+  <p><strong>Goodhart 红线：</strong>「当一个度量变成目标，它就不再是好度量。」actual/estimate 只用来校准自己；一旦拿它考核（哪怕考核自己），你就会把估算写大自保，台账失真。同族陷阱：按代码行数发奖金、McNamara fallacy（只量容易量的）。</p>
+</div>
+
+<h2>AI + Matt：数字由你出，回路交给 agent</h2>
+<ul>
+  <li><strong>本课无独立技能</strong>，to-tickets 也不估工时——它造好了「一个上下文窗口」的可估单元。agent 没有你的项目史，可比经验这一条它给不了。</li>
+  <li>agent 三件实事：<strong>事前列假设</strong>（读 spec + 工单，翻出没写死的前提；筛「真成立 / 是赌」归你）、<strong>事后记账</strong>（区间、实际值、比值进 <code>.scratch/&lt;feature&gt;/estimates.md</code>，对应 SWEBOK 度量的「执行」一环）、<strong>看趋势</strong>（比值收敛还是发散、哪类工单偏最狠）。</li>
+  <li><strong>独立一票（经验判断）</strong>：你先写完区间，再让 agent 不看你的数独立估一次。两票不用来平均，用来看分歧——分歧最大处＝假设最没底处。</li>
+  <li>人拍板三件：区间多宽；buffer 多大；<strong>什么时候把区间交出去</strong>——压成单点交出去的那一刻，本课所有机制同时失效。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我这份估算和台账（.scratch/&lt;feature&gt;/estimates.md），
+再读 SE-EDU Project Planning（WBS / Buffers / PERT 三节）、
+CMU 06-Metrics（Time estimation / GQM）、
+SWEBOK v4 ch.9 p9-9、ch.15 p15-7、p15-15。
+
+逐条检查：
+1. 有区间吗？还是单点假装精确？
+2. 假设清单在吗？「是赌」的标出来了吗？
+3. 依据写了吗？「无类比」如实标注了吗、区间拉宽了吗？
+4. buffer 显式吗？还是灌进了单张？
+5. 台账结构对吗：工单号、区间、实际值、比值、塌掉的假设？
+6. 有没有哪个数被写成了「承诺」？
+
+最后给结论：能拿去排计划吗？哪条假设最可能先塌？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">单点假精确</td><td>写「1 天」不写区间，把不知道藏进整数</td><td>三段式：区间 + 假设 + 依据</td></tr>
+      <tr><td class="what">灌水藏 buffer</td><td>每张都多加半天，事后分不清估错和缓冲</td><td>单张诚实估，里程碑单列「buffer：N 天」</td></tr>
+      <tr><td class="what">度量变目标</td><td>拿 actual/estimate 考核自己或别人</td><td>台账只服务校准；Goodhart 红线</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>estimate 估算、man day 人日、well-defined 定义清楚、anchoring 锚定、conformity bias 顺从偏差、Hofstadter's Law 霍夫施塔特定律、assumption 假设、buffer 缓冲（explicit 显式 / hidden 隐藏）、decomposition 分解估算（bottom-up 自底向上）、estimation by analogy 类比估算、PERT（Program Evaluation Review Technique，计划评审技术）、critical path 关键路径、Gantt chart 甘特图、burndown chart 燃尽图、GQM（Goal-Question-Metric，目标—问题—度量）、Goodhart's Law 古德哈特定律、McNamara fallacy 麦克纳马拉谬误、wisdom of the crowd 群体智慧、#NoEstimates。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 ch.9 p9-9、p9-15~9-17；ch.15 p15-7、p15-15；SE-EDU《Project Planning》WBS / Buffers / PERT charts；CMU 17-313《06-Metrics》（Time estimation / GQM / Goodhart 等）。</p>
+  <p><strong>实践方式：</strong>本课无独立技能；agent 承担列假设、记台账、看趋势，数字由人出。原料来自第 10 课 to-tickets 的工单。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0011-estimation.html">第 11 课：计划、估算与度量：为什么工时估算总是不准</a> · <a href="course-map.html">课程地图</a> · <a href="0010-tickets-card.html">第 10 课：工单参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

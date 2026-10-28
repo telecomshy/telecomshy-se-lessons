@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>架构取舍参考卡 · 一张组件图与三条取舍说明</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 17 课</p>
+  <h1>架构取舍参考卡</h1>
+  <p class="lede">架构是推理一个系统所需的那些结构（SWEBOK）。一张组件图是一个视图，回答某个读者的某个问题；决定结构的是质量属性，取舍发生在互相拉扯的质量属性之间。取舍说明写成四段：条件、哪个组件动、代价落点，再加第 16 课那句「为什么不选另一个」。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>架构取舍在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>模块 3 第四站：第 14 课定模块形状，第 15 课定落点与可替换，第 16 课在接口级比较与取舍；本课把比较抬到系统级——组件、视图、质量属性。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>第 2 章：视图回应关注点（§2.1）、质量属性间的取舍是设计决定的依据（§2.4）、ASR 定义（§3.2.1）；第 3 章 §6.2 质量属性分类。</td></tr>
+      <tr><td class="skill">给下一课的原料</td><td>一张组件图 + 三条取舍说明——设计文档「取舍」部分的内容（第 18 课合成完整 design doc）；取舍说明落进 ADR（第 7 课格式）。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三组概念，画图前先分清</h2>
+<div class="card-rule">
+  <p><strong>图是回答问题的工具，不是系统的完整画像。</strong>画之前先问：这张图替谁回答什么问题？答不出问题的框该删。取舍说明写不成场景句的，扔回雾里去想清再写。</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>概念</th><th>问什么</th><th>本课例子的答案</th></tr></thead>
+    <tbody>
+      <tr><td class="what">architecture view（架构视图）/ viewpoint（视点）</td><td>这张图回应谁的哪个关注点？用哪套画法</td><td>组件与连接件视图答「改 PDF 动哪儿」；部署视图等 HTTP adapter 上线才画。多视图有一致性代价（multiple views problem）</td></tr>
+      <tr><td class="what">quality attribute（质量属性）/ ASR</td><td>哪几条「…性」真的改变结构？</td><td>「PDF 库半年后要换」逼出独立的导入组件（ASR）；「按标题搜」加个字段就够（不是 ASR）。运行时可见的质量压测验证，可修改性靠「假装要改」试疼</td></tr>
+      <tr><td class="what">trade-off（取舍）</td><td>互相拉扯时谁让谁？代价落在哪</td><td>解析独立成组件：可修改性好，条目进核心多一层；核心直接读 PDF：少一层，换库的疼打在核心上。写清「为什么不选另一种结构」</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>行业做法（无统一标准，只有主流与取舍）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>类型</th><th>要点 / 产物 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">architecture style（架构风格）当约束</td><td>主流</td><td>拿 layered / client-server / pipes-and-filters / event-driven 等风格名当第 16 课的「设计约束」造候选（SWEBOK §2.2；SE-EDU）。产物：标了风格的组件图。代价：风格崇拜；现实常混用（SE-EDU：大多数应用混用）</td></tr>
+      <tr><td class="what">scenario-based technique（场景句）</td><td>主流</td><td>质量属性写成「条件 + 哪个组件 + 响应限度 / 代价落点」，判得出真假（SWEBOK ch.3 §6.3）。产物：可判的取舍说明。代价：费劲，容易滑回形容词</td></tr>
+      <tr><td class="what">架构取舍落 ADR</td><td>主流</td><td>极简模板（一句背景 + 决定加为什么；Status / Considered Options / Consequences 可选，第 7 课）；SWEBOK §2.4：被否决定值得记，条件变了可捡回。代价：多写几行</td></tr>
+      <tr><td class="what">画几个视图</td><td>取舍</td><td>一个问题一张图；新关注点出现再画第二张，接受手动对齐的代价（SWEBOK §2.1 multiple views problem）</td></tr>
+      <tr><td class="what">决定写多细</td><td>取舍</td><td>不写＝架构技术债（§2.4，债由未来的你偿还）；写全＝第 18 课设计文档。中间地带：组件图 + 取舍说明 + ADR，文档化程度跟着读者数量长</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：agent 当绘图员和追问者</h2>
+<ul>
+  <li><strong>没有架构技能</strong>（技能栏「—」）：哪些质量属性算数、取舍怎么称重是产品和风险判断，技能包不自动化这一层。</li>
+  <li><strong>agent 干三件</strong>：出组件图草稿和质量属性场景句；追问「改 X 动哪个组件」（你答不上处＝取舍说明没写完）；把取舍说明落成 ADR 草稿（<code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>，模型调用）。</li>
+  <li><strong>词汇双向翻译</strong>：画图用组件 / 视图语言（理论层词汇），落代码翻译回 module / port / adapter（<code>codebase-design</code> 词汇表）；<code>improve-codebase-architecture</code> 明确要求别把 module 说成 component。</li>
+  <li><strong>人拍板三件</strong>：哪些质量属性是 ASR（产品判断）；取舍怎么称重（风险判断）；图给谁看、回答什么问题。</li>
+  <li><strong>怎么判断生效</strong>：每条取舍说明有「条件 + 改哪个组件 + 代价落点」三段；至少一条含「为什么不选另一种结构」并落 ADR 草稿；图上已有的组件都对得到代码里的模块或缝。</li>
+  <li><strong>和行业的差异</strong>：ATAM 等架构评估方法本地无材料、本课不展开；「质量属性六段场景」出自 SEI 文献（经典转引），技能包没有对应自动化。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我纸面的组件图和三条取舍说明（贴在下面），再读
+C:\Users\admin\.agents\skills\codebase-design\SKILL.md 的词汇表，
+以及 C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md（如果我落了 ADR 草稿）。
+
+逐条检查：
+1. 图上每个组件有一句话职责吗？已有的组件能对应到代码里的模块或缝吗？虚线的规划组件写得出将来落在哪吗？
+2. 三条取舍说明是场景化的吗？每条都有「什么条件 + 哪个组件必须改 + 代价落在谁头上」吗？
+3. 至少一条写了「为什么不选另一种结构」吗？理由指向判据吗？
+4. 三个质量属性真的互相拉扯吗？还是三条其实在说同一件事？
+5. 哪条会改变结构（算 ASR）？哪条其实写个函数级约定就够？
+6. 图的画法有没有踩坑：符号混用、自造符号没说明、滥用双向箭头？
+7. 有没有为了显得专业多画出来的组件框？每个框答得出「它替谁扛什么」吗？
+
+结论：这三个取舍站得住吗？哪处「取舍没场景化」，哪处「图没回答问题」？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把风格名字当答案</td><td>「用分层架构」说完就当取舍做完了</td><td>风格只是造候选的约束；补上「为什么它扛得住这三条质量属性、代价落在谁」</td></tr>
+      <tr><td class="what">质量属性写成形容词</td><td>「高性能、高可用、易维护」，没有条件没有落点</td><td>写成场景句：条件 + 组件 + 响应限度 / 代价落点；ASR 筛选才做得动</td></tr>
+      <tr><td class="what">取舍只写「选了谁」</td><td>落选方案被重新发明；或图越画越大</td><td>「为什么不选另一种结构」写进 ADR rejected alternatives；图答完问题就停</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>software architecture 软件架构、architecture view 架构视图、viewpoint 视点、concern 关注点、stakeholder 干系人、logical view 逻辑视图、process view 进程视图、physical view 物理视图、development view 开发视图、component-and-connector view 组件与连接件视图、multiple views problem 多视图一致性问题、quality attribute 质量属性、modifiability 可修改性、testability 可测试性、performance 性能、availability 可用性、ASR 架构级重要需求、trade-off 取舍、architecture style 架构风格、layered 分层、pipes-and-filters 管道与过滤器、event-driven 事件驱动、client-server 客户端-服务器、scenario-based technique 基于场景的技术、quality attribute scenario 质量属性场景、architecture rationale 架构理由、architectural technical debt 架构技术债。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 2 章 p67–82——§1.2（printed 2-3）、§2 与 §2.1（printed 2-4~2-6）、§2.2（printed 2-6~2-7）、§2.4（printed 2-7）、§3.2.1（printed 2-9）、§4.1（printed 2-10~2-11）；第 3 章 p95–96——§6.2、§6.3（printed 3-13~3-14）。</p>
+  <p><strong>行业做法：</strong>SE-EDU《Architecture》（本地路径 <code>courseware/se-education/book/architecture/print.html</code>）：Bass 等人的架构定义、架构图无标准记法与画图规矩、风格清单与「大多数应用混用多种风格」。</p>
+  <p><strong>经典转引：</strong>Bass、Clements、Kazman《Software Architecture in Practice》的 quality attribute scenario（书不在本地）；ATAM / SAAM / QAW 本地无材料，不展开。</p>
+  <p><strong>实践方式：</strong><code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>、<code>codebase-design</code> 的 <code>SKILL.md</code> 词汇表、<code>improve-codebase-architecture</code> 的词汇纪律。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0017-architecture-tradeoffs.html">第 17 课：架构：质量属性、视图与取舍</a> · <a href="course-map.html">课程地图</a> · <a href="0016-design-it-twice-card.html">第 16 课：设计两次参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wayfinder 参考卡 · 模糊的大项目与决策地图</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 12 课</p>
+  <h1>wayfinder 参考卡</h1>
+  <p class="lede">当项目大到、模糊到连工单都拆不出来时，别急着更细地估算，先把雾变成图：一张 issue tracker 上的「决策地图」，每个 ticket 是一道待解的决定（不是一段待做的活），一次解一张，直到通往目的地的路清晰。判据是「现在能不能把问题说尖」，不是「现在能不能回答」；扫完没有雾，就别建图。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>wayfinder 在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Process &amp; Management（过程与管理）</td><td>模块 2 第四站（倒数第二站）：第 10 课拆工单、第 11 课估算都假设「能开工」；本课处理「大到、模糊到连工单都拆不出来」的项目，把雾变成决策地图。第 13 课 triage 处理「别人递进来的外部问题」。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>自适应式：需求不稳时不宜一次排满，用总体估算 + 逐迭代调整、约束反推迭代数（ch.9 p9-9）。</td></tr>
+      <tr><td class="skill">SE-EDU 定位</td><td>Milestones：不现实为整个项目做详细计划，用高层计划 + 近几个里程碑详设。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>何时该用 / 何时不该用</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>情况</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td class="what">用 wayfinder</td><td>太大 / 太模糊，一个 session 装不完，「拆」本身都要先定一个决定；从「这里」到「那里」怎么走需要先解决一堆决定。</td></tr>
+      <tr><td class="what">不用 wayfinder</td><td>grill 广度优先扫完「没有雾」——旅程小到、清楚到一个 session 能装完，能直接开工 / 直接拆工单。建图是额外负担。</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="card-rule">
+  <p><strong>判据核心：</strong>雾不雾，看「现在能不能把问题说尖」，不是「现在能不能回答」。能说清 → 建 ticket；还说不清 → 留在 Not yet specified。</p>
+</div>
+
+<h2>地图（index 不是 store）</h2>
+<p>地图 = tracker 上打 <code>wayfinder:map</code> 标签的单一 issue；<strong>索引（index），不是存储（store）</strong>：每个决定只住在它自己的 ticket，地图只写一行摘要（gist）+ 链接，不重复全貌。</p>
+<ul>
+  <li><strong>Destination（目的地）</strong>：先命名，塑造后面每张 ticket；可能是 spec / 锁定的决定 / 原地改动（迁移）。</li>
+  <li><strong>Notes</strong>：领域、每次 session 要 consult 的技能、本 effort 的固定偏好。</li>
+  <li><strong>Decisions so far</strong>：每张已关 ticket 一行「摘要 + 链接」的索引。</li>
+  <li><strong>Not yet specified</strong>：还在雾里、现在说尖不了的部分（可写松写全，随 frontier 推进逐块毕业）。</li>
+  <li><strong>Out of scope</strong>：被目的地排除的工作——不是雾，永不毕业；只有目的地重画，才可能以新 effort 回来。</li>
+</ul>
+
+<h2>铁律：Plan, don't do</h2>
+<div class="card-rule">
+  <p><strong>地图产决定，不产交付物。</strong>每张 ticket 解决一道决定，不是做一段活；地图「完成」= 路清晰、开工前无遗留待定项，不是功能做完。「想直接开做」的冲动 = 到了地图边缘、该交接了。effort 可在 Notes 改写此默认，但默认先解决定。</p>
+</div>
+
+<h2>四种 ticket 类型</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>类型</th><th>HITL / AFK</th><th>解什么</th><th>怎么做</th></tr></thead>
+    <tbody>
+      <tr><td class="what">research</td><td>AFK</td><td>查事实：文档、第三方 API、知识库</td><td>子 agent 调 "research" 技能（回指第 31 课）</td></tr>
+      <tr><td class="what">prototype</td><td>HITL</td><td>「它长这样/那样」——用廉价粗糙产物加高讨论保真</td><td>调 "prototype" 技能，产物链到 issue（回指第 30 课）</td></tr>
+      <tr><td class="what">grilling</td><td>HITL</td><td>对话，默认类型</td><td>同时调 "grilling" + "domain-modeling"（回指第 5、4 课）</td></tr>
+      <tr><td class="what">task</td><td>HITL 或 AFK</td><td>为决定扫障的手工活（注册服务、移数据看形状）</td><td>唯一「做活」的类型，但为解锁决定服务，非为到达目的地</td></tr>
+    </tbody>
+  </table>
+</div>
+<p><strong>HITL（human in the loop，人机回环）</strong> = 必须真人亲自说话、代表自己才能解；agent 绝不能替人回答。<strong>AFK（away from keyboard，无人值守）</strong> = agent 独立解。</p>
+
+<h2>frontier 三种含义（别混）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>课</th><th>frontier 指什么</th></tr></thead>
+    <tbody>
+      <tr><td class="num">5</td><td>grilling 的设计树前沿——还没被问清的决定</td></tr>
+      <tr><td class="num">10</td><td>所有前置已完成、现在就能开工的工单</td></tr>
+      <tr><td class="num">12</td><td>地图上「未被阻塞、未被认领、开放中」的子 ticket——现在可以解的决定</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：wayfinder 怎么落地</h2>
+<ul>
+  <li><strong>用户调用</strong>（<code>disable-model-invocation: true</code>）；前置：tracker 已 setup。为什么是用户调用：要不要建图先由你拍板。</li>
+  <li><strong>建图 chart the map</strong>：命名目的地（grilling + domain-modeling）→ 广度优先 grill 摸前沿 → <strong>无雾则停</strong> → 建地图 → 建可指定 ticket → 第二遍连阻塞边（需要 id）→ research 子代理并行查 → 停（建图不解题）。</li>
+  <li><strong>走图 work through the map</strong>：load 高层图 → 认领 frontier 第一张（<strong>先 assign，再干活</strong>）→ 按 <code>wayfinder:&lt;type&gt;</code> 解 → resolution 评论 + 关 issue + 地图追加一行 → 毕业新雾 / 清 Not yet specified / 越界关 out of scope。</li>
+  <li><strong>一次 session 最多解一张 ticket</strong>（research 例外）。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我这份「多来源知识库」的纸面决策地图（目的地 / Not yet specified / 我挑的 ticket / 是否该用 wayfinder），
+再读 C:\Users\admin\.agents\skills\wayfinder\SKILL.md。
+
+逐条检查：
+1. Destination 是一句「走到什么」的具体描述，不是口号？
+2. Not yet specified 各项是「说尖不了的雾」，还是已经能建 ticket？
+3. ticket 的 type（grilling/prototype/research/task）与 HITL/AFK 标对了吗？
+4. 有没有把「决定」写成「待做交付物」？
+5. Out of scope 和 Not yet specified 分开、没有混着？
+6. 守了 Plan, don't do 吗？没滑到「顺便把活做了」？
+
+最后给结论：雾和 ticket 分得清吗？继续建图，还是直接走 spec → tickets？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把雾当 ticket</td><td>「现在说尖不了」的也被当成一张能建的 ticket</td><td>用判据：说尖得了才建，否则回 Not yet specified</td></tr>
+      <tr><td class="what">把决定当活</td><td>ticket 写成「做出来 XX」，而不是「先定 XX」</td><td>Plan, don't do：地图只产决定，不产交付物</td></tr>
+      <tr><td class="what">没雾还硬建图</td><td>小项目也要建图，建图本身成为额外负担</td><td>先广度优先扫，无雾就停、直接开工</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>wayfinder 寻路、map 决策地图、index 索引、store 存储、destination 目的地、fog of war 战争迷雾、Not yet specified 尚未指定、Out of scope 范围外、Plan, don't do 只规划别动手、HITL（human in the loop，人机回环）、AFK（away from keyboard，无人值守）、decision ticket 决策工单、research / prototype / grilling / task 四种类型、frontier 前沿。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 9 章 p9-9（自适应式：需求不稳不宜预先满铺，总体估算 + 逐迭代调整）；SE-EDU《Project Planning》Milestones（高层计划 + 近几个里程碑详设）；延伸 CMU 17-313《03-project-planning》。</p>
+  <p><strong>实践方式：</strong><code>wayfinder</code>（用户调用）——建图（命名目的地 → 广度优先摸前沿 → 无雾则停 → 建图 → 建 ticket → 连阻塞边 → research 子代理并行）与走图（认领 → 按类型解 → resolution → 毕业新雾）。本机路径 <code>C:\Users\admin\.agents\skills\wayfinder\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0012-wayfinder.html">第 12 课：模糊的大项目：wayfinder 与决策单</a> · <a href="course-map.html">课程地图</a> · <a href="0011-estimation-card.html">第 11 课：估算参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>接缝与适配器参考卡 · seam、port 与 adapter</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 15 课</p>
+  <h1>接缝与适配器参考卡</h1>
+  <p class="lede">seam（接缝）是「不改那处代码就能改变行为」的地方；port（端口）是缝上的接口，adapter（适配器）是满足契约的具体物。一个 adapter 是假想缝，两个才是真缝；测试走缝测行为——替换，不要叠加。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>接缝在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>模块 3 第二站：上一课定模块形状（藏什么、承诺什么），本课定接口立在哪、谁来兑现、怎么被替换。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>第 3 章 p86：separation of interface and implementation——把「对组件的使用」和「组件如何构造的细节」隔离开。</td></tr>
+      <tr><td class="skill">给下一课的原料</td><td>一个 port 加两个 adapter——见过「同一契约、两种实现」，第 16 课就该造「同一问题、两个接口候选」。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三个词，一条链</h2>
+<div class="card-rule">
+  <p><strong>接缝为「替换」而生，测试只是替换的第一个客户。</strong>把真文件换成内存、真时钟换成假时钟、真 HTTP 换成桩件，走的是同一条缝；今天为测试换，明天为性能换，缝旁的逻辑一行不改。</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>概念</th><th>定义 / 判据</th><th>沙盒落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">seam（接缝）</td><td>不修改那处代码就能改变程序行为的地方（Feathers 2004，经典转引）</td><td>存储逻辑与 CLI 之间</td></tr>
+      <tr><td class="what">enabling point（启用点）</td><td>决定「缝上换哪种行为」的那一处代码——通常就是装配处</td><td><code>kb/cli.py</code> 里创建 store 的那一行</td></tr>
+      <tr><td class="what">port（端口）</td><td>缝上的接口：签名 + 不变量 + 错误模式 + 顺序约束，零实现细节</td><td>存储 port（<code>typing.Protocol</code> 或 ABC，取舍）</td></tr>
+      <tr><td class="what">adapter（适配器）</td><td>满足 port 契约的具体物；说的是角色不是体量</td><td><code>JsonlStore</code>（生产）、<code>InMemoryStore</code>（测试）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>开缝判据：一个还是两个</h2>
+<ul>
+  <li><strong>一个 adapter 是假想缝，两个才是真缝。</strong>只有一个实现的 port 只是 indirection（间接层）：多一层转发，没换来可替换性。</li>
+  <li><strong>第二个真实用途是谁？</strong>测试用的 in-memory 版就是合法答案；连「将来的数据库」这种想象用途都没有，就老实写实现。</li>
+  <li><strong>两个实现同契约，含糊会被逼出来。</strong>id 规则、返回值形状这类事，一个实现时靠自觉，两个实现对不上时才现形——现形了就写进 port 契约。</li>
+</ul>
+
+<h2>行业做法（无统一标准，只有主流与取舍）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>类型</th><th>要点 / 产物 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">ports &amp; adapters（六边形架构）</td><td>主流</td><td>核心在中间，外围细节经 port 注入 adapter，核心不 import 具体类。产物：port + N 个 adapter + 一处装配。代价：间接层 + 契约要维护（Cockburn 2005，经典转引）</td></tr>
+      <tr><td class="what">dependency injection（依赖注入）</td><td>主流</td><td>收依赖不造依赖：构造函数或参数注入。产物：构造签名 + 装配点。代价：到处 <code>new</code> 就名存实亡</td></tr>
+      <tr><td class="what">替身走缝 + contract test（契约测试）</td><td>主流</td><td>fake 注入后只断言行为；同一批断言对每个 adapter 都跑，防 fake 漂移。代价：多养一批测试，超过一个 adapter 才划算</td></tr>
+      <tr><td class="what">replace, don't layer（替换不叠加）</td><td>取舍</td><td>技能主张旧测试即删；保守路线是迁移期共存、定删除截止条件。两边代价对称</td></tr>
+      <tr><td class="what">先写实现 vs 先抽接口</td><td>取舍</td><td>先写实现：等第二个使用者来再抽，代价是迁调用点；先抽接口：第一天可测，代价是第一天赌形状</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：codebase-design 的缝纪律</h2>
+<ul>
+  <li><strong>模型调用</strong>的技能；本课用 <code>DEEPENING.md</code>（加深浅模块群的流程），借它的缝纪律，不是整条流程。</li>
+  <li><strong>四类依赖</strong>定缝开多大：in-process 不开缝；local-substitutable 用替身即可；remote but owned 立 port + 生产/内存 adapter；true external 立 port + mock adapter。分类是启发式，「会不会真的变」才是判据（经验判断）。</li>
+  <li><strong>缝纪律</strong>：两个 adapter 才是真缝；内部缝是实现私事，不因测试要用就提到 port 上。</li>
+  <li><strong>测试策略</strong>：replace, don't layer；接口即测试面，断言只看可观察结果，实现改了测试不该动。</li>
+  <li><strong>人拍板三件</strong>：缝开在哪一层（调用者和测试看到多大一片地）；port 契约认不认（它是签出去的合同）；第二个 adapter 是不是真需要（测试算真实用途）。</li>
+  <li><strong>和行业的差异</strong>：「两个 adapter 才是真缝」是技能包纪律，不是行业标准；「先写实现、后抽接口」同样常见。当纪律用，因为它把「要不要多一层」变成能回答的问题。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我沙盒里的存储 port 与两个 adapter（kb/ 下），对照 kb/cli.py，
+再读 C:\Users\admin\.agents\skills\codebase-design\SKILL.md 与 DEEPENING.md。
+
+逐条检查：
+1. port 只含行为契约吗？不变量、错误模式、顺序约束、id 规则有没有漏？
+2. 两个 adapter 真同契约吗？返回值形状、空结果、错误模式、id 规则逐条对照；
+   有没有哪个 adapter 有多余行为？
+3. add/search 返回副本还是内部引用？还能改破不变量吗？
+4. 断言只走 port 吗？伸手进 store.entries 或 kb.jsonl 就是没走缝。
+5. 装配是单点吗？还有别处创建具体 adapter 吗？
+6. 删除测试：删掉 port，两个 adapter 会各自长出一份逻辑吗？
+
+结论：这条缝开得值吗？哪处是「契约没说清」，哪处是「缝开错了地方」？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">seam = 测试文件放哪</td><td>只为测试开缝，换个需求就得拆</td><td>接缝为「替换」而生：换 SQLite、加 HTTP 入口、喂演示数据都走同一条缝</td></tr>
+      <tr><td class="what">一个 adapter 也抽 port</td><td>多一层转发，无可替换性</td><td>先答「第二个真实用途是谁」；测试用途是真实用途，别反向误用</td></tr>
+      <tr><td class="what">fake 比真物聪明</td><td>内存版自动去重 / 排序 / 修坏数据，测试绿得没意义</td><td>替身照抄 port 契约不许多做；同一批契约测试对两个 adapter 都跑</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>seam 接缝、enabling point 启用点、port 端口、adapter 适配器、indirection 间接层、module 模块、interface 接口、implementation 实现、test double 测试替身、fake 假件、stub 桩件、mock object 模拟对象、dependency injection 依赖注入、hexagonal architecture 六边形架构、ports &amp; adapters 端口与适配器架构、contract test 契约测试、typing.Protocol 协议、ABC 抽象基类。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 3 章 p83–98（separation of interface and implementation 见 p86）；MIT 6.031《Testing》（Unit and integration testing，“Isolating a higher-level module”：隔离论证与 stub / mock object 定义）。</p>
+  <p><strong>经典来源：</strong>Feathers《Working Effectively with Legacy Code》（2004）——seam 与 enabling point（书不在本地，经典转引）；Cockburn《Hexagonal Architecture》（2005）——ports &amp; adapters（线上文章，本地无全文，经典转引）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）的 <code>SKILL.md</code> 与 <code>DEEPENING.md</code>。本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0015-seams-adapters.html">第 15 课：接缝与适配器：测试的地基</a> · <a href="course-map.html">课程地图</a> · <a href="0014-deep-modules-card.html">第 14 课：深模块参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

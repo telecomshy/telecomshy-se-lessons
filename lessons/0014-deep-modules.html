@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 14 课 · 深模块、信息隐藏与不变量</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 3 · 设计与架构 · 第 14 课</p>
+  <h1>深模块、信息隐藏与不变量</h1>
+  <p class="lede">前十三课一直在回答「做什么、什么时候做」：需求问清了、决定记下了、spec 写成了、工单拆好了、外部输入也筛成了契约。这一课换一个题目：东西该怎么造。开工第一件事不是写代码，是决定一个模块长什么样——调用者看到什么、什么被藏在后面、哪一条性质永远不许破。这三件事分别叫 deep module（深模块）、information hiding（信息隐藏）和 invariant（不变量）。它们不是三种技巧，是同一件事的三个面：让调用者学得少、得得多，而且敢依赖你。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 8 课（spec 与 seam）、第 13 课（brief）</span>
+  <span><b>产出</b> 一个接口草图，加一条能在测试里守住的不变量</span>
+  <span><b>主读物</b> Ousterhout《A Philosophy of Software Design》第二版摘录，第 6 章</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清深模块落在第 2 课八个活动的哪一块，以及它和第 15 课接缝、第 17 课架构的关系。</li>
+    <li>用「接口 + 实现」这对词分析一个真实模块：接口不只是签名，还包括不变量、错误模式和调用者必须知道的顺序约束。</li>
+    <li>判断一个模块是深是浅，并说出它藏了什么秘密、为什么该藏（以及什么时候不该藏）。</li>
+    <li>把一条不变量写成「任何时刻都为真」的句子，并设计出只通过接口就能守住它的测试断言。</li>
+    <li>在沙盒里给 <code>kb</code> 的存储模块画一张接口草图，写出一条不变量。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课进入 <strong>Design &amp; Architecture（设计与架构）</strong>，是模块 3 的开篇。这个模块一共五站，按「从代码长到系统」的顺序排：本课讲代码级的<strong>模块形状</strong>，第 15 课讲模块之间怎么留 <strong>seam（接缝）</strong>，第 16 课讲怎么在两个候选方案之间选，第 17 课升到系统级的架构取舍，第 18 课把设计写成别人能接手的文档。五站的共同问题只有一个：<strong>什么被藏在后面、什么被暴露出来、为什么这样分</strong>。</p>
+  <p>为什么模块 3 排在过程和计划之后？因为到这里，「想清楚」的链路已经走完了。第 8 课的 spec 说清了要造什么，第 13 课的 brief 把契约签到了可验收的程度，两者都是开工前的文件。但它们都没有回答一个问题：造的时候，代码该长成什么形状。同一个 spec，可以长出一个调用者用得很爽的模块，也可以长出一坨每个调用点都要懂文件格式的代码——差别不在需求，在设计。</p>
+  <p>这一课的理论根基在 SWEBOK 的设计一章。它说软件设计是「把需求转化成可实现的设计规格」，并列出设计的基本概念：抽象、关注点分离、模块化、封装、接口与实现分离；其中 <strong>encapsulation（封装）被它直接括注为 information hiding（信息隐藏）</strong>——让模块的非本质信息不那么可及，让调用者只面对接口上的本质元素（SWEBOK v4, ch.3, p86）。本课把这几件抽象的事落到一个真实的模块上做一遍，做完你就有了给第 15 课的原料：<strong>interface sketch（接口草图）</strong>——接缝该开在哪，取决于接口长什么样。</p>
+</section>
+
+<section>
+  <h2>问题与概念：调用者要学多少东西，才算这个模块造好了</h2>
+  <p>沙盒里现在有一个能跑的最小骨架：迷你知识库的两个命令，<code>python -m kb add "标题" "正文"</code> 往库里加一条，<code>python -m kb search "关键词"</code> 按关键词搜；背后是一个存储模块 <code>KnowledgeStore</code>，把条目一行一条地存在 <code>kb.jsonl</code> 里。它小得不能再小了，正好用来问那个开工第一天就要回答的问题：<strong>这个存储模块的接口该怎么定？</strong></p>
+  <p>先看一个反面教材，它是真实项目里最常见的第一版。假设不抽存储模块，直接在每个命令里读写 JSONL：<code>add</code> 命令自己打开文件、拼一行 JSON、追加、关文件；<code>search</code> 命令自己打开文件、逐行解析、匹配。能跑，演示也过了。两周后三个需求接踵而来：换一种存储格式（JSONL 改 SQLite）、加项目定位里说好的薄 HTTP adapter、给条目加标签。每个需求都要在每个命令里改一遍读写逻辑，改漏一处就是线上 bug。更糟的是测试：你想验证「搜索是不区分大小写的」，得先在测试里自己拼一个格式正确的 JSONL 文件——测试被迫知道了它根本不该关心的文件格式。</p>
+  <p>这个痛的根源不是「代码没抽函数」，而是<strong>调用者被迫学了太多东西</strong>。要描述这件事，先要有一对词。<strong>module（模块）</strong>是任何「有接口、有实现」的东西——一个函数、一个类、一个包都算；<strong>interface（接口）</strong>是调用者要正确使用这个模块所必须知道的一切；<strong>implementation（实现）</strong>是模块内部的代码。请注意接口的定义比签名宽得多：签名只是接口的一部分，接口还包括<strong>不变量</strong>（什么性质永远成立）、错误模式（什么情况报什么错）、顺序约束（先开再存）、配置和性能特征——任何「你不写下来，调用者就会猜错」的事实，都属于接口。</p>
+
+  <h3>深模块：小接口，多行为</h3>
+  <p>有了这对词，就能说清什么样的模块算造得好。Ousterhout 在《A Philosophy of Software Design》里给的判据是<strong>depth（深度）</strong>：调用者学一份接口，能换来多少行为。<strong>deep module（深模块）</strong>是「小接口 + 很多实现」——接口上只有几个方法、参数简单，背后却藏着复杂的逻辑；反面是 <strong>shallow module（浅模块）</strong>：接口和实现一样复杂，调用者要学的东西几乎不比自己写一遍少。回到刚才的反面教材：把 JSONL 读写散在每个命令里，等于造了三个浅模块；抽成 <code>KnowledgeStore</code>，把 <code>add</code> / <code>search</code> 两个方法给出去，文件格式、id 规则、匹配规则全藏在里面，这就是在往深里走。</p>
+  <p>这个判据为什么值得信？Ousterhout 在书的第 21 章给了它的价值来源：<strong>leverage（杠杆）</strong>——「寻找杠杆：解决一个问题的方案，顺手让很多别的问题也能被解决」（Ousterhout 摘录, ch.21, p172）。他举的例子正是接口设计：一个「插入 / 删除字符区间」的通用接口能解很多问题，而 <code>backspace</code> 这种特化方法只解一个问题。深模块就是杠杆落在模块上的形态：一份接口成本，摊到 N 个调用点和 M 个测试上。和它配套的还有 <strong>locality（局部性）</strong>：改动、bug、知识和验证都集中在一个地方，修一次，处处修好。</p>
+  <p>摘录第 6 章「General-Purpose Modules are Deeper」把杠杆怎么来的讲得更细。章首一句是本课的引文：设计类或方法时，「造出深接口的最好办法之一，是把它做成 general-purpose（通用）的——通用接口带来更多的信息隐藏」（Ousterhout 摘录, ch.6, p39）。章里的对照例子是一个文本编辑器的学生作业：<strong>special-purpose（特化）</strong>的做法是给每种界面操作配一个方法——插入字符、删除字符、退格、重做……结果是每加一个界面操作就要在 text 类上加一个方法，界面代码和 text 类被绑死，谁也没法独立开发；<strong>通用</strong>的做法只给 <code>insert(position, text)</code> 和 <code>delete(start, end)</code> 这类「区间操作」，方法更少、总代码更少，而且这个 text 类「说不定能用在各种应用里」（ch.6, p41–43）。调用者学两个方法，得到的是整个编辑器的操作空间——这就是深。</p>
+
+  <h3>信息隐藏：按「什么会变」拆模块，而不是按流程步骤</h3>
+  <p>「把复杂度藏进实现」这个想法有个比 Ousterhout 更早的名字：<strong>information hiding</strong>，来自 Parnas 1972 年的论文《On the Criteria To Be Used in Decomposing Systems into Modules》。它回答的是一个更根本的问题：<strong>拆模块的依据是什么？</strong>直觉的答案是按流程步骤拆（第一步一个模块、第二步一个模块），Parnas 说不对：应该按<strong>设计决定</strong>拆，把「以后可能会变的设计决定」各自藏进一个模块的接口后面。因为模块化的目的不是好看，是让变化有边界——藏起来的东西变了，接口没变，外面一行不用改。MIT 6.031 把这条定义收得很干净：信息隐藏就是「把模块实现的细节对系统其余部分藏起来，好让这些细节以后可以改，而不用改系统其余部分」（MIT 6.031, Reading 10, “What abstraction means”）。同一份读物还提醒，抽象、模块化、封装、关注点分离、信息隐藏这串词说的都是同一件事的各个侧面，而它们共同的目标是：少 bug、好懂、好改。</p>
+  <p>那什么该藏？判据就一句：<strong>调用者不需要知道、而你预期会变的东西</strong>。对 <code>KnowledgeStore</code> 来说，JSONL 这个格式、id 怎么生成、匹配怎么做，都是这样的「秘密（secret）」：今天的调用者不需要知道它们，明天它们大概率会变（换 SQLite、换 id 方案、换匹配算法）。把它们写进接口，等于把「今天的设计决定」焊死进每一个调用点。</p>
+  <p>但要立刻补一个反方向的警告，否则这条原则会被用过头。Ousterhout 在第 6 章里说：如果某个信息是调用者<strong>需要</strong>知道的，把它藏在接口后面「只会制造晦涩（obscurity）」（ch.6, p44）。举个例子：如果 <code>search</code> 的匹配规则是「先按标题、标题没有再按正文」，而你在接口上只写「搜索条目」，调用者就只能靠试来猜行为——这不是信息隐藏，是把接口写成了谜语。信息隐藏藏的是<strong>实现选择</strong>，不是<strong>行为契约</strong>；行为契约恰恰是接口最重要的部分。</p>
+
+  <h3>不变量：接口上的承诺，写成永远为真的句子</h3>
+  <p>现在说第三件事。深模块的「多行为」不是随便多——它多出来的东西里，最值钱的是一条条<strong>invariant（不变量）</strong>：无论程序运行到哪一刻、无论调用者怎么调，都为真的性质。MIT 6.031 给的定义就是「不变量是这样一种程序性质：它永远为真，对程序的每一个可能的运行时状态都成立」（MIT 6.031, Reading 11, “Invariants”）。它的价值在省事：<strong>有了不变量，调用者可以在每个调用点少防一手</strong>。</p>
+  <p>这份读物里有个对照特别能说明它省在哪。很多函数的规格里写着一长串<strong>precondition（前置条件）</strong>：「参数是排好序的、没有重复的字符集合」——每个调用者都要保证它、每个函数都要重复它，漏一个就是 bug。而一个好的 abstract data type（抽象数据类型，ADT）可以把这条性质变成自己的不变量：<code>SortedSet</code> 类型在一个地方保证「有序无重复」，所有函数的前置条件整段消失（MIT 6.031, Reading 11, “ADT invariants replace preconditions”）。这和第 8 课的验收标准是同一种东西的两面：验收标准约束一次交付，不变量约束每一次调用。</p>
+  <p>不变量和隐藏是一对搭档，而且顺序不能反：<strong>正因为秘密被藏起来了，不变量才守得住</strong>。如果调用者能直接摸到内部表示，他就能把表示改坏——MIT 6.031 把这种事故叫 <strong>representation exposure（表示暴露）</strong>：外部代码能直接修改内部表示，它既威胁不变量，也威胁 <strong>representation independence（表示独立）</strong>——「换个内部实现，客户端不用改」这个承诺（MIT 6.031, Reading 11）。同一份读物给了两条配套的写法，值得照抄：一是 <strong>rep invariant（表示不变量）</strong>，写成一个判定「哪些内部状态是合法的」的条件（读物写作 RI : R → boolean）；二是 <strong>abstraction function（抽象函数）</strong>，写清「内部状态对应什么抽象值」（AF : R → A）。两者都<strong>写在代码里、紧挨着内部表示的声明</strong>，而不是散落在文档别处——因为它们就是接口的一部分。</p>
+  <p>回到 <code>KnowledgeStore</code>，现在能说清它该有什么了。它的秘密是 JSONL 格式、id 规则、匹配规则；它给调用者的承诺里，至少该有一条不变量，比如「<strong>每个条目都有一个非空且唯一的 id</strong>」，或者「<strong>store 里的条目和 <code>kb.jsonl</code> 里的行永远一致</strong>」。注意现在的第一版有个隐患：<code>add()</code> 和 <code>search()</code> 返回的都是内部的 dict 本身，调用方拿到就能原地改标题——一行代码就能把「内存和文件一致」改破。这就是 representation exposure 的现实版，也是本课练习要你亲手抓到的那个漏洞。</p>
+</section>
+
+<section>
+  <h2>行业做法：接口先行、单点强制、删除测试</h2>
+  <p>先把标尺立好：模块设计<strong>没有统一标准</strong>——没有哪份规范写着「模块必须这样拆」。这里只有主流做法和取舍；理论依据是 Parnas、SWEBOK 和 MIT 6.031 这一层。下面五个做法里，前四个是主流做法，最后一个是取舍。</p>
+
+  <h3>主流做法一：接口先行，先写草图再写实现</h3>
+  <p>接口草图是什么：在写实现之前，把「调用者必须知道什么」写在一页纸上——每个操作的签名、不变量、错误模式、顺序约束，通常还有几个调用示例。具体怎么做：设计讨论时对着草图评审，而不是对着实现评审；实现写完后，草图和实现对不上的地方，要么改实现、要么承认草图错了改草图。什么时候用：任何「会有多个调用者」的模块——CLI、HTTP adapter、测试都是调用者。产物就是那一页草图，它同时是第 15 课画接缝的原料。代价：纸上的接口和实现的脾气会打架，第一版草图一定会返工——所以它才叫草图。例子就在手边：<code>KnowledgeStore</code> 的草图大概只有「<code>add(title, text) -&gt; id</code>」「<code>search(query) -&gt; 条目列表</code>」两行签名，加一句「id 非空且唯一」的不变量和一句「查不到返回空列表，不抛错」的错误模式——三句话，调用者就能干活。CMU 17-313 的《08-design-docs》把接口和方案写在设计文档里先评审，走的就是这个顺序。</p>
+
+  <h3>主流做法二：删除测试，一次零成本的思想实验</h3>
+  <p>删除测试（deletion test）是判断一个模块值不值得存在的思想实验：想象把这个模块整个删掉，问两个问题。如果复杂度跟着消失了，说明它只是个 pass-through（转发层）——它没藏住任何东西。如果复杂度在 N 个调用点重新冒出来，说明它在挣钱：一份实现，摊给了 N 个调用者。拿 <code>KnowledgeStore</code> 做这个实验：删掉它，两个命令里各要长出一份文件读写和匹配逻辑，还有测试里的第三份——复杂度不减反增，它挣得到自己的位置。具体怎么做：设计评审时口头做这个实验，三十秒就够。产物是没有的——它的产出是「这个模块该不该在这」这个判断。代价也几乎没有，但它只对「该不该存在」有效，对「接口好不好」无效；后者要靠下面的做法。</p>
+
+  <h3>主流做法三：不变量单点强制，别散在前置条件里</h3>
+  <p>不变量写下来只是第一步，还要有人守。通行做法是<strong>单点强制</strong>：把强制逻辑放在唯一入口上，而不是散在每个函数开头。具体怎么做有三层。第一层，写在 rep 旁边：按 MIT 6.031 的写法，把表示不变量和抽象函数写成 docstring 或注释，紧挨内部表示的声明。第二层，用类型和写入口守住：Python 里常见的是 <code>__post_init__</code> 里校验、把容器封成不可变、不在返回值里给内部容器的引用（给副本）。第三层，测试只通过接口断言（这是模块 4 的正题，本课只写断言草图）。什么时候用：只要模块有内部状态，就该有一条。产物：docstring 里的不变量 + 一处强制代码。代价：多一层封装，调试时要点进去看——但比起「哪个调用点忘了防」的排查成本，这层代价几乎总是划算的。</p>
+
+  <h3>主流做法四：接口当测试面，测不过去说明形状不对</h3>
+  <p>这条做法是判断接口形状的试金石：<strong>调用者和测试走同一条线</strong>。你想测「搜索不区分大小写」，如果必须先在测试里手拼 JSONL 文件，说明接口漏了；如果你想测某个内部步骤，说明你想要的可能是一个「内部接缝」而不是公开接口。具体怎么做：写断言时刻意只用公开操作；需要伸手进内部状态时，停下来记一笔「接口缺了什么」。产物是测试和一份「接口缺口」清单。代价：有些实现细节确实想测（第 15、22 课会讲内部接缝和测试替身），别把「测不过去」一律当成罪过。</p>
+
+  <h3>取舍：通用还是特化，深到什么程度</h3>
+  <p>最后一个不是做法，是取舍，两边都有道理。Ousterhout 自己的说法是「somewhat general-purpose」——<strong>稍微</strong>通用一点（ch.6, §6.1, p40）；「通用接口更深」不等于「越通用越好」。什么时候该往通用走：调用方式确实会变（一个 CLI 命令会长出 HTTP、批处理两个兄弟）。什么时候该特化：只有一个调用者、行为很特殊，为它造通用抽象纯属想象——这就是「过度设计」。产物是两种选择各一份理由（第 16 课「设计两次」专门练这个）。代价：通用接口的第一版更难写，你要想清楚抽象在哪；特化的第一版好写，第二三个调用者来时要还债。</p>
+  <p>五个做法摆完，能看出一条共同线：<strong>所有的功夫都花在「调用者看到的那一面」上</strong>。实现写多厚是下一步的事，先把那一面定小、定稳、定清楚。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：codebase-design 管形状，domain-modeling 管词</h2>
+  <p>技能包里把这套设计语言固化下来的是 <code>codebase-design</code>。它是<strong>模型调用</strong>的技能：agent 在设计、重构或评审接口的流程里会拉起它，你也可以在对话里主动要求「用 codebase-design 的词汇过一遍这个接口」。它解决的问题很具体：设计讨论时词汇漂移——同一个人这句说 component、下句说 service、再下句说 API，讨论就没法收敛。所以 SKILL.md 开头就立了规矩：<strong>用词必须精确</strong>，module / interface / implementation / depth / seam / adapter / leverage / locality 这几个词各有定义，不许拿 component、service、boundary 顶替。</p>
+
+  <h3>它给你的三件工具</h3>
+  <p>第一件是<strong>深度的三问</strong>：面对一个接口，问「方法数能再少吗？参数能再简单吗？还有复杂度能藏进去吗？」这三问就是把「深模块」从形容词变成动作。第二件是<strong>删除测试</strong>（上一节讲过，SKILL.md 把它列为原则）。第三件是<strong>接口即测试面</strong>：「调用者和测试跨同一条线；如果你想测过接口去，这个模块多半形状不对」。它还给了三条让接口好测的形状建议：收依赖而不是自己造依赖（<code>processOrder(order, paymentGateway)</code> 而不是在里面 <code>new StripeGateway()</code>）、返回结果而不是悄悄改状态、表面面积尽量小。</p>
+  <p>开发者具体做什么？把要设计的模块、它的调用点和约束丢给 agent，让它用这三件工具出一份接口草图；你审查草图，做三件它做不了的决定。<strong>什么算秘密</strong>：哪些设计决定藏进实现，这是对「什么会变」的判断，来自你对业务的预期。<strong>不变量选哪条</strong>：不变量是接口上的承诺，承诺错了调用者会依赖错，这是责任问题。<strong>深到什么程度够</strong>：接口小是好事，但为小而小、把调用者真正需要的行为藏成谜语，就是上一节说的 obscurity。这三件都是「什么重要」的判断——Ousterhout 把它写成了第 21 章的标题：Decide What Matters（决定什么重要）。</p>
+  <p>产物和生效判断也照例说清。产物：<strong>一页接口草图</strong>（签名 + 不变量 + 错误模式 + 调用示例）和<strong>一条不变量声明</strong>。怎么判断生效：一是遮住实现，只读草图能不能写出一个正确的调用示例——能，说明接口说清了；二是那条不变量能不能写成只用公开操作的测试断言——能，说明它守得住。</p>
+
+  <h3>和经典理论的差异，以及技能分工</h3>
+  <p>有一处差异要明说，因为你在两处会读到不同的判据。技能包<strong>明确拒绝</strong>了「用实现行数除以接口行数来度量深度」这种做法，理由是它会奖励把实现写胖；它改用 <strong>depth-as-leverage（按杠杆算深度）</strong>：每单位接口，调用者能行使多少行为。公平地说，Ousterhout 书里的判据是「接口复杂度 vs 提供的功能」，并不是行数比——但两者的重心确实不同（这是我的经验判断）：书更像在问「实现比接口厚多少」，技能更像在问「调用者学一份得多少」。做设计时我建议用技能的判据，因为它直接对准调用者的体验；读书时知道这处差异，就不会拿行数当 KPI。另外，技能包把 interface 的范围划得比类型签名宽（含不变量、错误模式），这一点和 MIT 6.031「ADT 由它的操作定义」并不冲突，只是把「操作」扩成了「调用者必须知道的一切」。</p>
+  <p>还有个分工要记住，因为两个技能都叫「设计」：<code>domain-modeling</code> 管<strong>词</strong>——GLOSSARY.md 和 ADR，回答「这个概念叫什么、为什么这么叫」（第 4、7 课）；<code>codebase-design</code> 管<strong>形状</strong>——module、interface、depth，回答「代码长什么样、什么被藏起来」。顺序上先词后形：词错了，接口上的名字就会错，形状跟着歪。两者都是模型调用，产物不同，别互相顶替。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>概念和做法都讲完了，动手之前先认清三个最容易滑进去的坑——它们都有一个共同点：看起来在做设计，其实在做设计的表面文章。</p>
+  <ul>
+    <li><strong>把接口理解成签名。</strong>草图上只画函数名和参数，不写不变量和错误模式。结果是调用者照着签名写代码，然后在边界情况上翻车——因为「id 一定唯一」「查不到就返回空列表而不是 None」这类事实从来没被写下来。接口的定义是「调用者必须知道的一切」，签名只是其中最机械的一部分。</li>
+    <li><strong>把隐藏理解成藏得越多越好。</strong>调用者需要知道的行为也被藏起来，接口写成谜语，大家靠试来猜匹配规则。Ousterhout 说得很直白：把需要知道的信息藏起来只是 obscurity（ch.6, p44）。藏实现选择，露行为契约——方向别反。</li>
+    <li><strong>把不变量写成愿望。</strong>「数据要正确」「搜索要可靠」不是不变量，是心情。不变量必须是「任何时刻都为真」且能断言的句子：「每个条目的 id 非空且唯一」是，「数据要正确」不是。写不出断言的不变量，等于没写。</li>
+  </ul>
+  <p>这三个坑的解药其实都是同一个动作：写完草图，遮住实现读一遍，看它像不像一份能签的合同。</p>
+</section>
+
+<section>
+  <h2>练习：给存储模块画一张接口草图，守住一条不变量</h2>
+  <p>本课练习在沙盒里真做，对象就是那两个文件：<code>kb/cli.py</code> 和 <code>kb/storage.py</code>。产出两样东西：一页接口草图，一条能在测试里守住的不变量。它们就是第 15 课画接缝的原料。</p>
+
+  <ol class="steps">
+    <li><strong>先把它跑起来。</strong>在 <code>D:\code\my_projects\se-course-sandbox</code> 下执行 <code>python -m kb add "第一条知识" "存储模块把条目存进 JSONL 文件"</code> 和 <code>python -m kb search "JSONL"</code>，确认你能看到返回的 id 和命中结果。跑不通就先修跑不通，设计讨论要对着能跑的东西做。</li>
+    <li><strong>遮住实现，画接口草图。</strong>只看调用者的需要，给 <code>KnowledgeStore</code> 写一页草图：每个操作的签名、不变量、错误模式、顺序约束（要不要先建库再存？），加一两个调用示例。同时写一份「调用者不必知道」清单——我预期里面有 JSONL 格式、id 生成规则、匹配规则。</li>
+    <li><strong>写一条不变量。</strong>从「每个条目 id 非空且唯一」或「store 里的条目和 <code>kb.jsonl</code> 永远一致」里挑一条（也可以自己写一条更好的），写成「任何时刻都为真」的句子，注明它由谁守、破了会怎样。</li>
+    <li><strong>把它写成测试断言草图。</strong>用 pytest 的样子写（真测试是第 19 课的事）：造什么状态、调什么公开操作、断言什么。只许用接口上的操作——<strong>如果断言必须伸手进 <code>store.entries</code> 才能写，记一笔</strong>：这说明接口漏了，这正是 rep exposure，也是下一版该改的地方。</li>
+    <li><strong>顺手交一笔学费。</strong>把不变量按 MIT 6.031 的写法补进 <code>kb/storage.py</code>：注释或 docstring，紧挨 <code>KnowledgeStore</code> 的内部表示声明。一行就够，这是「不变量写在 rep 旁边」的第一次实操。</li>
+  </ol>
+
+  <p>如果画草图时发现自己在描述「怎么实现 JSONL」，停一下：那是实现，不是接口。草图的读者是调用者，不是维护者——第 18 课会讲给维护者的文档，别在这里混。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这张草图「够开工吗」</h2>
+  <p>把你的草图和不变量交给 agent，让它按下面这份检查单过一遍。它查的不是画得漂不漂亮，是「调用者拿着这张图能不能安全干活」。</p>
+
+  <pre><code>读我沙盒里的接口草图和不变量（写在哪就指哪），对照 kb/storage.py 与 kb/cli.py，
+再读 C:\Users\admin\.agents\skills\codebase-design\SKILL.md。
+
+逐条检查：
+1. 草图覆盖调用者必须知道的一切吗？签名之外，不变量、错误模式、顺序约束有没有漏？
+2. 「不必知道」清单列了什么？有没有把调用者需要知道的行为（比如匹配规则）也藏了进去？
+3. 这个模块是深是浅？用三问过一遍：方法能更少吗？参数能更简单吗？还有复杂度该藏进去吗？
+4. 那条不变量是「任何时刻都为真」的句子吗？还是「add 之后应该……」这种只管一个时刻的愿望？
+5. 测试断言草图只用了公开操作吗？有没有伸手进 store.entries 或直接摸 kb.jsonl？伸了手就标出「接口缺口」。
+6. 对照 storage.py 现状：add()/search() 返回内部 dict 这件事，草图里指出来了吗？它威胁哪条不变量？
+
+逐条引用指出问题，最后给结论：这张草图现在能当合同用吗？不变量守得住吗？哪一处是「接口形状问题」而不是「测试问题」？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是<strong>草图漏了调用者必须知道的事</strong>——比如没写错误模式，补进草图就行。另一类是<strong>不变量守不住</strong>——断言非得伸手进内部状态，或者返回值能让调用方改破它；这不是补文档能解决的，是接口形状要改，把它记成「下一版要改的接口缺口」。真正的检查单不查你画得多好看，查这张图能不能让调用者不翻车。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>模块 = 接口 + 实现；接口是调用者必须知道的一切，不只是签名。深模块的判据是杠杆：学一份接口，换很多行为。</li>
+    <li>信息隐藏按「什么会变」拆模块：把预期会变、调用者不必知道的设计决定藏进实现；但调用者需要知道的行为必须写进接口，藏了就是 obscurity。</li>
+    <li>不变量是接口上的承诺：写成「任何时刻都为真」的句子，写在 rep 旁边，单点强制，只用公开操作就能在测试里守住——守不住就说明接口形状有问题。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031 Reading 10《Abstract Data Types》（“What abstraction means”：抽象 / 封装 / 信息隐藏的定义与 Parnas 出处；“Representation independence”：换实现不动客户端）与 Reading 11《Abstraction Functions &amp; Rep Invariants》（“Invariants”：不变量定义；“Rep invariant and abstraction function”：RI : R → boolean、AF : R → A，写在 rep 旁边；“ADT invariants replace preconditions”；representation exposure）；SWEBOK v4 第 3 章 p83–98（设计原则一节 p86：modularization、encapsulation = information hiding、separation of interface and implementation）。</p>
+  <p><strong>经典来源：</strong>Ousterhout,《A Philosophy of Software Design》第二版摘录（<code>courseware/ousterhout/aposd2ndEdExtract.pdf</code>）：ch.6 “General-Purpose Modules are Deeper” p39（通用接口带来更多信息隐藏）、p40–43（特化 vs 通用的编辑器例子）、p44（藏需要知道的信息只是 obscurity）、ch.21 “Decide What Matters” p172（leverage 的定义）；Parnas,《On the Criteria To Be Used in Decomposing Systems into Modules》（1972，信息隐藏的出处；本地无全文，经 SWEBOK 第 3 章文献 [32] 与 MIT 6.031 转引）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）——词汇表（module / interface / implementation / depth / seam / adapter / leverage / locality）、深浅三问、删除测试、接口即测试面、可测接口三形状；本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>（只作实践方式，不作理论来源）。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 15 课「接缝与适配器：测试的地基」。这一课你给一个模块定了接口、藏了秘密、立了承诺；下一课的问题是这些接口该<strong>放在哪</strong>：当一个模块要换实现、要能用假件测，行为该从哪个缝里进出。你练习里那份接口草图——尤其是标了「接口缺口」的那几笔——就是第 15 课的原料。</p>
+  <p>你的接口草图和不变量，贴给我，或让 agent 按上面的检查单过一遍。如果不变量写着「数据要正确」，别急着交——先问自己：这条能写成断言吗？</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0014-deep-modules-card.html">深模块参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

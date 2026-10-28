@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设计文档参考卡 · 六节骨架与交接检查</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 18 课</p>
+  <h1>设计文档参考卡</h1>
+  <p class="lede">design doc 是写给不在场的人的工作产物（SWEBOK：AD 是有形的表示，人会进出，会话会结束）。spec 管做什么，design doc 管怎么组织、为什么这样组织。六节骨架：问题、目标与非目标、架构、取舍、风险与未决问题、引用；会过时的长产物指路径，结构性内容内嵌到能独立读懂，验它的人是没读过前文的 agent。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>设计文档在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>模块 3 收尾站：第 14 课接口草图、第 15 课 port + 两 adapter、第 16 课两候选与取舍理由、第 17 课组件图与取舍说明，本课合成一份能交接的文档。</td></tr>
+      <tr><td class="skill">和 spec 的分工</td><td>spec（第 8 课）管做什么——问题、方案、用户故事、边界；design doc 管怎么组织、为什么这样组织——结构、取舍、风险。互相引用，不互相复制。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>模块 4（第 19 课 pytest）从这份文档的接口草图、不变量和缝开始写测试；文档是零件的索引。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>六节骨架：每节替谁回答什么</h2>
+<div class="card-rule">
+  <p><strong>模板当骨架，别当合同。</strong>哪一节答不出它承诺的问题，说明那个问题还没想清——删掉、并掉，或者写进未决问题，不要靠措辞糊过去。</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>节</th><th>回答什么</th><th>本课例子的答案</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Problem（问题）</td><td>接手者凭什么知道这事值得做</td><td>多来源导入要把 PDF 放进来；网页、笔记已在做，引用行号对不上是已知问题</td></tr>
+      <tr><td class="what">Goals / Non-Goals（目标与非目标）</td><td>这轮做到哪；什么明确不做</td><td>做 PDF 导入与薄 HTTP adapter；不做向量库检索、不做桌面 GUI（写死）</td></tr>
+      <tr><td class="what">Architecture（架构）</td><td>没看过图的人能重建结构吗</td><td>第 17 课组件图 + 每组件一句话职责 + 第 15 课缝的位置（存储 port 在哪条线上）</td></tr>
+      <tr><td class="what">Trade-offs（取舍）</td><td>为什么这样组织，不选的为什么不行</td><td>三条取舍说明（条件 + 哪个组件动 + 代价落点 + 为什么不选另一种结构），落选方案指向 ADR</td></tr>
+      <tr><td class="what">Risks &amp; Open Issues（风险与未决问题）</td><td>还没定什么、赌错会疼在哪</td><td>PDF 库选型没定；检索语义升级会不会动核心，待第 12 课雾散</td></tr>
+      <tr><td class="what">Links（引用）</td><td>散件在哪</td><td>需求清单、spec、接口草图、port 契约、ADR 各一行：名字 + 回答什么 + 路径或位置</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>行业做法（无统一标准，只有主流与取舍）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>类型</th><th>要点 / 产物 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">模板当骨架</td><td>主流</td><td>CMU 常见十一项（metadata / executive summary / stakeholders / scenarios / UX / 高层与全局需求 / 功能 / 设计考量与取舍 / non-goals / roadmap / open issues，p11）按手头问题挑节。产物：有结构的文档。代价：全填稀释重点</td></tr>
+      <tr><td class="what">design review（设计评审）</td><td>主流</td><td>「Code review before there is code」（CMU p7）；SWEBOK §6.1：查完成度、需求覆盖、未决问题、潜在问题，任何阶段可做，评审者可是设计团队 / 独立第三方 / 其他干系人。产物：带修改记录的文档。代价：要花时间、要找没参与设计的人（agent 当便宜版）</td></tr>
+      <tr><td class="what">RFC 状态流</td><td>主流</td><td>Sourcegraph 开源 RFC（CMU p13–15）：用在框问题、要反馈、跨职能决定；你是决定者就别开。状态 WIP → Review → Approved → Implemented → Closed / Abandoned，单人版留「草稿 / 已评审 / 已实现」三态。代价：状态会烂，要随文档更新</td></tr>
+      <tr><td class="what">写多细</td><td>取舍</td><td>SE-EDU「Document Minimally, but Sufficiently」：代码里已清楚的不写，写代码里看不出的高层信息；top-down，别为每类图单开一节。刻度（经验判断）：读者数量；一个读者时工作稿就够，未知未来读者才值得写正式文档</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：agent 当执笔者和陌生读者</h2>
+<ul>
+  <li><strong>没有文档技能</strong>（技能栏「—」）：目标与非目标划在哪（范围判断）、取舍怎么裁（风险判断）、写给谁写多细（读者判断），三块板在人。</li>
+  <li><strong>agent 干三件</strong>：把散件收成六节草稿；当陌生读者试疼（三个问题：接下来做哪张工单、加 RSS 动哪儿、为什么不直接读 PDF）；和 <code>handoff</code> 分工对照。</li>
+  <li><strong>引用不复制</strong>（规矩出自 <code>handoff/SKILL.md</code>），照办时分三类：会过时的长产物（取舍说明全文、接口契约）只给路径；结论性短内容（问题一两句、目标与非目标）写死；结构性内容（组件图、职责、缝的位置）内嵌到能独立读懂。复制全文等于埋一个会过时的副本。</li>
+  <li><strong>design doc vs handoff</strong>：handoff（用户调用）是会话级交接——压当前对话、存系统临时目录、带 suggested skills、活不过一次会话；design doc 是作品级交接——进仓库、跟功能走、活到功能被重写。常一起用，别混着存。</li>
+  <li><strong>怎么判断生效</strong>：没读过前文的 agent 答得出三问——接下来做哪张工单、加 RSS 导入要动哪儿、为什么不让核心直接读 PDF；每节答得出「替谁回答什么」；引用的路径都指得到。</li>
+  <li><strong>和行业的差异</strong>：技能包没有 design doc 自动化，<code>to-spec</code> 产 spec 不是 design doc；模板挑节、安排评审这两步的判断在人，agent 初稿默认会把空白处糊上。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我这份 design doc（.scratch/&lt;feature&gt;/design.md），有 spec 的话
+一起读 .scratch/&lt;feature&gt;/spec.md；再读
+C:\Users\admin\.agents\skills\handoff\SKILL.md 里「不重复已有产物、
+引用路径」那条规矩，以及 C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md
+（如果文档引用了 ADR）。
+
+逐条检查：
+1. 每一节都答得出「它替谁回答什么问题」吗？有没有哪节是照模板填出来的空格？
+2. 目标与非目标判得出边界吗？「明确不做」写死了吗，还是写着「无」？
+3. 架构一节让没看过组件图的人重建结构吗？组件的一句话职责、缝的位置都在吗？
+4. 取舍一节有「为什么」吗？落选方案指得到 ADR，或者写在文档里了吗？
+5. 风险与未决问题具体吗？还是「性能可能不足」这种谁都能写的句子？
+6. 文档里有没有复制代码里已经清楚的东西（文件路径、代码段、现状描述）？
+   该引用的路径都指得到东西吗？
+7. 假装你是没读过前文的接手者：接下来做哪张工单、加 RSS 导入要动哪儿、
+   为什么不让核心直接读 PDF，三个问题都答得出吗？哪一句是你替我猜的？
+
+结论：这份文档能交接吗？哪一处「接手者只能猜」，哪一节「回答不了它承诺的问题」？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">写成流水账或代码说明书</td><td>文件路径、代码段、现状描述堆成正文</td><td>implementation ideas 不过细（CMU p7）；删掉路径和代码段后还剩多少信息量</td></tr>
+      <tr><td class="what">模板当合同，十一项全填</td><td>Non-Goals 写「无」、Open Issues 写「暂无」</td><td>按手头问题挑节；答不出的节删掉或写进未决问题，不糊</td></tr>
+      <tr><td class="what">只写选了谁，不写为什么</td><td>落选方案几个月后被重新发明</td><td>取舍一节写「为什么不选另一个」，落选方案指 ADR；理由对后来者未必显然（SWEBOK §4.6）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>design doc 设计文档、architecture description（AD）架构描述、work product 工作产物、stakeholder 干系人、blueprint 施工图、design rationale 设计理由（rationale 理由）、in-process working specifications 进行中的工作稿、final design products 最终设计产物、design review 设计评审、template 模板、executive summary 执行摘要、non-goals 非目标、open issues 未决问题、roadmap 路线图、RFC（Request for Comments）征求意见稿。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 2 章 §2（printed 2-4：AD 是工作产物、面向干系人、blueprint 与依据）；第 3 章 §4（printed 3-7~3-8：捕获四样、working specs vs final design products）、§4.6（printed 3-11：理由对后来者未必显然）、§6.1（printed 3-13：设计评审）。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《08-design-docs》（本地路径 <code>courseware/cmu-17-313/pdfs/08-design-docs.pdf</code>）：p7、p8、p11、p13–15、p18；SE-EDU《Documentation》（本地路径 <code>courseware/se-education/book/documentation/print.html</code>）：Document Minimally but Sufficiently、Go Top-down。design doc 无统一标准。</p>
+  <p><strong>实践方式：</strong><code>handoff</code>（用户调用，会话级交接与「引用不复制」）、<code>to-spec</code>（spec 模板作分工对照）、<code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0018-design-doc.html">第 18 课：设计文档：让下一个人（或 agent）能接手</a> · <a href="course-map.html">课程地图</a> · <a href="0017-architecture-tradeoffs-card.html">第 17 课：架构取舍参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

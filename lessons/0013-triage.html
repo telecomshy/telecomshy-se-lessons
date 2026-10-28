@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 13 课 · 外部输入：triage 与 agent-ready</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 2 · 计划与过程 · 第 13 课</p>
+  <h1>外部输入：triage 与 agent-ready</h1>
+  <p class="lede">前一课处理的是「自己脑子里的雾」：一个大到拆不出工单的想法，先画成决策地图。可现实里递到你面前的工作，更多是另一副样子——别人提的一条 issue、一段试用反馈、一句「你们这个能不能……」。它们含糊、夹着情绪、可能重复、可能越界，还常常在一条里混着两件事。直接按字面开工，是最快的浪费。这一课讲 triage（分诊）：让外部输入走一个受控的入口——分类、验证、必要时逼问——最后写成一份 agent-ready 的 brief（可直接交给无人值守 agent 的任务简报）。这是模块 2 的收尾：到这里，你已经把「想清楚」的整条链路走完了。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 8、12 课</span>
+  <span><b>产出</b> 一份 agent brief + 一份 needs-info 的 triage notes</span>
+  <span><b>主读物</b> SWEBOK 第 1 章（validation 与变更控制）；Google SRE《Effective Troubleshooting》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清 triage 落在第 2 课八个活动的哪一块，以及它和第 12 课 wayfinder 分别管「先理清再动手」的哪两头。</li>
+    <li>用 category role（类别角色）和 state role（状态角色）两套标签，把一条原始输入放进状态机；遇到「一条里混两件事」先拆再进。</li>
+    <li>说清为什么「验证声明（verify the claim）」排在「动手修」之前，以及「比较急」为什么不能当优先级判据。</li>
+    <li>说清 agent brief 是契约不是描述：耐久（durable）、讲行为不讲步骤、有可测的验收标准、有明确的 out of scope。</li>
+    <li>在沙盒里把一条真实的复合输入拆成两条 issue，产出一份 brief 和一份 needs-info 的 triage notes。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课仍在 <strong>Process &amp; Management（过程与管理）</strong>，是模块 2 的第五站、也是收尾站。前四站处理的都是「你自己的工作」：第 9 课选过程取向，第 10 课把 spec 拆成带阻塞边的工单，第 11 课给工单估时，第 12 课对付大到拆不出工单的模糊想法。这一课换了一个方向：<strong>工作不是你起的，是别人递进来的</strong>。第 12 课的雾在你自己脑子里，你既是提问者又是回答者；这一课的输入在别人手里，你连「他在说什么」都得先弄清。</p>
+  <p>把这两课摆在一起，就看清了 triage 的位置：它们同属「先理清再动手」这个家族，是它的两头。一头（wayfinder）的问题是「太大太散，先画成图」；另一头（triage）的问题是「太原始太杂，先过一道筛」。筛完的东西，才轮到第 10、11 课那套「拆单、估算、开工」。</p>
+  <p>为什么外部输入值得在软件工程里单独立一课？因为它的理论根基就在需求这一章：SWEBOK 把需求活动拆成 elicitation、analysis、specification、validation、management 五类，其中 <strong>validation（验证）要求需求在进入规格之前先被证实——正确、无歧义、一致、可验证</strong>（SWEBOK v4, ch.1, p43–66）；而<strong>需求会变，变更要走受控的入口（change control，变更控制）：评估影响、记录、批准，而不是谁喊得急就改谁的</strong>（SWEBOK v4, ch.1, p57–62；第 7 课引过同一段）。一条别人递进来的 issue，既不是需求，也不是变更单，它是「未经验证的需求候选」。triage 做的，正是把它变成两者之一的过程。</p>
+  <p>这一课还接上第 8 课留下的那条线。spec 是「客户和工程师达成一致的契约」（CMU 17-313《07-specs》p5，第 6、8 课引过），本课的 agent brief 是它的又一个变体：当执行者是一个没有你语境的 AFK agent 时，brief 就是契约本身。走完这一课，模块 2 结束；第 14 课进模块 3，开始讲「怎么把东西做对」，而 brief 正是开工前的最后一份合同。</p>
+</section>
+
+<section>
+  <h2>问题与概念：一条原始输入，和它不能直接开工的理由</h2>
+  <p>先看一条真实的输入。你的迷你知识库已经在几个同事手里用起来了（他们拿它存 Markdown 资料、建索引、按关键词检索），今天 issue tracker 上来了一条：</p>
+  <blockquote>
+    <p><strong>能不能贴个网址就入库？另外搜索的引用有点怪</strong></p>
+    <p>我把工具推荐给了组里同事，大家都觉得挺好。但是我们存资料基本都是网页链接，能不能我贴一个网址进去，它就自己把内容抓下来放进库？不然每次还得先手工存成 Markdown，太麻烦了。</p>
+    <p>还有个事，我搜「引用格式」的时候出来的那条引用，点开一看行号对不上，不知道是不是我用错了。这个比较急，我们下周要给领导演示，最好这周能修好。</p>
+  </blockquote>
+  <p>把它当工单直接开工，会连着踩三个坑。第一，这条输入里其实混着<strong>两件事</strong>：一个新功能（贴 URL 入库）和一个疑似缺陷（引用行号对不上），它们该走完全不同的处理通道。第二，那句「行号对不上」<strong>没法动手</strong>：哪条查询？哪条引用？期望行号是多少、实际是多少？版本是哪个？按字面去猜，你多半在修一个不存在的 bug。第三，「比较急」「下周要演示」是报告者的处境，不是这个缺陷的影响面——把情绪当优先级，是 triage 里最常见的判断污染。</p>
+  <p>更常见、也更隐蔽的结局是：这条 issue 因为「不知道从哪下手」被挂在那里，下周另一个人提一条几乎一样的，再下周又来一条。问题不在人，在入口：<strong>外部输入需要一个明确的、受控的入口，让每一条都被分类、被验证、被决定去向，而不是被凭感觉处置</strong>。</p>
+
+  <h3>triage：先分清「这是什么、有多急」，再决定进哪条通道</h3>
+  <p>这个入口有个从医学借来的名字：<strong>triage（分诊）</strong>。战场上或急诊室里的分诊，做的是「先判断这是什么伤、多重，再决定送哪条通道」，而不是逮着最近的伤员就开刀。软件行业很早就把这个词用在了问题处理上：Google SRE 说，on-call 工程师收到并确认告警后，第一件事是 triage the problem——把它分类、定级，解决或按需<strong>升级（escalate）</strong>给合适的人（Google SRE Book,《Being On-Call》）；在《Effective Troubleshooting》里，triage 是排在 Examine、Diagnose 之前的独立一步，要点是「先让系统在当前情况下尽量正常工作、止血优先，但同时保留证据」，并且明确警告：低效的排障大多坏在 Triage、Examine、Diagnose 这三步上，而不是坏在最后的修复上。</p>
+  <p>把这句话挪到 issue 处理上，动作完全同构：<strong>先分类定级，再深入处理</strong>。只不过 issue 的「伤情」不是严重度，而是两套标签。</p>
+
+  <h3>两套角色：一条输入恰好一个类别、一个状态</h3>
+  <p>第一套是 <strong>category role（类别角色）</strong>，回答「这是什么」，只有两类：<code>bug</code>（坏了）和 <code>enhancement</code>（新功能或改进）。第二套是 <strong>state role（状态角色）</strong>，回答「现在到哪一步了」，有五个。下面这张表是本课的主对照表——它把一条输入的「去向」穷举成了五个格子：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>状态</th><th>含义</th><th>走到这个状态要有什么</th></tr></thead>
+      <tbody>
+        <tr><td class="skill"><code>needs-triage</code></td><td>还没人评估，或评估进行中</td><td>一条已登记的输入</td></tr>
+        <tr><td class="skill"><code>needs-info</code></td><td>卡在报告者那里，等补充信息</td><td>一份 triage notes：已确认什么、还缺什么</td></tr>
+        <tr><td class="skill"><code>ready-for-agent</code></td><td>已经说清楚，可以交给 AFK agent 做</td><td>一份 agent brief（本课后半段）</td></tr>
+        <tr><td class="skill"><code>ready-for-human</code></td><td>说清楚了，但必须人来做</td><td>同 brief 结构，外加「为什么不能委托」</td></tr>
+        <tr><td class="skill"><code>wontfix</code></td><td>不会做</td><td>一个理由，必要时留档（见下）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>规则有两条。一条是「恰好一个」：一条被 triage 过的输入，恰好带一个 category role 和一个 state role；如果发现它同时挂着两个状态，那是配置错了，先问人，别自作主张。另一条是流转方向：新输入默认先进 <code>needs-triage</code>，从这里走向其余四个之一；<code>needs-info</code> 是唯一会回头的——报告者回复后，它回到 <code>needs-triage</code> 重新评估。维护者随时可以手动改状态，agent 看到不寻常的流转要先问。</p>
+  <p>回到那条输入。它要先拆成两条，各自进状态机：「贴 URL 入库」是 <code>enhancement</code>，「引用行号对不上」是 <code>bug</code>。拆完你会发现，它们的去向立刻分岔了——这也是 triage 最实际的价值：<strong>让每条输入走适合它的通道，而不是挤在一条队里互相耽误</strong>。</p>
+
+  <h3>agent brief：把愿望翻译成契约</h3>
+  <p>五个状态里，<code>ready-for-agent</code> 是最费劲的一个，因为它的产物不是一句「可以做了」，而是一份 <strong>agent brief（智能体任务简报）</strong>。这里的关键前提是：执行者是一个 AFK agent（第 12 课定义过，无人值守），它没有你们的聊天记录、没听过那句「太麻烦了」背后的需求、也不知道「领导演示」意味着什么。原始 issue 和讨论是上下文，<strong>brief 才是契约</strong>——第 8 课讲过「spec 是客户和工程师达成一致的契约」，brief 是同一性质的东西，只是甲方是外部报告者、乙方是一个没有记忆的 agent。</p>
+  <p>这也解释了为什么外部输入非得过 triage 这道筛：你不是在给自己写备忘，而是在把别人的愿望翻译成一份可验收的合同。翻译没做完就交付，agent 会替你做决定——而那些决定本来该你做。</p>
+</section>
+
+<section>
+  <h2>行业做法：受控入口、验证先行、拒了要留档</h2>
+  <p>先把话说在前面：issue triage <strong>没有统一标准</strong>——没有哪份 ISO 规范写着「issue 必须这样分类」。这里只有主流做法和取舍；它的理论根基，是 SWEBOK 需求那一章早就写清的两件事：验证和变更控制。</p>
+
+  <h3>一手理论：外部输入要先验证，变更要走受控入口</h3>
+  <p>SWEBOK 对「什么能进规格」的态度很硬：需求在 specification 之前要过 validation，检查它正确、无歧义、一致、可行、可验证、可追踪（SWEBOK v4, ch.1, p43–66）；而对「已经进了基线的东西要改」，走 change control：提交变更请求、评估影响、批准或拒绝、记录在案（SWEBOK v4, ch.1, p57–62）。这两条合起来就是本课的立场：<strong>外部输入既没被验证、也不是正式的变更单，它必须先经过一个受控入口，才谈得上「做不做、怎么做」</strong>。triage 就是那个入口的日常形态。</p>
+
+  <h3>主流做法一：tracker 上的标签与状态流</h3>
+  <p>GitHub、GitLab 这类 issue tracker 的通行玩法，是把「标签 + 状态」做成两套 label：一套标类别（bug / enhancement / 文档 / 问题），一套标处理状态（待分诊 / 等信息 / 就绪 / 不做）。具体怎么做：新 issue 进来先打待分诊；维护者按模板补上下文，缺信息就打等信息并列出具体问题；补完回来重新分诊；就绪的进开发队列。产物是一个「状态明确、可查询」的队列——你可以随时问「现在有什么在等我」「什么已经能开工」。代价也明摆着：<strong>状态要人维护，没人更新就腐烂</strong>，队列很快就不可信。这里的经验判断是（这是我的经验判断，不是来源）：状态流的成本几乎全在「谁负责改状态」这一件事上，定不下来就别上复杂状态机。</p>
+
+  <h3>主流做法二：SRE 的 triage 谱系——同名不同场景</h3>
+  <p>Google SRE 那套 triage 管的是线上事故，不是 issue，但它把「分诊」这个动作的骨架讲得最清楚。《Effective Troubleshooting》的 Triage 一节给了三条可迁移的原则：先按影响面定级，别让小问题用大响动、大问题用小响应；第一反应不是查根因，是先止血、让系统尽量还能干活；但止血不等于毁掉证据，日志要留下来供后面分析。同书还提醒，Triage、Examine、Diagnose 三步是最容易出问题的地方，因为它们都吃「对系统的理解」，不吃「修得快」。</p>
+  <p>把它和 issue triage 对照着看，差别在场景、共通点在动作：事故 triage 的产物是「谁去止血、谁去查因」，issue triage 的产物是「这条输入进哪个状态、留下什么」；两者都坚持<strong>先分类定级再深入</strong>，都警惕「情绪驱动的优先级」。这套对照值得记住：以后你看到任何叫 triage 的流程，先问它「分诊的维度是什么、升级给谁」。</p>
+
+  <h3>取舍：验证先行，以及「拒了要不要留档」</h3>
+  <p>还有两条主流做法，各有明确代价。一条是<strong>验证先行</strong>：修 bug 之前先按报告者的步骤复现，复现不了就回去要信息——多一轮往返，换来的是不修空气。另一条是<strong>拒了要留档</strong>：一个被否掉的功能请求，如果只留一句「不做了」关掉，几个月后同样的请求会原样回来，你们会把同一场争论再吵一遍。留档的做法是给「被拒的概念」建一页记录（决定、理由、历次请求链接），新请求进来先查它；这在组织里叫 <strong>institutional memory（机构记忆）</strong>，查重动作叫 <strong>dedup（去重）</strong>。代价是维护成本，收益是不用反复解释同一个「不」。顺带说清「不做」的三种理由要分开写：已经实现了（指向实现处，不留档）、拒绝的 bug（解释后关掉）、拒绝的功能（留档后关掉）——把「已实现」当成「被拒」记进去，会污染以后的查重。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：triage 把这条链路变成可执行的动作</h2>
+  <p>这套技能包里把 triage 落地的是 <code>triage</code>。和 to-spec、to-tickets、wayfinder 一样，它是<strong>用户调用</strong>的技能（SKILL.md 标了 <code>disable-model-invocation: true</code>）：你主动喊它跑，agent 不会随手拉起它。理由和前几课一致：「这条输入算什么、拒不拒」是维护者的事，不是 agent 能替你定的。它的前置是第 3 课 setup 写下的三份配置：<code>docs/agents/issue-tracker.md</code>（工单放哪、状态怎么写）、<code>docs/agents/triage-labels.md</code>（五个角色映射到本仓库的标签字符串）、<code>docs/agents/domain.md</code>（探索代码前先读 <code>GLOSSARY.md</code> 和 <code>docs/adr/</code>）。这三份是 agent 的「仓库说明书」，缺了它就只能猜。顺带一提，外部 PR 也在 triage 的射程内——SKILL.md 的说法是「a PR is an issue with attached code」，同一批角色、同一个状态机，只是验证那一步变成了「跑测试核对 diff」。</p>
+
+  <h3>五步走查：把那条输入过一遍</h3>
+  <p>用课里那条输入走一遍流程，你就知道每步在做什么。第一步是 <strong>gather context（收集上下文）</strong>：读全 issue（正文、评论、标签、时间），如果之前有过 triage notes 就先读，别问已经问过的问题；然后探索仓库——按 <code>GLOSSARY.md</code> 的词汇理解概念、尊重相关 ADR；同时跑两个检查：一是 <strong>redundancy check（冗余检查）</strong>，按领域概念（而不是报告者的措辞）搜「这功能是不是已经有了」，并报告搜了哪里——沙盒里搜下来，入库只吃本地 Markdown 文件，没有等价实现；二是 <strong>prior rejection（既往拒绝）</strong>检查，读 <code>.out-of-scope/</code> 下的记录，看有没有概念相近的旧「不」——沙盒里这个目录还空着。这一步做完，才谈得上「这是什么」。</p>
+  <p>第二步是 <strong>recommend（给出建议）</strong>：agent 带着理由建议类别和状态，附一段和请求相关的仓库现状，然后<strong>停下等你点头</strong>。第三步是 <strong>verify the claim（验证声明）</strong>——动手写任何东西之前，先证实报告者说的成立：bug 就按他的步骤复现，PR 就跑相关测试核对 diff，结论只有三种：confirmed（确认，附代码路径）、failed（复现不了）、insufficient detail（信息不够）。我们这条 bug 就卡在这里：没有查询、没有期望/实际行号、没有版本，复现无从下手——insufficient detail 是一个强 <code>needs-info</code> 信号。验证过了再往下走，产物的可信度完全不同。</p>
+  <p>第四步是 <strong>grill if needed（必要时逼问）</strong>：请求还模糊时，agent 同时拉起 <code>grilling</code> 和 <code>domain-modeling</code>（第 5、4 课），一轮一轮问清，顺手把落定的领域词写进 <code>GLOSSARY.md</code>、把定下来的决定记成 ADR（第 7 课）。对「贴 URL 入库」，一轮像样的问题大概是：入库的是网页正文还是只存链接？正文要不要清洗版式？抓取失败重试还是报错？要不要保留原 URL 当出处？——这些问题问完，愿望才变成规格。</p>
+  <p>第五步是 <strong>apply outcome（落实去向）</strong>，按状态产出对应的东西：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>状态</th><th>产出</th><th>怎么判断生效</th></tr></thead>
+      <tbody>
+        <tr><td class="skill"><code>ready-for-agent</code></td><td>一份 agent brief 评论</td><td>四原则过检（见下），验收标准可勾选</td></tr>
+        <tr><td class="skill"><code>ready-for-human</code></td><td>同 brief 结构 + 「为什么不能委托」</td><td>写明了判断点、外部权限或手工测试在哪</td></tr>
+        <tr><td class="skill"><code>needs-info</code></td><td>一份 triage notes：已确认什么、还缺什么</td><td>问题是具体的、可回答的，不是「请补充信息」</td></tr>
+        <tr><td class="skill"><code>wontfix</code></td><td>关 issue + 按理由留档（已实现指向实现处；拒的功能写 <code>.out-of-scope/</code>）</td><td>下次同类请求进来，查重能翻到它</td></tr>
+        <tr><td class="skill"><code>needs-triage</code></td><td>贴上角色，有进展就留一句评论</td><td>状态行更新，队列里能看到</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>注意这五格不只是「五个标签」，而是「五种不同的产物」——状态是产物的索引。另外每个状态都支持快速通道：你说「把 #42 标成 ready-for-agent」，agent 就直接执行（确认一下要做什么就动手，跳过 grilling），因为维护者的决定优先于流程。</p>
+
+  <h3>brief 的四条原则：契约怎么写才立得住</h3>
+  <p>brief 的写法有一份专门的参考（AGENT-BRIEF.md），核心是四条原则，值得逐条过。<strong>耐久优先于精确（durability over precision）</strong>：issue 可能躺几周，代码会被重构，所以写接口、类型、行为契约，不写文件路径和行号——它们一定会过期。<strong>讲行为不讲步骤（behavioral, not procedural）</strong>：写「系统该做什么」，不写「去哪个文件加什么」，实现方式留给 agent 现场决定。<strong>完整的验收标准（complete acceptance criteria）</strong>：每个标准独立可测，比如「超过 1024 字符的描述在词边界截断并以 ... 结尾」，而不是「截断要正确」。<strong>明确的范围边界（explicit scope boundaries）</strong>：写清不要动什么，防止 agent 镀金和想当然。</p>
+  <p>一句好坏对照最能说明差别。好的写法是「<code>SkillConfig</code> 类型应接受一个可选的 <code>schedule</code> 字段，类型是 <code>CronExpression</code>」；坏的写法是「打开 src/types/skill.ts，在第 42 行加个 schedule 字段」。前者是契约，后者是过期的便条。brief 还有一条纪律来自 triage 的上游：triage 过程中发到 tracker 的每条评论，都要以 <code>&gt; *This was generated by AI during triage.*</code> 开头——让别人一眼看出哪段是机器生成的，责任和来源都可追。</p>
+
+  <h3>人拍板：哪三件是 agent 不能替你做的</h3>
+  <p>把 triage 的自动化摊开看：它替你做的是机械劳动——读全量上下文、搜冗余、查旧拒、复现、整理问题、按模板写 brief 和 notes。剩下三件判断必须你来。<strong>这条输入的类别和状态归属</strong>：agent 只给建议，标签是你对「这是什么」的判断。<strong>拒不拒</strong>：wontfix 是范围决定，等于第 12 课那次「画出 out of scope」的动作，得由目的地和战略说了算。<strong>brief 的验收标准够不够硬</strong>：标准可测不可测、范围边界划在哪，直接决定 agent 会做出什么——这句合同是你签的。还有一处和经典理论的差异要说明：SRE 那套 triage 的重心是「先止血」，issue triage 的重心是「先分类定级」，而 <code>triage</code> 额外加了「验证声明」和「brief 契约化」两步——传统 issue 分诊不是每个团队都做这两件事，它们是为「执行者是 AFK agent」补的：agent 没有语境，合同不硬，它就只能编。</p>
+</section>
+
+<section>
+  <h2>练习：把那条输入拆开、筛一遍、写成 brief</h2>
+  <p>本课练习在沙盒里真做：把你收到的这条输入登记进 tracker，走一遍 triage，留下两份产物。输入就用课里这条（也可以换成你自己项目里真实收到过的一条，效果更好）。</p>
+
+  <ol class="steps">
+    <li><strong>拆开并登记。</strong>按 <code>docs/agents/issue-tracker.md</code> 的约定，在 <code>.scratch/&lt;feature-slug&gt;/issues/</code> 下建<strong>两个</strong>文件：一个记「贴 URL 入库」，category 是 <code>enhancement</code>；一个记「引用行号对不上」，category 是 <code>bug</code>。两个都先写 <code>Status: needs-triage</code>。原话可以整段贴进去当正文，但标题要写清一件事。</li>
+    <li><strong>把 bug 条筛到 needs-info。</strong>对它跑「gather context + verify」：写一行验证结论（这一步在沙盒里做不了复现——CLI 代码还没写，而这正是 insufficient detail 的证据），然后按 triage notes 模板写「我们已确认什么、还需要报告者给什么」：哪条查询、哪条引用、期望 vs 实际行号、用的哪个版本。状态改成 <code>needs-info</code>。</li>
+    <li><strong>把 enhancement 条筛到 ready-for-agent。</strong>先写两个检查的结论（冗余检查搜了哪里、有没有等价实现；<code>.out-of-scope/</code> 里有没有旧拒），再自己当一轮报告者回答四个逼问（入库存正文还是链接？版式清洗吗？失败重试吗？保留原 URL 吗？），最后把答案写成一份 agent brief，追加在文件的 <code>## Comments</code> 下，状态改成 <code>ready-for-agent</code>。</li>
+    <li><strong>补上 AI 声明。</strong>检查 <code>## Comments</code> 里的每条评论都以 <code>&gt; *This was generated by AI during triage.*</code> 开头。这是 triage 的硬纪律，不是可选项。</li>
+    <li><strong>顺带走一次「不做」。</strong>假设有人在同一条里提「要不你们出个桌面 GUI」，把它判为 out of scope：写一页 <code>.out-of-scope/desktop-gui.md</code>（概念名、决定、理由、历次请求），理由要引用项目定位（这个知识库是 CLI + 薄 HTTP adapter）。这一步让你记住「拒了要留档」长什么样。</li>
+  </ol>
+
+  <p>写 brief 时如果发现自己在描述「怎么实现」，那是第 8 课的老毛病又犯了：brief 是合同不是施工图。验收标准如果写成「入库功能正常」，重写成一条能打勾的具体行为。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这两份产物「够开工吗」</h2>
+  <p>把两条 issue 文件交给 agent，让它按下面这份检查单过一遍。它查的不是格式，是「这条输入现在能不能开工、合同签得硬不硬」。</p>
+
+  <pre><code>读我沙盒里这两条 issue（.scratch/&lt;feature-slug&gt;/issues/ 下的两个文件，含 ## Comments），
+再读 C:\Users\admin\.agents\skills\triage\SKILL.md、AGENT-BRIEF.md、OUT-OF-SCOPE.md。
+
+逐条检查：
+1. 拆得对吗？两个文件各只含一件事，category（bug / enhancement）标对了吗？
+2. 每条恰好一个 category + 一个 state？状态和产物匹配吗（needs-info 配 notes、ready-for-agent 配 brief）？
+3. bug 条的 triage notes：问题是具体的、可回答的吗？「已确认什么」有没有把已知信息保住？「比较急」有没有被当成优先级？
+4. enhancement 条的 brief：四原则逐条过——耐久（没有文件路径/行号）？行为而非步骤？验收标准每条可独立打勾？Out of scope 写了什么？
+5. 冗余检查和 prior rejection 有结论吗？写清搜了哪里吗？
+6. 每条评论都以 AI 声明开头了吗？
+7. .out-of-scope/desktop-gui.md 的理由是「项目定位」这种耐久的理由，而不是「最近太忙」这种临时借口？
+
+逐条引用指出问题，最后给结论：这两条现在分别是「能开工」「在等信息」还是「该拒」？这份 brief 能直接交给 AFK agent 吗？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是<strong>状态错配</strong>——比如 bug 条信息不足却标了 ready-for-agent，或者 brief 写了却没有验收标准，这属于「通道进错了」，回练习第 2、3 步补。另一类是<strong>合同不硬</strong>——brief 里出现「打开某文件改某行」「让功能正常工作」这类句子，说明它还是描述不是契约，按四原则重写。真正的检查单不查你写了多少字，查这条输入现在有没有一个明确的去向。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>外部输入不是需求也不是变更单，是「未经验证的需求候选」；它必须过 triage 这个受控入口——分类、验证、必要时逼问——才进得了系统。</li>
+    <li>一条输入恰好一个 category + 一个 state，混两件事先拆；「比较急」是处境不是优先级，验证排在动手之前。</li>
+    <li>ready-for-agent 的产物是 agent brief：它是契约不是描述——耐久、讲行为、有可测的验收标准、有 out of scope；拒了要留档，下次才不用重吵。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章 p43–66（需求 validation：进入规格前先验证）与 p57–62（requirements management / change control：变更走受控入口）；Google SRE Book《Being On-Call》（收到问题后 triage + 按需升级）与《Effective Troubleshooting》Triage 一节（按影响面定级、先止血、保留证据；Triage/Examine/Diagnose 是易败步骤）；CMU 17-313《07-specs》p5（spec 是契约，回指第 6、8 课）。</p>
+  <p><strong>实践方式：</strong><code>triage</code>（用户调用，<code>disable-model-invocation: true</code>）——五步流程（gather context 含 redundancy / prior rejection 两检查 → recommend 等你点头 → verify the claim → grill if needed 调 grilling + domain-modeling → apply outcome 五种产物）；brief 写法见 <code>AGENT-BRIEF.md</code> 四原则，拒的功能留档见 <code>OUT-OF-SCOPE.md</code>。本机路径 <code>C:\Users\admin\.agents\skills\triage\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>延伸：</strong>第 14 课进模块 3「设计与架构」，第一站是深模块、信息隐藏与不变量——brief 签好了，接下来轮到把它做对。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 14 课「深模块、信息隐藏与不变量」。这一课你把「别人递进来的原始问题」筛成了能开工的契约，模块 2 到此结束：过程、拆单、估算、模糊大项目、外部输入都过了一遍。下一课进模块 3，开始回答「东西该怎么造」：一个模块为什么该是「接口小、实现深」，什么该藏起来，怎么用一条不变量在测试里守住它。</p>
+  <p>你筛出来的那两条 issue 和那份 brief，贴给我，或让 agent 按上面的检查单过一遍。如果 brief 里冒出了文件路径和行号，别急着删——那说明你还在写施工图，回「四条原则」一节把它改写成契约。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0013-triage-card.html">triage 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

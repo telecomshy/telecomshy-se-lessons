@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>深模块参考卡 · 信息隐藏与不变量</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 14 课</p>
+  <h1>深模块参考卡</h1>
+  <p class="lede">模块 = 接口 + 实现。deep module（深模块）的判据是 leverage（杠杆）：学一份小接口，换很多行为。按「什么会变」决定什么藏进实现——information hiding（信息隐藏）；并把承诺写成 invariant（不变量）：任何时刻都为真、只用公开操作就能在测试里守住。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>深模块在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>模块 3 第一站：代码级的模块形状。第 15 课接缝、第 16 课设计两次、第 17 课架构取舍、第 18 课设计文档，共同问题是「什么被藏起来、什么被暴露、为什么」。</td></tr>
+      <tr><td class="skill">SWEBOK 定位</td><td>第 3 章 p86：modularization、encapsulation（= information hiding）、separation of interface and implementation 是设计基本概念。</td></tr>
+      <tr><td class="skill">给下一课的原料</td><td>接口草图（interface sketch）——接缝开在哪，取决于接口长什么样。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三个概念，同一件事的三面</h2>
+<div class="card-rule">
+  <p><strong>接口是调用者必须知道的一切，不只是签名。</strong>签名之外还有不变量、错误模式、顺序约束、配置与性能特征——任何「不写下来调用者就会猜错」的事实，都属于接口。</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>概念</th><th>判据 / 定义</th><th>反面</th></tr></thead>
+    <tbody>
+      <tr><td class="what">deep module（深模块）</td><td>小接口 + 很多行为；杠杆：解决一个问题的方案顺手解很多问题（Ousterhout ch.21, p172）</td><td>shallow module（浅模块）：接口和实现一样复杂</td></tr>
+      <tr><td class="what">information hiding（信息隐藏）</td><td>按「设计决定会怎么变」拆模块（Parnas 1972）；藏「调用者不必知道、而预期会变」的东西</td><td>按流程步骤拆；或把调用者需要知道的行为也藏了（obscurity，Ousterhout ch.6, p44）</td></tr>
+      <tr><td class="what">invariant（不变量）</td><td>任何运行时刻都为真的性质（MIT 6.031 R11）；写在 rep 旁边，单点强制</td><td>愿望式不变量：「数据要正确」——写不出断言的不是不变量</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>信息隐藏：什么该藏</h2>
+<ul>
+  <li><strong>藏实现选择：</strong>文件格式、id 生成规则、匹配算法——今天调用者不必知道、明天会变的设计决定。</li>
+  <li><strong>露行为契约：</strong>匹配规则是「什么行为」不是「怎么实现」，属于接口；藏了它，调用者只能靠试，这是 obscurity 不是设计。</li>
+  <li><strong>representation exposure（表示暴露）</strong>是大忌：把内部容器/引用直接给调用方，等于让他能改破不变量，也改掉了表示独立（representation independence）。</li>
+</ul>
+
+<h2>不变量的写法（MIT 6.031, Reading 11）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>写什么</th><th>形式</th><th>沙盒例子</th></tr></thead>
+    <tbody>
+      <tr><td class="what">rep invariant（表示不变量，RI）</td><td>RI : R → boolean，判定哪些内部状态合法</td><td>「每个条目 id 非空且唯一」「内存条目与 kb.jsonl 的行永远一致」</td></tr>
+      <tr><td class="what">abstraction function（抽象函数，AF）</td><td>AF : R → A，说明内部状态对应什么抽象值</td><td>「这组 JSON 行 = 一个按插入顺序的条目序列」</td></tr>
+      <tr><td class="what">单点强制</td><td>写在 rep 旁 + 类型 / 写入口守住 + 测试只走公开操作</td><td><code>__post_init__</code> 校验、返回副本不给内部引用</td></tr>
+    </tbody>
+  </table>
+</div>
+<p><strong>ADT invariants replace preconditions：</strong>「有序无重复」不再写进每个函数的前置条件（precondition），由 <code>SortedSet</code> 类型在一个地方守住——不变量省掉的是每个调用点的设防。</p>
+
+<h2>行业做法（无统一标准，只有主流与取舍）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>类型</th><th>要点 / 产物 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">接口先行（接口草图）</td><td>主流</td><td>实现前写签名+不变量+错误模式+示例；对着草图评审。产物：一页草图（也是第 15 课原料）。代价：必返工</td></tr>
+      <tr><td class="what">deletion test（删除测试）</td><td>主流</td><td>想象删掉模块：复杂度消失=pass-through；复杂度在 N 个调用点重现=挣到位置。零成本，只答「该不该存在」</td></tr>
+      <tr><td class="what">不变量单点强制</td><td>主流</td><td>RI/AF 写在 rep 旁；类型与写入口强制；不返回内部引用。代价：调试多点一层</td></tr>
+      <tr><td class="what">接口即测试面</td><td>主流</td><td>断言只用公开操作；想越过接口测试 = 模块形状不对，记「接口缺口」</td></tr>
+      <tr><td class="what">general-purpose vs special-purpose</td><td>取舍</td><td>Ousterhout：somewhat general-purpose（ch.6 §6.1, p40）。调用方式会变才值得通用；一个特化调用者别硬造抽象</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：codebase-design 怎么落地</h2>
+<ul>
+  <li><strong>模型调用</strong>的技能，设计 / 重构 / 评审接口时被 agent 拉起；词汇固定：module / interface / implementation / depth / seam / adapter / leverage / locality，不许换词。</li>
+  <li><strong>三件工具</strong>：深浅三问（方法能更少吗？参数能更简单吗？还有复杂度该藏吗？）；删除测试；接口即测试面（三条可测形状：收依赖不造依赖、返回结果不改状态、表面面积小）。</li>
+  <li><strong>人拍板三件</strong>：什么算秘密（什么藏起来）；不变量选哪条（它是承诺）；深到什么程度够（为小而小会变 obscurity）。</li>
+  <li><strong>和理论的差异</strong>：技能拒绝「实现行数/接口行数」度量深度（会奖励把实现写胖），改用 depth-as-leverage（按杠杆算深度）；Ousterhout 书里判据是「接口复杂度 vs 功能」，重心不同（经验判断：用技能的判据，直接对准调用者体验）。</li>
+  <li><strong>分工</strong>：<code>domain-modeling</code> 管词（GLOSSARY / ADR），<code>codebase-design</code> 管形状；先词后形。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我沙盒里的接口草图和不变量（写在哪就指哪），对照 kb/storage.py 与 kb/cli.py，
+再读 C:\Users\admin\.agents\skills\codebase-design\SKILL.md。
+
+逐条检查：
+1. 草图覆盖调用者必须知道的一切吗？签名之外，不变量、错误模式、顺序约束有没有漏？
+2. 「不必知道」清单列了什么？有没有把调用者需要知道的行为也藏了进去？
+3. 这个模块是深是浅？三问过一遍。
+4. 不变量是「任何时刻都为真」的句子吗？还是「add 之后应该……」的愿望？
+5. 断言草图只用公开操作吗？伸手进 store.entries 或 kb.jsonl 就标「接口缺口」。
+6. add()/search() 返回内部 dict 威胁哪条不变量，草图里指出来了吗？
+
+结论：这张草图能当合同用吗？不变量守得住吗？哪处是接口形状问题而不是测试问题？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把接口理解成签名</td><td>草图只有函数名和参数</td><td>补不变量、错误模式、顺序约束——接口是「必须知道的一切」</td></tr>
+      <tr><td class="what">藏得太多</td><td>行为契约也被藏，接口成谜语</td><td>藏实现选择、露行为契约（Ousterhout ch.6, p44）</td></tr>
+      <tr><td class="what">不变量写成愿望</td><td>「数据要正确」「搜索要可靠」</td><td>写成可断言的句子：「id 非空且唯一」是，心情不是</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>deep module 深模块、shallow module 浅模块、module 模块、interface 接口、implementation 实现、depth 深度、information hiding 信息隐藏、invariant 不变量、rep invariant 表示不变量、abstraction function 抽象函数、representation independence 表示独立、representation exposure 表示暴露、precondition 前置条件、leverage 杠杆、locality 局部性、deletion test 删除测试、interface sketch 接口草图、general-purpose 通用、special-purpose 特化、obscurity 晦涩、pass-through 转发层、abstract data type 抽象数据类型（ADT）。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031 Reading 10《Abstract Data Types》、Reading 11《Abstraction Functions &amp; Rep Invariants》；SWEBOK v4 第 3 章 p83–98（设计原则见 p86）。</p>
+  <p><strong>经典来源：</strong>Ousterhout《A Philosophy of Software Design》第二版摘录 ch.6（p39–44）与 ch.21（p172）；Parnas 1972（信息隐藏出处，本地无全文，经 SWEBOK 文献 [32] 与 MIT 6.031 转引）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）。本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0014-deep-modules.html">第 14 课：深模块、信息隐藏与不变量</a> · <a href="course-map.html">课程地图</a> · <a href="0013-triage-card.html">第 13 课：triage 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

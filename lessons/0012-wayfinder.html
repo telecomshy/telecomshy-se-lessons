@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 12 课 · 模糊的大项目：wayfinder 与决策单</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 2 · 计划与过程 · 第 12 课</p>
+  <h1>模糊的大项目：wayfinder 与决策单</h1>
+  <p class="lede">前两课有一条隐含前提：工作已经拆成了带阻塞边的工单——第 8 课的 spec、第 10 课的拆单。可如果迎面撞上一个松散的、模糊的大想法——大到、乱到一个 agent 会话都装不下、连一张工单都拆不出来时，怎么办？答案不是更细的估算，而是先把雾变成图：wayfinder 把一个松散的大想法画成 issue tracker 上一张「决策地图」，地图上每个 ticket 是一道待解的决定、不是一段待做的活，一次解一张，直到通往目的地的路清晰。这一课讲清楚什么是 fog of war（迷雾）、什么时候不该用 wayfinder，以及「先解决定、别急着动手」这条铁律。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 35–45 分钟</span>
+  <span><b>前置</b> 第 9、10、11 课</span>
+  <span><b>产出</b> 一张「决策地图」的判据 + 一张参考卡</span>
+  <span><b>主读物</b> SWEBOK 第 9 章；SE-EDU《Project Planning》Milestones；CMU 17-313《03-project-planning》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清 wayfinder 落在第 2 课八个活动里的哪一块，以及它和上一课估算、下一课 triage 的关系。</li>
+    <li>区分三种工作：已经拆成工单的（第 10 课）、已经能开工的（第 11 课）、以及「大到连工单都拆不出来」的（本课）。</li>
+    <li>说清 fog of war（迷雾）是什么、判据是「现在能不能把问题说尖」而不是「现在能不能回答」，以及「什么时候不该用 wayfinder」。</li>
+    <li>说清决策地图 vs spec（第 8 课）vs 工单图（第 10 课）的区别：地图解决定、不产交付物。</li>
+    <li>在课文构造的「多来源知识库」例子里，用「命名目的地 → 摸雾 → 建图 → 解第一张」走完一张纸面决策地图。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课仍在 <strong>Process &amp; Management（过程与管理）</strong>，是模块 2 的第四站、也是倒数第二站。前两站处理的是「能开工」的活：第 10 课用 to-tickets 把 spec 拆成带阻塞边的工单，第 11 课给这些工单估时。这一课处理的是它们的反面——一个<strong>大到、模糊到连工单都拆不出来的项目</strong>。第 13 课（triage）在它之后，处理「别人递进来的、还没理清的外部问题」；两者都在回答同一件事：还没到「能不能做」之前，先想清楚「这是什么」。</p>
+  <p>为什么这是软件工程的一部分，而不是可有可无的管理词？SWEBOK 在计划这一章给了直接依据：<strong>自适应式过程项目，通常只从对需求的初始理解给出总体估算，或者反过来用约束反推迭代数和每圈的投入；而不是一次就把整个项目排满</strong>（SWEBOK v4, ch.9, p9-9）。换句话说，当需求本身还是一片雾时，软件工程的标准做法不是假装能一次排满，而是<strong>先承认「计划还排不满」，再用小步、可调整的方式把雾剥开</strong>——本课的 wayfinder 就是把这句话变成一个可操作的动作。它跟第 9 课那条「预测式 → 自适应式」连续谱是同一个坐标：越是需求不稳、风险越高、越需要早拿反馈的项目，越该靠「先想清、再小步」的自适应玩法（回指第 9 课）。</p>
+  <p>SE-EDU 在讲里程碑（milestone，里程碑，第 10 课已经引过）时给过一句和它配套的话：<strong>「有些项目不现实要求为整个项目做一份详细计划——可以用一份高层计划，加上接下来几个里程碑的详细计划」</strong>（SE-EDU《Project Planning》, Milestones）。这句话在 wayfinder 里被放大了：不只里程碑要做「高层 + 近期详设」，连「这个项目到底是什么」都先不锁死——先用一张低清地图带大家看方向，再一张一张解决定，路清晰了才谈详细的拆单。</p>
+  <p>这一课的产物是一张「决策地图」的判读框架：你看得懂它，就能在真实项目里用它；但本课的练习是纸面的，不要求你真去建地图（见「练习」）。第 13 课会把它和 triage 接上。</p>
+</section>
+
+<section>
+  <h2>问题与概念：不是更细的估算，是把雾变成图</h2>
+  <p>先回到你手里那张「该先做的工单」。第 11 课你估了工时，第 10 课你拆了工单——但这两课的原料都是同一个东西：第 8 课那份 spec。现在换一个场景：你的 agent 交给你一页纸，上面写着一句话——「把迷你知识库升级成多来源知识库，网页 / PDF / 笔记都要能进、能检索、能引用」。就这么一句话。你没写过 spec，不知道网页和 PDF 要不要一个入口、检索到什么精度算好、笔记是不是要重开格式；你对「先做哪个」毫无头绪，因为连「做什么」都没定。这时候你会发现：第 10 课的工单、第 11 课的估算，全都没法用——它们假设「要做什么已经定了」，而这里最缺的恰恰是「这到底是什么」。</p>
+  <p>这个处境有个名字，也是本课的核心概念：<strong>fog of war（战争迷雾）</strong>。它借了战争用语，指「你能感到有些决定/探索要来，但一时还说不出尖——因为它们挂在还没定的问题上」。注意这里的判据，是本课最要紧的一句话：<strong>判据不是「我现在能不能回答」，而是「我现在能不能把问题说清楚」</strong>。能说清楚，就是雾已经散到可以建「一张 ticket」；还说不清楚，那就还属于雾。这两者差得很远：一个模糊的大项目，可能 70% 还在雾里。</p>
+  <p>而 wayfinder 的全部动作，就是<strong>把雾一点一点剥开，直到你不再需要「猜」</strong>——不是猜它要什么，而是把它一张张变成「能说尖的问题」，再逐个解决。</p>
+
+  <h3>地图：不是存决定的库，是索引</h3>
+  <p>wayfinder 的核心产物是一张<strong>决策地图（map）</strong>：一张打在 issue tracker 上、加了 <code>wayfinder:map</code> 标签的单一 issue。地图上有几段：<strong>Destination（目的地）</strong>、<strong>Notes（注意事项）</strong>、<strong>Decisions so far（目前做过的决定）</strong>、<strong>Not yet specified（还没明确说的雾）</strong>、<strong>Out of scope（超出范围）</strong>——每段各司其职，下面逐个讲。</p>
+  <p>有一个关键的原则：地图是<strong>索引（index），不是存储（store）</strong>——每个决定只活在一个地方（它自己的 ticket 里），地图上不重复它的全貌，只写一行摘要（gist）加链接。换句话说，你看地图是想知道「决定了什么、该看哪张 ticket」，而不是在地图上再读一遍决定的内容。这个约定保证「一份决定只住一个地方」，避免来回抄写、抄出两个版本。</p>
+
+  <h3>destination：先命名目的地，再走路</h3>
+  <p>wayfinder 的 SKILL.md 说，命名目的地是建图的第一步，它塑造了后面的每一张 ticket：一个 effort 的目的地，可能是「一份 spec（交给 to-spec 开工）」、可能是「一个要锁定的决定（在排计划之前先定）」、也可能是「一次原地改造（比如一次数据结构迁移）」。一句话：目的地回答「走到这趟的尽头是什么」。命名它，才谈得上「哪条路通向它」——也才好定「哪些事在范围之外」（见下）。</p>
+
+  <h3>Plan, don't do：地图产决定，不产交付物</h3>
+  <p>这是 wayfinder 最重要的一条铁律，SKILL.md 用「Plan, don't do（计划，别动手）」来命名：<strong>wayfinder 默认只做计划——每张 ticket 解决的是一道决定，不是一段要执行的活；地图「完成」的时刻是「路已经清晰、开工之前没有遗留的待定项」，而不是「功能做完了」</strong>。为什么这么重要？因为它把「想清楚」和「做出来」这两件事分开：你手里这张知识库升级想法，最需要的是先把它想清楚——哪些决定必须先定、哪些路可选、边界在哪；想清楚之前动手，是在雾里乱撞。而「想直接开做」的冲动，SKILL.md 给了一个贴切的诊断：<strong>那通常说明你已经走到地图的边缘，该把这件事交出去了</strong>——也就是「地图之旅结束，该开工了」的信号。</p>
+  <p>但注意：这是一条「默认」。SKILL.md 说 effort 可以在自己的 Notes 里改写这条默认——如果它真需要在图里直接干活，可以带执行进图。但默认情况下，先解决定。</p>
+
+  <h3>out of scope：目的地定边界</h3>
+  <p>最后一块，是 fog 的唯一例外：<strong>out of scope（范围外）</strong>。雾永远只往目的地聚；一旦目的地定了，工作「超出目的地」的就是 out of scope——它不是雾，不该放进 Not yet specified，而有自己的 Out of scope 区块。决定某件事 out of scope 是一次「范围设定」的动作，不是「路上的一步」；被划出范围的东西「永不毕业」（frontier 到目的地为止），只有当目的地被重画时，它才可能以新 effort 的形式回来。这个设计回答了一个常见烦恼：探索大项目时，很容易被「顺带想到的」带跑——有了 out of scope，你有一条干净的槽把这些放进去。</p>
+</section>
+
+<section>
+  <h2>行业做法：从「一次排满」到「先把雾剥开」</h2>
+  <p>把行业做法摆开，你会发现 wayfinder 不是 Matt 凭空造的东西，而是把软件工程里一条逐渐成熟的思路——<strong>项目越大越模糊，越不该一次排满，越该用「先小步、再扩展」的玩法</strong>——具体成了一个工具。</p>
+
+  <h3>标准：SWEBOK 的自适应式计划</h3>
+  <p>SWEBOK 在「计划」一节把它写成标准意义上的建议：<strong>当项目需求多变、一次排满不现实时，自适应式项目通常只从对需求的初始理解给出一个粗略的总体估算，或者反过来用约束（如截止日期、预算）反推迭代数和每段的投入</strong>（SWEBOK v4, ch.9, p9-9）。这是一条 SWEBOK 明确写的、业内的通用做法，它在说：<strong>需求不稳时，工程计划不该装作「一次全排满」；而该承认「先有方向，后有细节」</strong>。wayfinder 是它的实现——但它更进一步：连「方向」都不是一次定的，而是一张地图 + 一个一个解。</p>
+
+  <h3>SE-EDU 的里程碑：高层计划 + 近详设</h3>
+  <p>SE-EDU 在《Project Planning》的 Milestones 一节，给了本课另一块根基：<strong>里程碑是阶段进展的标志；决定一个里程碑交付哪些特性时，要参考依赖和优先级；有些项目不现实为整个项目做详细计划，可以用一份高层计划 + 接下来几个里程碑的详细计划</strong>（SE-EDU《Project Planning》，Milestones；第 10 课已引）。wayfinder 把这句「高层 + 近详设」推到更前：连「先做什么决定」都不锁死，先立一张高层地图、逐个解决「近处」的决定，远处保持 fog（Not yet specified）。它没有发明「分层计划」——它只是把「何时锁死」的刻度，从「里程碑」挪到了「决策」。这一条正好接上第 11 课的「估算粒度随过程取向走」——你在第 9 课选自适应，第 11 课估算时就该用「总体 + 逐迭代」，本课的决策图正是它的「逐迭代」展开。</p>
+
+  <h3>主流 / 取舍：探索类项目的两条路</h3>
+  <p>行业里对「大而模糊」有两条主流的路，各有取舍。一条是 <strong>roadmap（路线图）+ 阶段化</strong>：把项目摊成几个阶段，每个阶段有明确交付，先做风险最高 / 收益最高的一块。它适用于「目标清楚、路径不确定」的项目——但问题在于它假定「先定好目标」，当目标本身都模糊时，roadmap 容易变成「一堆高级名词的预写」。另一条是 <strong>探索原型（spike / prototype）</strong>：先做一个廉价、可丢的东西来回答「这能不能」——这对应第 6 模块的 prototype 课（第 30 课）。这两条路都不是标准，是主流做法，各有取舍：阶段化强在「有条理」，弱在「定了还要改」；spike 强在「快、可调」，弱在「不成体系，做完可能丢」。wayfinder 不替代它们，而是排在它们之前：先用地图判断「该走阶段化还是 spike」，再决定——它管的不是「做」，是「先想清做什么」。这个分层，是软件工程里「先决策、后行动」的通用结构。</p>
+
+  <h3>为什么 skill 做成「地图」而不是「规划文档」</h3>
+  <p>还有一个只有「地图」才成立的理由，需要单独说：它住在 issue tracker 上、是「活的」。规划文档写完了就躺在盘里；而地图的每一块（决策、雾、out of scope）都跟着一个真实的 ticket，每解一张，地图多一行。这也让它天然共享了 issue tracker 的协作属性——多人可以同时并发解「未阻塞」的 ticket，地图是共同看板而不是私密文档。这是 wayfinder 相对「写一份规划文档」的差异，也是它「住进 tracker」的理由。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：wayfinder 把雾变成一张可作业的地图</h2>
+  <p>这套技能包里，把「把雾变成一张决策地图」落地的，是 <code>wayfinder</code>。它和 to-spec、to-tickets 一样，是<strong>用户调用</strong>的技能（它的 SKILL.md 标了 <code>disable-model-invocation: true</code>）：你在沙盒里主动让它跑，它不会被 agent 随手拉起——因为「要不要为这件事建图」本身就是要你先拍板的事。它也有一个前置：issue tracker 得先配好（第 3 课的 setup 做过、沙盒的 <code>docs/agents/issue-tracker.md</code> 在）。</p>
+  <p>wayfinder 有两种工作方式：建图（chart the map）和走图（work through the map）。</p>
+
+  <h3>先看「建图」：把一句话变成一个目的地 + 一张图</h3>
+  <p>你喂给它那个「多来源知识库」的想法。它第一步会<strong>命名目的地</strong>——它会用 grilling（逼问，第 5 课）加 domain-modeling（第 4 课）把「这次 effort 走到哪算完」逼出来：是要一份 spec？一个锁定的决定？还是一次原地改动（迁移）？目的地定下来，才棋局。<br>
+  第二步，它会<strong>广度优先地 grill 摸前沿</strong>——不是逮着一个问题死磕，而是「扇面扫过整个空间」，把那些现在能说的决定和可先行步浮出来。<strong>如果这次扫完「没有雾」</strong>——即「通往目的地的路已经一目了然、整个旅程小到一个会话能装下」——那它就不会建图，而是停下来问你「要不要直接开工」。这一条就是本课标题里「何时不该用 wayfinder」的判据（见下节）。<br>
+  第三步，<strong>创建地图</strong>（标 <code>wayfinder:map</code>），把 fog 写进 Not yet specified；再<strong>建所有现在能指定的 ticket</strong> 作为地图的子 issue；然后再跑第二遍去连「阻塞边」——因为它需要先有 issue 的 id 才能引用彼此。最后，<strong>把 research 型 ticket 交给子 agent 去并行查</strong>（查文档、第三方 API 这类「读外」的事），然后它停下来：建图是一次 session 的活，它不在这趟里自己解决任何一张 ticket。</p>
+
+  <h3>再看「走图」：解一张、关一张、推进一格</h3>
+  <p>你在别天的 session 里带着地图来：它会把地图的「低清图」加载进来（Not every ticket body，只 load 高层），然后取 frontier 的第一张 ticket。<strong>frontier（前沿）第三次出现了</strong>，这里要特别把它和前面两个区清楚：第 5 课的 frontier 是「grilling 的设计树前沿」——那些还没被问清的决定；第 10 课的 frontier 是「所有前置都完成、现在就能开工的工单」；而 wayfinder 的 frontier 是「地图上 <strong>未被阻塞、未被认领、开放中的子 ticket</strong>」——它是「现在可以解的决定」而不是「现在可以做的活」。三个都是「下一步该看哪」，但一个在需求、一个在计划-执行、一个在「先理清」——别把它们混成一个。</p>
+  <p>取到 ticket 后，wayfinder 先做一件规矩事：<strong>先 assign 认领</strong>（把它指给自己），再干活——因为可能有人（另一个 session）并发走同一张，assign 让其他人看到它已被认领而跳过。然后按它的类型去解（四种类型见下），解完把答案作为 resolution 评论、把 issue 关掉、并在地图的「Decisions so far」里追加一行索引链接。然后，<strong>毕业新雾</strong>：这次解答把前头的雾剥开，凡是「现在能说尖了」的部分，长成新的 ticket；同时清掉已经在 Not yet specified 里的对应段。而如果一个决定暴露出来「某张 ticket 实际上在目的地之外」，就把划进 out of scope 关掉——而不是硬「把它解出来」。</p>
+
+  <h3>四种 ticket 类型：解「什么」决定了谁来解</h3>
+  <p>每张决策 ticket 都带着一个 <code>wayfinder:&lt;type&gt;</code> 标签，表示它属于哪一类决定，从而决定是「agent 独立解」还是「要真人一起解」——后者叫 <strong>HITL（human in the loop，人机回环）</strong>，即必须有人「亲自说话、代表自己」才能解；前者叫 <strong>AFK（away from keyboard，无人值守）</strong>，agent 自己就能解。<strong>铁律：HITL 的 ticket，agent 绝不能替人回答；一个「自己答自己问题」的 grilling 就坏了这条。</strong> 四类型是：</p>
+  <ul>
+    <li><strong>research（AFK）</strong>：读文档、查第三方 API、查知识库，弄清一个决定卡着的事实；由子 agent 调 "research" 技能解（回指第 31 课的研究）。</li>
+    <li><strong>prototype（HITL）</strong>：用一个廉价、粗糙、具体的产物（大纲 / 草稿 / 桩 / UI 或逻辑代码）来「把讨论加高保真」，让当事人边看边反应；解它要调 "prototype" 技能（回指第 30 课）。「它长这样还是那样」这类问题适合。</li>
+    <li><strong>grilling（HITL）</strong>：对话——默认类型；解它必须同时调 "grilling" 和 "domain-modeling" 两个技能（回指第 5 课逼问、第 4 课领域语言）。</li>
+    <li><strong>task（HITL 或 AFK）</strong>：做决定的「前置手工活」——没什么好定、好原型、好研究的，但讨论卡在「这事没做完」上；比如去注册一个服务、把数据移出来看看形状。它是四种里唯一「做活」而不是「决定」的类型，但它是为「解锁一个决定」服务，不是为「到达目的地」服务。</li>
+  </ul>
+  <p>你注意到没有：wayfinder 没有「自己发明一种新类型」，它把第 5 课的 grilling、第 30 课的 prototype、第 31 课的研究这三个已有 skill，用「解决一个什么决定」的方式串了起来。这就是「决策地图」与「工单图」的本质区别（呼应本课开头）：工单图上的每张是「一段待做的活」（第 10 课），而决策地图上的每张是「一道待解决定」——它们的交付物是「一个决定」，不是「一段代码」。最后，「一次 session 最多解一张 ticket」（research 例外），这也是给你踩住刹车、别一口气把图烧完的节奏。</p>
+
+  <h3>人拍板：哪三件是 agent 不能替你做的</h3>
+  <p>把 wayfinder 的「自动化」拆开，你会看到它其实自动化的是「把雾剥成一张可作业的地图 + 逐张推进」这整套机械劳动——命名目的地、扫雾、建 ticket、连阻塞、assign、写 resolution、毕业新雾。剩下三件必须由你拍板：<strong>目的地是什么</strong>（这是整个 effort 的根，agent 只能建议，你定到底要走到哪）；<strong>一张雾是不是雾</strong>（你判断「现在能不能说尖」——这是本课的关键判据；agent 帮你整理，判断在你）；以及 <strong>何时「就是不该用 wayfinder」</strong>（见下一节）。agent 能帮你把雾「看」成一张清单，但「这是该不该建图」的信号，是你在它问「我该直接开工吗」时拍板。</p>
+</section>
+
+<section>
+  <h2>「何时不该用 wayfinder」：判据</h2>
+  <p>这是 wayfinder 里一个很特别、也常被忽略的部分——它自己告诉你什么时候别用它。判据就一条，写得很干脆：<strong>建图时，grill 广度优先扫完之后如果「没有雾」——整个旅程小到、清楚到一个 agent session 就能装完——那就别建图</strong>（SKILL.md，Chart the map 第 2 步）。这时建一张图是纯浪费：一张图 + 一堆 ticket 的工作量，比「直接干」还大。</p>
+  <p>什么时候算是「没雾」？回到本课判据的写法：如果「现在就能把要做的决定（或路径）说清楚」，就不是雾；如果一张都能直接开工/排进当前 session，就别绕到 wayfinder 里。举几个「就别用」的例子：一个「给接口加一个字段、改一处调用」的活；一个「明天就交付的小改动」；一个你已经能拆出「三张工单」的工作。这些都在「第 10 课/第 11 课」的范畴里，直接走 spec → tickets → implement 就好。</p>
+  <p>反过来，什么时候「很值得用」：你想用 wayfinder 处理的是「<strong>太大 / 太模糊，一个 session 装不完，甚至「拆」本身都要先定一个决定</strong>」的那类。它用一句话概括：<strong>当「从这里到那里怎么走」本身需要先做一堆决定，而且这些决定大小到值得一张图时</strong>。本课的贯穿例子——把迷你知识库升级为「多来源知识库（网页 / PDF / 笔记混合）」——正好落到这一类：它有明确的「要走到哪」（升级成支持多来源），但路径上挤满了还没定的决定（见「练习」）。</p>
+</section>
+
+<section>
+  <h2>练习：纸面画一张「多来源知识库」的决策地图</h2>
+  <p>本课练习不写代码、不真建 issue tracker，而是一张纯纸面的决策地图——像第 9 课那张「选型对照表」一样，把整个流程用「纸面走查」练一遍。贯穿例子就用课里的：<strong>把迷你知识库升级为多来源知识库（网页 / PDF / 笔记混合）</strong>。它不是真实项目，只存在课文和你的纸上。</p>
+
+  <ol class="steps">
+    <li><strong>命名目的地。</strong>先给它写一句「走到尽头是什么」：是「一份 spec（可交给 to-spec 开工）」？还是「一个锁定的决定（比如采用哪套解析库）」？写上你选哪个，并写一句为什么。这是地图上唯一「先定」的格子。</li>
+    <li><strong>扫雾。</strong>假装你在「广度优先 grill」它：把所有「现在说尖不了的」决定都堆到一张 Not yet specified 列表。它能是 4–6 个「网页要不要先做版式清洗？PDF 用哪个库解析？笔记复用现在格式还是要改？检索要不要升级成新机制？引用格式要不要统一？」——想不出就问自己：「我现在能把它说成一张 ticket 吗？」不能，就进雾。</li>
+    <li><strong>挑一张能说尖的 ticket。</strong>从雾里找一张「现在就能把问题说清」的（不要求现在能回答），比如「要不要先做「网页 → 统一中间格式」这一步」——这个你其实已经能说清它是什么了，所以它不是雾。写下这一张的 <code>type</code>（grilling / prototype / research / task）和它该 HITL 还是 AFK。</li>
+    <li><strong>判「何时不该用」。</strong> 回到开头：如果这个「多来源升级」你掂量下来，其实「路已经清楚、一次 session 就够」——那就不该建图。写一句：什么情况下你会说「这不用 wayfinder，直接走 spec → tickets」？</li>
+    <li><strong>走一下「解一张」。</strong>假想解上面那张 ticket：写一句 resolution comment、在「Decisions so far」加一行，然后「这会不会让雾里哪块毕业成新 ticket」。这五步做完，你就把 wayfinder 的动作过了一遍。</li>
+  </ol>
+
+  <p>写的时候如果发现自己「Destination 写不出来」，那不是练习的问题，是你还没想清「这次升级走到哪算完」——回「问题与概念」把 destination 那节再读一遍。如果雾里挤了「要把全站都改了」这种一看就 out of scope 的，记得它有 Out of scope 那个槽，别硬塞进 Not yet specified。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这张决策地图「站得住吗」</h2>
+  <p>判断纸面练习画得对不对，让 agent 按下面这份检查单过一遍。它查的不是格式，是「你有没有把「雾」和「可开工」分开、有没有守住「地图解决的是决定」这条线」。</p>
+
+  <pre><code>读我这份「多来源知识库」的纸面决策地图（目的地 / Not yet specified / 我挑的那张 ticket / 是否该用 wayfinder 的判断），
+再读 C:\Users\admin\.agents\skills\wayfinder\SKILL.md。
+
+逐条检查：
+1. Destination 先写清了吗？它是一句「走到什么算」的具体描述，不是「把这做大」这类口号？
+2. Not yet specified 里的每一项，是「现在说尖不了的雾」，还是其实已经是「一张能说清的 ticket」？（按本课判据「能不能把问题说尖」，不是「能不能回答」）
+3. 我挑的那张 ticket 的 type 标对了吗？（grilling=对话、prototype=要造个粗糙产物、research=查文档/API、task=为决定扫障的手工活）？HITL / AFK 分对了吗？
+4. 有没有把「决定」写成「待做交付物」？（地图上应该是「解决什么决定」，不是「做什么功能」）
+5. out of scope 和 Not yet specified 分开了吗？有没有「超出目的地但还在雾里」的混着？
+6. 我有没有守「Plan, don't do」——解 ticket 时是不是只要「解决定」、没有滑到「顺便把活也做了」？
+
+逐条引用指出问题，最后给结论：这张地图的「雾和 ticket」分得清吗？现在该继续建图、还是该直接走 spec → tickets？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是「把雾当成 ticket」了——本课判据没过，这部分该回 Not yet specified。另一类是「把决定当成活」了——你写「那张 ticket 要『把网页转 PDF 转换做出来』」，错在它不该是「做出来」，而是「先定『用哪个库、要不要先清洗』」这种决定。真正的检查单不查你做了多少，查你有没有把「决定」和「交付物」彻底分开。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>当一个项目大到、模糊到连工单都拆不出来时，答案不是更细的估算，而是先把雾变图：fog of war 判据是「现在能不能把问题说尖」，不是「现在能不能回答」。</li>
+    <li>决策地图解决的是「决定」，不是「交付物」（Plan, don't do）；地图是索引不是存储，每张 ticket 是一道待解的决定，frontier 是「开放、未阻塞、未认领」的决策。</li>
+    <li>何时不该用 wayfinder：grill 扫完后如果「没有雾」（整个能一次装完、能直接说清），就别建图直接开工——建图本身是额外的活。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 9 章 p9-9（自适应式：需求不稳时不宜预先排满，用总体估算 + 逐迭代调整、约束反推迭代数）；SE-EDU《Project Planning》Milestones（高层计划 + 近几个里程碑详设——「不现实为整个项目做详细计划」）；延伸 CMU 17-313《03-project-planning》（计划、里程碑与风险，作延伸来源）。</p>
+  <p><strong>实践方式：</strong><code>wayfinder</code>（用户调用，<code>disable-model-invocation: true</code>）——建图（命名目的地 → 广度优先 grill 摸前沿 → 无雾则停 → 建地图 → 建可指定 ticket → 第二遍连阻塞边 → research 子代理并行）与走图（load 高层图 → 认领 frontier 第一张 → 按类型解 → resolution + 关 issue + 地图追加一行 → 毕业新雾 / 清 out of scope）。本机路径 <code>C:\Users\admin\.agents\skills\wayfinder\</code>。</p>
+  <p><strong>延伸：</strong>第 13 课「外部输入：triage 与 agent-ready」——处理别人递进来的、还没理清的外部问题；<strong>本课练习不真建图</strong>（纸面走查），需要时再让 agent 用 wayfinder 建真实地图。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 13 课「外部输入：triage 与 agent-ready」。这一课你学会「太模糊 → 先画决策地图」，而现实中很多大项目不是你自己起的，是别人递给你的——一个 issue、一个外部反馈、一条需求。下一课讲 triage：怎么把「别人递进来、没理清、还不能动手」的外部问题，整理成一份 agent-ready 的 brief；它和本课 wayfinder 是同一个「先理清再动手」的家族，只是输入从「你自己脑子里的雾」换成了「别人递进来的原始问题」。</p>
+  <p>你这张纸面地图画好后，贴给我，或让 agent 按上面的检查单过一遍。如果你发现「Destination 写不出来」，那不是画法的问题，是你还没想清「这张图走到哪算」——回「问题与概念」的 destination 那节；如果越画越多、雾里挤了不该在的「超范围」项，就把它划进 Out of scope，而不是硬塞进 Not yet specified。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0012-wayfinder-card.html">wayfinder 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

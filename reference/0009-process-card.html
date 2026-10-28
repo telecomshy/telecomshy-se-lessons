@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>过程模型参考卡 · 瀑布、迭代、敏捷与谱系定位</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 9 课</p>
+  <h1>过程模型参考卡</h1>
+  <p class="lede">spec 就绪不等于「知道怎么开工」。过程模型在回答「怎么把工作排开」，本质是你对「需求何时敢提前写死」的预判。没有普适最佳，只有按项目画像在「预测式 → 自适应式」连续谱上挑一个落点。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>过程在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Process &amp; Management（过程与管理）</td><td>模块二的导读：第 8 课 spec 就绪后，回答「用什么样的过程把它排出来」。给第 10 课 to-tickets、第 11 课估算定位。</td></tr>
+      <tr><td class="skill">SWEBOK 支点</td><td>「没有理想过程存在，只能挑选和适配」（ch.10 p10-2）；过程是一条 predictive → adaptive 的连续谱（ch.9 p9-8）。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>核心概念：过程在回答什么</h2>
+<p><strong>过程模型（process model）= 你怎么把工作排开。</strong>选择它，本质是回答「需求此刻有多可确定」——这就是预测式与自适应式的分歧。</p>
+
+<h2>谱系：predictive → adaptive</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>端点</th><th>特征</th></tr></thead>
+    <tbody>
+      <tr><td class="what">预测式 predictive</td><td>开工前写死需求和架构、尽量少迭代；一次计划成本最低。</td></tr>
+      <tr><td class="what">自适应式 adaptive</td><td>接受需求会变、小步迭代、频繁调计划；靠反馈兜底。</td></tr>
+      <tr><td class="what">中间</td><td>预设日程产出增量（偏预测式）或频繁更新的小周期产出增量（偏自适应式）。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三种过程：各怕什么</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>过程</th><th>怎么做</th><th>适合</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">瀑布式 waterfall（顺序式）</td><td>需求 → 设计 → 实现 → 测试一条直线，只向前走，需求定下后基本不改（SE-EDU Sequential）。</td><td>需求一开始就被理解清楚、要按合同交付</td><td>需求在开工后才变 → 一次性计划全部作废</td></tr>
+      <tr><td class="what">迭代式 iterative</td><td>多轮迭代，每圈走全程、产新版本、反馈进下一圈；广度优先每圈有可用产品 / 深度优先每圈厚实一部分</td><td>需求会变、要多早拿到反馈</td><td>计划要随反馈反复调整，得有反馈回路</td></tr>
+      <tr><td class="what">敏捷 agile（Scrum / XP）</td><td>需求按价值进 product backlog；Sprint（冲刺）内需求冻结；结束时演示 + 复盘；依赖持续客户协作</td><td>需求频繁变化、要快速交付拿反馈</td><td>高度依赖客户参与和团队自律，否则塌空</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>没有标准答案：选型的四个变量</h2>
+<p>SWEBOK：没有理想过程，只有对项目和上下文的挑选、适配。选型看四件事：<strong>需求多稳、风险多高、多早要反馈、团队 / 客户能不能持续参与</strong>。</p>
+<div class="card-rule">
+  <p><strong>别把任何过程当「最佳实践」。</strong>过程不是教条，是一个你按项目画的取舍。</p>
+</div>
+
+<h2>本课程自己这套流程站在哪</h2>
+<ul>
+  <li>链路：grill → to-spec → to-tickets → implement → code-review（第 3 课五步）＝一套完整过程。</li>
+  <li>偏预测式：先 spec 再动手、每张工单带验收、一次只做一件事。</li>
+  <li>偏自适应式：拆得小、每张可独立验收、有反馈回路、没写死的需求靠下一张工单补。</li>
+  <li>为什么是中间路：<strong>单人 + agent</strong>，没有团队沟通成本、没有合同化交付压力，不必为它们买单。</li>
+  <li>提醒：别把本课中间路当新教条；真实项目要按画像往谱两端选。</li>
+</ul>
+
+<h2>练习怎么验</h2>
+<pre><code>读我这份「什么项目适合什么过程」的对照表，再读
+SWEBOK 第 9、10 章、SE-EDU Process Models。
+
+逐条检查：
+1. 我选的模型，跟「需求稳不稳、反馈快不快」对上了吗？
+2. 有没有把某过程当绝对最佳？有没有写下「这个项目为什么」？
+3. 我在 predictive / adaptive 谱上的定位跟理由一致吗？
+4. 备注里标出「明天要交货」这类变量会让选型怎么变了吗？
+
+最后给结论：现在选型和理由还成立吗？哪里站不住？</code></pre>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">把过程当教条</td><td>「敏捷就是对的」「瀑布过时了」</td><td>每次都说清「这个项目为什么」，不写「一般最好」</td></tr>
+      <tr><td class="what">忘了先想需求稳不稳</td><td>上来就选，不画项目画像</td><td>先写需求多稳、反馈多快，再落到谱上</td></tr>
+      <tr><td class="what">把本课流程当新模板</td><td>真实项目也照搬「先 spec 再小步」</td><td>记住选型的变量，按画像选，别照搬</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>process model 过程模型、predictive 预测式、adaptive 自适应式、waterfall 瀑布式、sequential 顺序式、iterative 迭代式、agile 敏捷、Sprint 冲刺、product backlog 产品待办。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 10 章 p10-2（无理想过程、只能挑选适配）；第 9 章 p9-8~9-9（predictive → adaptive 连续谱、瀑布 / 增量 / 螺旋 / 敏捷）；SE-EDU《Process Models》全章（Sequential / Iterative / Agile）。</p>
+  <p><strong>实践方式：</strong>本课无独立技能，回指第 3 课五步链路（grill → spec → tickets → implement → review）。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0009-process-models.html">第 9 课：过程模型：瀑布、迭代、敏捷，以及这套流程的位置</a> · <a href="course-map.html">课程地图</a> · <a href="0008-spec-card.html">第 8 课：Spec 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

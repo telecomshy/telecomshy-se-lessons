@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 8 课 · Spec：从共识到可执行</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 1 · 需求与语言 · 第 8 课</p>
+  <h1>Spec：从共识到可执行</h1>
+  <p class="lede">第 4 课给了词、第 5 课问了决定、第 6 课写了需求、第 7 课记了 ADR——这些散落在词表、清单和文档里的共识，还不足以让 agent 开工。这一课用 to-spec 把它们合写成一份 spec，发布到仓库的 issue tracker 上，标成「可以交给 agent 做了」。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 35–45 分钟</span>
+  <span><b>前置</b> 第 4、6、7 课</span>
+  <span><b>产出</b> 一份发布到 tracker 的 spec + 一张参考卡</span>
+  <span><b>主读物</b> SWEBOK 第 1 章；CMU 17-313《07-specs》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清 spec 落在第 2 课八个活动里的哪一块，以及它和前四课、下一课的关系。</li>
+    <li>说清 spec 和需求清单的区别：它是「我们能开工的依据」，可执行、可评审，不是又一份需求文档。</li>
+    <li>说清一份 spec 的结构：Problem / Solution / User Stories / Implementation Decisions / Testing Decisions / Out of Scope。</li>
+    <li>在沙盒里用 to-spec 把前几课攒下的共识发布成一份 spec，落到 tracker 并标成 ready-for-agent。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课仍然落在 <strong>Requirements（需求）</strong>，但它是这条链的收尾。前四课是一条完整的链：第 4 课给了你一套一致的词（<code>GLOSSARY.md</code>），第 5 课把藏在脑里的决定一句句逼出来，第 6 课把决定写成可验收的需求清单，第 7 课从清单里挑出「值得留下」的决定记成 ADR。第 8 课把所有这些——词、需求、决定——合写成一份 <strong>spec（Specification，规格说明）</strong>，落到仓库的 issue tracker（问题跟踪器）上。</p>
+  <p>SWEBOK 把需求活动拆成 elicitation（需求获取）、analysis（分析）、specification（规格说明）、validation（验证）、management（管理）五类（SWEBOK v4, ch1, p48–61）。前四课踩过前四类的大部分：获取、分析、写规格、验证；第 7 课踩了 management。第 8 课踩的是 specification 这一步的收口——但不是「再写一份需求文档」，而是把已经到手的共识，织成一份<strong>给 agent 和 reviewer 都看得懂的开工文件</strong>。</p>
+  <p>为什么必须有这一步？因为散落的共识和一份 spec 是两回事。第 6 课的需求清单回答了「系统必须表现出什么」，第 7 课的 ADR 回答了「为什么这样定」，第 4 课的词表管的是「词的意思要对齐」。但 agent 开工时，需要一份<strong>就这一项功能、按固定结构写清楚</strong>的文件，能读一遍就动手，而不是去翻三个不同用途的文档。这份文件，就是本课的 spec。</p>
+  <p>它是模块 1 的最后一块。下一课（第 9 课）从模块 1 进入模块 2，讨论「拿到 spec 之后，用什么样的过程把它排出来」；而这份 spec 本身，又是第 10 课用 to-tickets 拆成工单的原料。所以这一课只解决「把共识变成一份能开工的 spec」；怎么排过程、怎么拆工单，留给下一课。</p>
+</section>
+
+<section>
+  <h2>问题与概念：为什么散落的共识还不够</h2>
+  <p>先回到你手上的三样东西。假设你花了一周，把知识库的「总结功能」想清楚了：第 4 课统一了词（Document、索引、条目），第 6 课写下了需求清单（把输入压缩成两到三句中文、输出带引用、500 毫秒内返回、总结落成条目），第 7 课记了一条 ADR（总结作为派生条目入库，但默认查询排除派生条目）。现在你坐下来，想「让 agent 把这个功能做出来」。你打开词表、需求清单、ADR 三个文件，想给 agent 一个开工入口——然后你发现，没有一份东西能直接丢给它当依据。</p>
+  <p>这就是本课要解决的问题。第 6 课说清了「系统必须表现出什么」，第 7 课说清了「为什么这样定」，但还缺一件：把它们按一个固定结构、针对这一项功能合写成一份文件，让 agent 能照单动手、让评审的人能先点头。这件文件，就是 spec。</p>
+  <p>所以要先说清 spec 和需求清单的区别。CMU 17-313 的《07-specs》给了一个最简洁的定义：<strong>spec 是「客户和软件工程师之间，就该软件产品应如何运作达成一致」的基础</strong>——它同时建立了估算成本、风险、进度的现实基础（CMU 17-313, <em>Software Specifications</em>, p. 5）。换句话说，需求清单是「我们想要什么的记录」；spec 是「客户和工程师都认可怎么做的契约」。它必须同时满足三件事：</p>
+  <ol class="steps">
+    <li><strong>可执行（executable）</strong>：agent 读一遍就能开工——它知道这一项功能要做什么、在哪里测试、边界是什么，不用再回头问你「你要什么」。</li>
+    <li><strong>可评审（reviewable）</strong>：在动手之前，一个人能通读一遍，决定「要不要做、这样做对不对」，省下开工后才发现跑偏的返工。</li>
+    <li><strong>不是又一份需求文档</strong>：它不是把所有需求堆在一起，而是针对这一项功能、被组织好的一份开工契约。</li>
+  </ol>
+  <p>SWEBOK 甚至把 specification 称作「需求领域里最有争议的一块」（SWEBOK v4, ch1, p50）：到底要不要把需求写下来、写成什么形式、要不要长期维护，「没有标准答案」，取决于你的领域、风险、团队流动性。这提醒我们：spec 不是教条，它是一份「你决定记多少、记成什么样、维护多久」的产物。本课给你一套能直接上手的结构，但「记多少算够」这个判断，始终是你做的。</p>
+</section>
+
+<section>
+  <h2>行业做法：一份 spec 记什么</h2>
+  <p>SWEBOK 对需求规格说明（requirements specification）给出的本质是：<strong>「把需求记录下来，让它们既能被记住、也能被传达」</strong>（SWEBOK, ch.1, p. 50）。它没有统一标准——ISO/IEC/IEEE 29148 是一个正式标准，提供了需求文档模板；但实践中，多数团队并不照搬，因为「面向什么样的读者」决定「怎么组织」，而读者各不相同。SWEBOK 明确：最基本的建议是面向受众（audience）分析——谁会读这份 spec、他们需要什么信息、怎么排版能让他们用最少力气拿到（p. 50）。</p>
+  <p>下面这套结构不是哪个标准规定的，但被广泛使用，而且就是你装的 to-spec 技能的模板。它把「一份可执行的 spec 该有什么」拆成六个问题，每个问题一节：</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>一节</th><th>它回答的问题</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">Problem Statement（问题陈述）</td><td>从用户视角，一句话说清「用户正遇到什么问题」——先对齐「我们在解决什么」。</td></tr>
+        <tr><td class="what">Solution（方案）</td><td>从用户视角，说清「我们打算怎么解决它」。</td></tr>
+        <tr><td class="what">User Stories（用户故事）</td><td>一份很长的编号清单，每条形如「As a &lt;角色&gt;，I want &lt;功能&gt;，so that &lt;好处&gt;」，覆盖功能的所有方面。</td></tr>
+        <tr><td class="what">Implementation Decisions（实现决定）</td><td>已定下的实现决策：要建的模块、接口、架构决定、schema、API 契约。不写具体文件路径和代码片段。</td></tr>
+        <tr><td class="what">Testing Decisions（测试决定）</td><td>怎么知道它对了：只测外部行为、不测实现细节；测哪些模块；代码库里有没有可参照的同类测试。</td></tr>
+        <tr><td class="what">Out of Scope（范围外）</td><td>这份 spec 明确不做的东西。最容易漏、也最值钱的一节。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>看完这张表，你可能会觉得「这不就是多写了几节的需求文档吗」。差别在最后两节。需求清单关心的是「把要的都列全」；spec 关心的是「这份文件的每一节，能不能让一个人读完就知道能不能开工」。所以 <strong>Testing Decisions</strong> 和 <strong>Out of Scope</strong> 这两节，是 spec 区别于需求清单的地方：前者告诉 agent「对没对怎么判断」，后者告诉 agent「边界在哪、别越界」。</p>
+  <p>尤其 <strong>Out of Scope</strong>，它和需求清单的天然倾向相反。需求清单巴不得把所有要的都写上；spec 必须反过来，把「明确不做」的写明白。原因有两个。第一，返工的主因之一就是边界不清：你没写「不做向量库」，agent 会顺手做一个你以为没做的事。第二，把它写下来，能让评审的人一眼发现 scope 蔓延（某个后来加的需求「越界」了）。记住 SWEBOK 那条「面向读者」：Out of Scope 是写给「未来会替我们加需求的人」看的边界。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：to-spec 的合成与接缝</h2>
+  <p>这套技能包里，把「共识合写成 spec」落地的，是 <code>to-spec</code>。它是一次性动作，<strong>用户调用</strong>——它的 <code>SKILL.md</code> 里写了 <code>disable-model-invocation: true</code>，意思是它不会被 agent 随手拉起，需要你主动发出 <code>/to-spec</code>（或明确告诉 agent 用 to-spec）。它的前提是仓库已经 setup 过（第 3 课装过、沙盒的 <code>docs/agents/issue-tracker.md</code> 已经在了），否则它第一件事就是让你去跑 <code>/setup-matt-pocock-skills</code>。</p>
+  <p>to-spec 的流程里，有三步特别值得你知道，因为它们正好说明「为什么你前几课要先做功课」。</p>
+  <p>第一步，<strong>先探索仓库再动笔</strong>。它会读一遍当前仓库，用项目 <code>GLOSSARY.md</code> 里的词汇写 spec（让术语对齐第 4 课），并且「尊重已经落盘的 ADR」——也就是说，第 7 课那条 ADR 定下的「派生条目默认不进检索」会作为既定事实被遵守，而不是被重新翻出来重吵一遍。它默认你前几课的共识是准的。</p>
+  <p>第二步，<strong>先画接缝（seam）</strong>，这是 to-spec 最特别的动作。它先把「我们会在哪一层测试这个功能」想清楚，把测试接口点画出来，规则是：优先用已经存在的接缝、用尽量高的接缝、全仓库的接缝越少越好（理想是一个）。它会先把接缝草图给你看、<strong>跟你确认</strong>，再往下写。这里你只需要把 seam 理解成「让被测代码能稳定、独立被调用的测试接入点」——它会在第 15 课「接缝与适配器」里正式展开，本课不深入。</p>
+  <p>第三步，<strong>写 spec 并发布</strong>。按模板写好六个小节，然后「发布到项目 issue tracker」——在沙盒这个本地 tracker 里，就是写到 <code>.scratch/&lt;feature&gt;/spec.md</code>，并打上 <code>ready-for-agent</code> 标签（本地形式就是文件里的 <code>Status: ready-for-agent</code> 一行）。这个标签的意思是：这份 spec 已经过了需求阶段、可以直接交给 agent 开工，不需要再走一遍 triage。</p>
+  <p>这里最要紧的一句话：<code>to-spec</code> 会<strong>明确不访谈你</strong>——它只综合你已经讨论过的内容，不再问你问题（<code>SKILL.md</code>: "Do NOT interview the user; just synthesize what you already know"）。这意味着你前几课的讨论质量，直接决定了这份 spec 的质量。你没逼细的问题，它会原样放进 spec 里；你没定的边界，它不会替你编一个。所以 spec 反过来是 <code>grilling</code> 有没有问够的照妖镜。</p>
+  <p>开发者（你）要拍板的，恰好是它不能替你做的三件事：① <strong>接缝的位置</strong>——它会给你看草图，你确认它跟你想的测试方向一致；② <strong>user story 和 out of scope</strong>——哪些需求算进这一项、哪些明确不做，是你的业务判断；③ <strong>已定的实现决定</strong>——第 6 课的验收标准、第 7 课的 ADR，有没有被正确写进去。它不会重新访谈你，也不会帮你补你没问过的东西。</p>
+  <p>怎么判断生效了？<code>.scratch/&lt;feature&gt;/spec.md</code> 里出现了一份 spec，开头一行 <code>Status: ready-for-agent</code>；你通读一遍，能答出「这份 spec 只讲这一项功能、agent 能照它开工、我在动手前该先看哪几处的决定」。更硬的一条证明：把它丢给一个全新的 agent，它读完能直接开工，不再问你「你要什么」——因为该问的、该定的，早在前几课问过、定过了。</p>
+</section>
+
+<section>
+  <h2>练习：把前几课的共识合成一份 spec</h2>
+  <p>下面这个练习，就是把沙盒里「总结功能」的前几课产物，合写成一份能开工的 spec。你只需要这三样旧产物、一个已经 setup 过的沙盒仓库；本课写的是 spec，不是代码。</p>
+
+  <ol class="steps">
+    <li><strong>先确认三样产物到齐。</strong>第 4 课的词表（<code>GLOSSARY.md</code> 里的词）、第 6 课的需求清单、第 7 课的 ADR。缺一样，先回头补那一课——to-spec 只综合你已经有的，补不了你没写的。</li>
+    <li><strong>让 agent 用 to-spec。</strong>给 agent 一句输入，比如「把总结功能的这些共识用 to-spec 合成一份 spec，发布到 issue tracker」。它会先探索仓库、读词表和 ADR。</li>
+    <li><strong>先看它画的接缝草图。</strong>确认接缝是不是你想要的——比如它是不是在「把文档喂进 summarizer、断言返回两到三句中文」这一层接（一个稳定、高层、能独立测试的接缝）。不对就说，让它改。</li>
+    <li><strong>审两处最容易错的地方：User Stories 和 Out of Scope。</strong>故事有没有覆盖你说的「两到三句、带引用、时长」；Out of Scope 有没有把「不做向量、不做全库总结、不做 UI」写清楚。缺的，是你补。</li>
+    <li><strong>让它发布。</strong>把 spec 写到 <code>.scratch/&lt;feature&gt;/spec.md</code>，并加上 <code>Status: ready-for-agent</code>。</li>
+  </ol>
+
+  <p>写的时候如果发现自己「接缝说不出、user story 列不全、out of scope 写不出」，那不是 to-spec 的问题，是你前几课没做够——这正是这一课想逼你看出来的。</p>
+</section>
+
+<section>
+  <h2>反馈回路：一份 spec 是不是够开工</h2>
+  <p>判断一份 spec 够不够开工，最好办的办法，是拿一个「读它能不能开工」的检查单，让 agent 自己过一遍。这不是格式检查，而是「它有没有把开工需要的东西都写全」。</p>
+
+  <pre><code>读我这份 spec（.scratch/&lt;feature&gt;/spec.md），再读
+C:\Users\admin\.agents\skills\to-spec\SKILL.md、项目的 GLOSSARY.md 和 docs/adr/。
+
+逐条检查：
+1. 这份 spec 能不能只靠自己开工？有没有依赖 spec 之外、没写进去的约定？
+2. User Stories 是否覆盖已知需求（第 6 课的验收标准、第 7 课 ADR 决定的「派生默认不进检索」）？
+3. 有没有把「要不要做、为什么」这类决定留给了 agent 去猜？
+4. 接缝（seam）是不是稳定、高层的测试接入点？有没有被写死的文件路径或代码片段？
+5. Out of Scope 是否明确写出了「这份 spec 不做哪些」？
+6. 有没有从 GLOSSARY 之外的词、或没有遵守已落盘的 ADR？
+
+逐条引用原文指出问题，最后给结论：这份 spec 现在可以开工吗？可以的话，缺什么？</code></pre>
+
+  <p>读反馈时，把意见分两类。一类是「没写全」——缺了 user story、没写 out of scope、没遵守 ADR，这类直接补。另一类是「根本不该写进来」——把实现细节、文件路径、还没定的事写进 spec 了，这类删掉，因为 spec 不该绑死细节，代码细节会很快过期。还要警惕一种：agent 可能在你看完前说「我直接帮你实现了吧」。它是在跳步，把这份 spec 拉回 to-spec 的规则：<strong>spec 先落盘、你拍板、再开工</strong>。spec 和前面的 ADR 一样，都是「动手之前」的产物。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>spec 是「我们能开工的依据」：可执行、可评审、不是又一份需求文档；它是客户和工程师之间就该软件如何运作达成一致的契约（CMU 07-specs）。</li>
+    <li>一份 spec 的结构是 Problem / Solution / User Stories / Implementation Decisions / Testing Decisions / Out of Scope；尤其是 Out of Scope，把「你明确不做的事」写死，才能防返工。</li>
+    <li>to-spec 只把「你已讨论过的共识」合成，不访谈、不补你漏问的决定；它画的接缝（seam）和业务边界，是你要亲手拍板的。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章（Software Requirements），p43–66——需求规格说明（requirements specification）：把需求记录下来以便记忆和传达、是最有争议的一块、面向受众的组织原则（p50 一带）、结构化自然语言 / user story 格式、ISO/IEC/IEEE 29148 需求文档模板（p1-12）；CMU 17-313《Software Specifications》p5——spec 是客户与工程师就该软件如何运作达成一致的基础，也是估算成本、风险、进度的现实基础；SE-EDU《Specifying Requirements》（回指第 6 课）。</p>
+  <p><strong>实践工具（以此为准）：</strong><code>to-spec</code>——用户调用（<code>disable-model-invocation</code>），流程为「探索仓库 → 画 seam → 写模板 spec → 发布到 tracker → 打 <code>ready-for-agent</code>」；本机路径 <code>C:\Users\admin\.agents\skills\to-spec\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>延伸：</strong>seam（接缝）在本课只是 to-spec 的一个动作，第 15 课「接缝与适配器」会正式展开；到那之前，你只要把它理解为「测试从哪一层插进去」即可。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 9 课「过程模型：瀑布、迭代、敏捷，以及这套流程的位置」。这一课的 spec 已经落到 tracker、标成 <code>ready-for-agent</code>——模块一（需求与语言）在这里收束，模块二（计划与过程）从「拿到 spec 之后，用什么样的过程把它排产」开始。同时记住：这份 spec 正是第 10 课用 to-tickets 拆成工单的原料。</p>
+  <p>你的 spec 写好后，贴给我，或直接让 agent 按上面的检查单过一遍。如果你发现「哪一项功能的边界说不清、user story 列不全」，那不是 to-spec 的问题，是你该回第 5 课再逼问一轮的地方。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0008-spec-card.html">Spec 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

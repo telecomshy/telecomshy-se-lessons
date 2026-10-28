@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 16 课 · 设计两次：先造两个候选再选</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 3 · 设计与架构 · 第 16 课</p>
+  <h1>设计两次：先造两个候选再选</h1>
+  <p class="lede">上一课把存储迁成一个 port 加两个 adapter，同一份契约被两种实现检验过一遍。但契约本身只被造过一次：写下 <code>add</code> / <code>search</code> 的那一刻，它是第一个从脑子里冒出来的形状。Ousterhout 有一句常被转引的判断：你的第一个想法不太可能是最好的（《A Philosophy of Software Design》“Design It Twice”一章；书不在本地，此处经典转引）。这句话听懂容易，照做难：第二个候选从哪来、两个候选怎么比、比完怎么说出「为什么不选另一个」。这一课练的就是这个动作：同一个问题造两个真正不同的接口候选，用深度、局部性和缝的位置当判据选出一个，把落选的方案和理由一起留下来。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 7 课（ADR 的被否方案）、第 14 课（深度与杠杆）、第 15 课（port 与两个 adapter）</span>
+  <span><b>产出</b> 两套接口候选，加一条取舍理由</span>
+  <span><b>主读物</b> SWEBOK v4 第 3 章（Design Rationale 一节）</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清「设计两次」在第 2 课八个活动里的位置，以及它给第 17 课架构取舍留下什么。</li>
+    <li>换一个设计约束，为同一个问题造出两个调用方式明显不同的接口候选。</li>
+    <li>用 depth、locality、seam placement 三件事对比两个候选，说出各自把复杂度推给了谁。</li>
+    <li>写出一条钉在判据上的取舍理由，包括「为什么不选另一个」，并知道它该落到哪。</li>
+    <li>用 <code>codebase-design</code> 的 DESIGN-IT-TWICE 流程让并行 agent 出候选，自己做三块拍板。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：从「造一个接口」到「造两个再选」</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课还待在 <strong>Design &amp; Architecture（设计与架构）</strong>里，是模块 3 的第三站。前两站各解决了一个问题：第 14 课定模块形状——接口上只留调用者必须知道的事，秘密藏进实现，承诺写成不变量；第 15 课定落点——接口立在一条 seam（接缝）上，缝上放 port，port 由两个 adapter 兑现，行为因此可替换、可测试。两站下来你手里有一个像样的存储接口，但有一件事一直没做：<strong>这个接口从头到尾只被设计过一次</strong>。</p>
+  <p>为什么「一次」不够，值得单开一课？因为接口是设计产物里最难收回的一种。代码改起来便宜，接口改起来要动所有调用者、所有实现和一整份契约文档——第 15 课迁一次 port 就领教过了。难收回的决定值得多花一点设计功夫，这是本课全部内容的前提。它也直接给下一课供货：第 17 课要在架构层做取舍说明，而取舍说明的原料就是「两个候选、各自优劣、选了谁、为什么不选另一个」——比较这个动作先在接口级练熟，再上升到系统级。</p>
+  <p>还有一个更早的去处：第 7 课写 ADR（Architecture Decision Record，架构决策记录）时，模板里有一栏 rejected alternatives（被否掉的方案），当时只能告诉你「这一栏值得填」。这一课产出的就是那一栏的内容：被否的候选、否掉它的判据。SWEBOK 把这件事叫 <strong>design rationale（设计理由）</strong>——「重大决定连同理由的解释」，并明确说它包含「考虑过的替代方案、以及为选定一个、拒绝其余而分析的取舍和判据」（SWEBOK v4, ch.3, §4.6, printed 3-11）。这一课练的动作，就是把这段话里的「考虑过的替代方案」从一句话变成两次真实的设计。</p>
+</section>
+
+<section>
+  <h2>问题与概念：第一个想法接住了需求，但它是对的吗</h2>
+  <p>回到沙盒知识库。port 迁完之后，试用的同事真的用起来了，然后递来新的诉求：条目攒多了，<code>search "JSONL"</code> 一捞就是几十条，他想按标签筛，还想翻页看「最近加的」。需求很清楚，第一反应也很清楚——把 <code>search</code> 加胖：<code>search(keyword=None, tag=None, since=None, limit=20)</code>。今天下午就能改完，两个 adapter 各加几行过滤，收工。</p>
+  <p>先别动手。这个「加参数」的形状就是你的第一个想法，而 Ousterhout 对第一个想法的判断是：它不太可能是最好的（“Design It Twice”一章，经典转引，同上）。问题在于这句话没法直接执行——总不能靠苦想憋出「第二个想法」。<strong>造出第二个候选的可靠办法，是换一个设计约束重画一遍</strong>。SWEBOK 的约束式设计（constraint-based design）一节给了它理论依据：约束的作用是「缩小设计空间的尺寸，把不可行或不可接受的替代方案排除出去」，而且「约束加速设计，因为它们迫使少数几个早期决定出现」（SWEBOK v4, ch.3, §5.9, printed 3-12）。给候选配一个不同的约束，两个候选自然分家；没有约束地「想个不一样的」，往往只会在第一个想法上打磨。</p>
+  <p>照这个办法来。第一个候选的约束是<strong>为最常见调用者优化</strong>：CLI 的两条命令是最常见用例，接口让它们最省事。第二个候选的约束换成<strong>最大化灵活性</strong>：支持多用例和扩展，把「按什么查」做成可以长的东西。两个约束顶着走，画出来的形状如下——代码只是把形状钉具体，重点看调用示例和参数表。</p>
+
+  <p>候选 A（仓库式，查询维度进参数表）：</p>
+  <pre><code>class KnowledgeStore(Protocol):
+    def add(self, title: str, body: str, tags: Sequence[str] = ()) -&gt; Entry: ...
+    def search(self, keyword: str | None = None, tag: str | None = None,
+               since: datetime | None = None, limit: int = 20) -&gt; list[Entry]: ...
+
+# 调用
+store.search("JSONL")                    # 最常见用例，一步到位
+store.search(tag="设计", limit=20)        # 新维度：加一个参数</code></pre>
+
+  <p>候选 B（查询对象式，查询维度进数据）：</p>
+  <pre><code>@dataclass(frozen=True)
+class Query:
+    keyword: str | None = None
+    tag: str | None = None
+    since: datetime | None = None
+
+class KnowledgeStore(Protocol):
+    def save(self, title: str, body: str, tags: Sequence[str] = ()) -&gt; Entry: ...
+    def find(self, query: Query, limit: int = 20) -&gt; list[Entry]: ...
+
+# 调用
+store.find(Query(keyword="JSONL"))       # 最常见用例，先学 Query 类型
+store.find(Query(tag="设计", since=...))  # 新维度：Query 加字段</code></pre>
+
+  <p>两个候选摆在眼前，下一步是比。比什么？技能包给的三件事：<strong>depth（深度）</strong>——接口上的 leverage（杠杆），调用者每学一单位接口能驱动多少行为（第 14 课的概念，这里回指）；<strong>locality（局部性）</strong>——变化落在谁头上，改一处还是改 N 处；<strong>seam placement（缝的位置）</strong>——缝开在哪、缝上的契约多长、缝后面的每个 adapter 要兑现多少东西。逐个过一遍，账就清楚了。</p>
+
+  <h3>第一笔账：接口的杠杆，分子里装了什么，分母里装了什么</h3>
+  <p>A 的最常见用例确实便宜：<code>search("JSONL")</code> 一行完成整个检索，调用者不用学任何额外类型。但每来一个查询维度，参数表就胖一圈；维度攒到五六个，满屏默认值等着被理解，最常见用例还得从这片参数里穿过去。B 反过来：最常见用例先要学 <code>Query</code> 这个类型的字段和默认值，接口要学的东西多了；换来的是 <code>find</code> 一个方法吞下所有查询，单个入口能驱动的行为更多。杠杆这把尺子要分子分母一起量，「谁的杠杆高」这个空名不回答问题，要看真实用例落在哪：只看最常见的「按关键词找」，A 一次调用换来同样的行为，要学的东西少，杠杆反而更高；把「将来可能的各种查询」都算进来，<code>find</code> 加一个长得出字段的 <code>Query</code> 能吞下任意组合，B 的上限更高，可调用者得先学一整个类型，分母跟着涨。这个场景里真实的用例只有一个，A 照顾得更好。<code>Query</code> 还有个惯性：它会长成万能口袋，什么都能筛，接口宽度看起来没变，契约在暗处膨胀——这笔账记在第三笔里。</p>
+
+  <h3>第二笔账：「新增查询维度」这个变化，落在谁头上</h3>
+  <p>想象半年后真的要加「按作者筛」。A 里这个变化打在接口签名上：所有调用者跟着改，两个 adapter 的 <code>search</code> 跟着改，契约测试补上新组合。B 里它打在 <code>Query</code> 的字段和每个 adapter 的过滤实现上：方法签名不动，老调用者一行不改；不过 <code>Query</code> 的字段本来就是接口的一部分（第 14 课的定义：接口是调用者必须知道的一切），字段加一个，契约就长一截，这笔账留给第三笔。更疼的是过滤语义要写进 <code>JsonlStore</code> 和 <code>InMemoryStore</code> 各一份——同一份逻辑两处实现，正是第 15 课说的 fake 漂移最容易钻的空子，契约测试的矩阵跟着变宽。两笔账的疼痛对象不同：A 疼调用者，B 疼 adapter 作者。locality 问的就是这个——变化的落点是集中在一处，还是摊在两处、N 处。</p>
+
+  <h3>第三笔账：缝的位置没动，契约的长度动了</h3>
+  <p>两个候选的缝都开在存储上，这点没分歧；分歧在缝上的契约要写多长。A 的契约要把参数语义写清：<code>None</code> 表示不筛、多个条件是 AND 还是 OR、命中顺序是什么、<code>limit</code> 怎么截断。B 的契约在这些之外还要写清 <code>Query</code> 的组合语义，以及加字段时旧调用不受影响这条兼容承诺。缝后面的负担也随之不同：A 的两个 adapter 要实现每个参数组合的过滤，B 的两个 adapter 各养一份过滤逻辑，除非把过滤抽成共享模块。第 15 课的走缝验证也跟着变贵——契约越长，「同一批断言对两个 adapter 都过」要覆盖的语义就越多。</p>
+
+  <p>三笔账算完，可以选了。这个场景里真实的查询需求只有一个：按关键词找。标签和翻页是「会来的诉求」，不是「拍板的需求」。照 SWEBOK 对约束的说法，把还没拍板的查询维度当约束排除掉，候选 A 这种窄接口就是合理解：<strong>选 A</strong>。为什么不选 B——一句话版本：<strong>B 把「将来会有多种查询」这个假设的成本提前摊进了契约和每个 adapter，假设落空时这笔钱收不回来</strong>。具体说，如果真实需求半年后变成「全文排序」而不是「多维筛选」，<code>Query</code> 的形状照样要重画，而两个 adapter 的过滤逻辑已经白写了。反过来，如果「按标签查」明天就拍板，正确动作是给它一个窄方法（比如 <code>find_by_tag</code>），并把过滤语义做成两个 adapter 共享的纯函数，<code>search</code> 不用提前摊宽——这是从 B 借一个元素回来的混合方案：接口保持窄，过滤逻辑不复制。</p>
+  <p>落选的 B 也是设计产物的一部分。SWEBOK 说被否掉的决定连同拒绝理由值得记下来，因为「当假设、需求或约束变化时，这些理由能让团队重新审视一个此前被否的决定」（SWEBOK v4, ch.3, §4.6, printed 3-11）。写进第 7 课 ADR 的 rejected alternatives 一栏，B 就从「被扔掉的想法」变成「可以捡回来的候选」。</p>
+</section>
+
+<section>
+  <h2>行业做法：把「两个候选」写进文档，把「约束」当成造候选的工具</h2>
+  <p>先立标尺：「造几个候选再选」<strong>没有统一标准</strong>——没有任何规范规定接口设计必须出几套方案。这里有的是主流做法和取舍；理论那一层是 SWEBOK 的 design rationale（§4.6）和 constraint-based design（§5.9），其余是设计评审文化里长出来的惯例。下面两个是主流做法，最后两个是取舍。</p>
+
+  <h3>主流做法一：设计文档里的 alternatives 一节</h3>
+  <p>CMU 17-313 的设计文档讲义把这个动作说得很直白：好的设计文档要「提出关键设计决定，重点写各自的取舍」，而「最好的设计文档会给出设计目标，并覆盖备选设计，记录每一项的长处和短处」（CMU 17-313,《08-design-docs》, p7–8）。具体怎么做：文档里单开一节 alternatives，每个候选写一段——方案是什么、优点、缺点，评审的人对着这节讨论，而不是对着一段孤零零的「最终方案」点头。什么时候用：难回滚、确实存在多个方案的决定。产物是带 alternatives 一节的设计文档，代价是写两份的笔墨，以及一个真实风险——凑数的「假候选」：为了让文档显得有得比，随手编一个明显更差的方案垫背，比不出任何东西。设计文档的完整结构是第 18 课的正题，这里只借它这一页。</p>
+
+  <h3>主流做法二：用约束造候选，而不是硬想候选</h3>
+  <p>SWEBOK 的约束式设计一节讲的是约束在设计过程里的角色：缩小设计空间，排除不可行或不可接受的替代方案，「迫使少数几个早期决定出现」（SWEBOK v4, ch.3, §5.9, printed 3-12）。落成动作就是本课开头那套：给每个候选配一条不同的设计约束——最小接口、最大灵活、最常见调用者优先——约束顶着走，候选自然长得不一样。什么时候用：想不出「另一个方案」的时候，问题十有八九出在没换约束。产物是两三个带约束说明的候选，代价是要防住换皮：两条约束选得太像，画出来的是同一个候选穿两件衣服。</p>
+
+  <h3>取舍一：设计几次才停</h3>
+  <p>SE-EDU 的《Design Approaches》把设计的「前置程度」摆成两极：full upfront design（完整前置设计）一次把设计做完，agile design（敏捷设计）则强调「设计是涌现的，不在开工前定死」（SE-EDU,《Design Approaches》, Agile design 一节）。设计两次是接口级的局部动作，和这两极都不冲突：只对难收回的接口做。什么时候值得做两次——接口签出去收不回、有多个实现要守同一份契约、调用者不止一个；什么时候一次就够——内部小工具、只有一个调用者、改起来便宜，为它画两套方案比直接写还贵。什么时候该从两次往上加：三四个候选还比不出胜负，说明判据没定清，或者某个关键假设没人验过——这时该去探一个原型（prototype，第 30 课展开），或者小步实现让真实使用说话。两次是下限，也是常态。</p>
+
+  <h3>取舍二：被否方案记不记、记在哪</h3>
+  <p>SWEBOK 的 design rationale 一节除了要求记「考虑过的替代方案」，还专门补了一句：「记录被否掉的决定和否掉它们的理由，也是有用的」，理由是假设变化时可以重新审视（SWEBOK v4, ch.3, §4.6, printed 3-11）。业界的落点就是 ADR 的 rejected alternatives 一栏（第 7 课），或者设计文档 alternatives 一节里那几行缺点。代价是多写几行字；不记的代价前面说过：落选方案会在几个月后被当成新想法重新发明一遍。这一条没有争议，属于「不做只是因为懒」的主流做法。</p>
+
+  <p>四个做法的共同线很清楚：<strong>「比」这个动作的功夫，最后都落在把替代方案、取舍和判据写清楚上</strong>。选一个、拒其余，把「拒」也写成能读的东西。下一节的技能包流程自动化的是造候选和对比，最后这段「写清楚」仍然要人签字。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：DESIGN-IT-TWICE 的并行候选</h2>
+  <p>这套动作在技能包里由 <code>codebase-design</code> 的第三份文档 <code>DESIGN-IT-TWICE.md</code> 承载（前两课用过它的词汇表和 <code>DEEPENING.md</code>，还是<strong>模型调用</strong>，不重复总览）。它把 Ousterhout 的原则落成一条并行子代理的流程，用的词汇就是第 14、15 课那套：module、interface、seam、adapter、leverage。适用前提要先说清：它是为「一个已选定的加深候选，探索它的替代接口」写的，候选本身从哪来（哪块代码值得动）是前两课的事。</p>
+
+  <h3>流程四步：框问题、并行造、比三轴、给强判断</h3>
+  <p>第一步，框架问题空间。动手前先写一份给人看的约束清单：新接口必须满足什么、依赖落在第 15 课四类依赖的哪一类、一段示意代码把约束钉具体（文档明说这只是让约束落地，本身不算方案）。这份清单给人读，子代理同时就开工了。第二步，并行起多个子代理，每个只带一条设计约束：「最小接口，每个入口的杠杆最大化」「最大化灵活性，支持多用例和扩展」「为最常见调用者优化，让默认用例最省事」，跨缝依赖再加一条「按 ports &amp; adapters 设计」。每个子代理交五件东西：接口（类型、方法、参数，加上不变量、顺序约束、错误模式）、一段调用示例、缝后面藏了什么、依赖策略与 adapter、取舍（杠杆在哪、哪里薄）。简报里带上 <code>SKILL.md</code> 的词汇表和 GLOSSARY 的领域词，让候选用同一套话命名，不然对比的时候还得先互相翻译。</p>
+  <p>第三步，呈现与对比。候选一个个给用户看，然后用文字比，比的就是本课那三轴——depth、locality、seam placement。文档特意要求散文对比，不用打分表——打分表会把「为什么」压没，这个理由是我补的。第四步，给强判断：文档的原话是「要有立场，用户要的是一个强读法，不是一个菜单」；两个候选里好用的元素能合，就提混合方案。本课正文那个「窄接口加共享过滤模块」就是这么来的。</p>
+
+  <h3>你做什么：给原料，拍三块板</h3>
+  <p>开发者具体配合什么？先给原料：约束清单的来源是需求清单和非功能需求（第 6 课）、ADR 里的既有决定（第 7 课）、GLOSSARY 的领域词（第 4 课）——约束都来自项目里已有的判断，agent 只负责搬运。然后拍三块 agent 拍不了的板。<strong>候选够不够不同</strong>：两个候选的调用示例并排一看几乎一样，就是换皮，退回换约束重造——「截然不同」（radically different）是流程的硬要求。<strong>三轴的权重</strong>：本课例子里「最常见用例便宜」压过「想象中的查询维度」，这个取舍是产品判断，agent 只能摆账。<strong>最终选谁</strong>：agent 会给强判断，但签字的还是你。</p>
+  <p>产物两样加一处落盘：两套候选（每个四件——接口、调用示例、缝后藏了什么、取舍；技能流程交五件，多一件「依赖策略与 adapter」，纸面练习可省）、一条含「为什么不选另一个」的取舍理由，连同落选候选写进 ADR 的 rejected alternatives 或 spec 的 Implementation Decisions（第 7、8 课的地盘）。怎么判断生效？三个检查动作：「为什么不选另一个」能说成一句指向具体判据的话，说不出来就说明对比没做实；落选方案真的落了盘，不在聊天记录里烂掉；选中的候选拿给第 15 课的两个 adapter 试一遍疼不疼——契约面多大、过滤语义会不会复制进每个实现。最后照例说差异：Ousterhout 的 Design It Twice 是让人在脑子里把设计做两遍，技能包把它落成「并行子代理加三轴对比加强判断」，这是技能的自动化方式；行业里没有这条标准，流行的是设计文档的 alternatives 一节，也没有规范规定必须造几个候选。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>动作和工具都齐了，动手前认三个坑。它们的共同点是：流程都走了一遍，「比」这个动作其实没发生。</p>
+  <ul>
+    <li><strong>两个候选换皮。</strong>把 <code>search</code> 改名 <code>query</code>、参数换个顺序，再煞有介事地比一番——这不是设计两次。判据很简单：调用示例并排放，几乎一样就是换皮；第二个候选要让第一个候选的作者看得不舒服。造不出来就换约束重画，别在第一个想法上打磨。</li>
+    <li><strong>比功能多少，不比复杂度从哪冒出来。</strong>B 能按标签筛，不等于 B 更好——要看支持它花掉了什么：契约变长多少、两个 adapter 各要实现多少过滤语义、契约测试矩阵变多大。功能清单只是候选的介绍；真正的判据是杠杆、变化落点、缝的契约面这三笔账。</li>
+    <li><strong>选完不写落选理由。</strong>三个月后，落选方案会被当成新想法重新发明一遍，有人再花一个下午得出一样的结论。SWEBOK 说被否决定值得记，因为假设会变（§4.6）；ADR 的 rejected alternatives 一栏正好收它。同一个坑的另一头是设计停不下来——三四轮还比不出胜负，该去探关键假设（第 30 课的原型），别把画方案当拖延的体面说法。</li>
+  </ul>
+  <p>三个坑的解药是同一句话：<strong>把「为什么不选另一个」写出来，写不出来就是还没比</strong>。</p>
+</section>
+
+<section>
+  <h2>练习：给存储接口设计两次</h2>
+  <p>本课练习是纸面练习，不动沙盒代码，第 15 课的迁移做没做都能来。对象是沙盒知识库的存储接口；产出两样：两套候选和一条取舍理由。每个候选交四件——接口、调用示例、缝后藏了什么、取舍（技能流程交五件，多一件「依赖策略与 adapter」，纸面练习省掉）；取舍理由必须含「为什么不选另一个」，连同落选候选一起落进 ADR 草稿。</p>
+
+  <ol class="steps">
+    <li><strong>定问题空间。</strong>写三行约束：真实用例（CLI 的 <code>add</code> / <code>search</code>）、会来的诉求（按标签筛、翻页看最近——试用同事提的，还没拍板）、硬约束（第 15 课的两个 adapter 要跟着实现，测试走缝）。依赖照第 15 课的四类归个位，问一句「它会真的变吗」。</li>
+    <li><strong>造候选 A。</strong>以第 15 课的存储 port（没做迁移就用现在 <code>KnowledgeStore</code> 的两个方法）为起点，约束写「为最常见调用者优化」，顺应需求画出查询口，写四件：接口、调用示例、缝后藏了什么、取舍。</li>
+    <li><strong>换约束造候选 B。</strong>约束换成「最大化灵活性：支持多用例和扩展」（想挑战自己就选「最小接口」，和 A 反着来），画一个截然不同的查询口，同样四件。画完先自检：两个调用示例并排，明显不同吗？只差命名就重画。</li>
+    <li><strong>三轴对比写成文字。</strong>depth——最常见用例几步完成、要学多少东西；locality——「新增查询维度」这个变化落在谁头上；seam placement——两个 adapter 各要实现什么、契约写多长。每轴至少一句具体的话，别用打分表代替。</li>
+    <li><strong>给取舍理由，选一个。</strong>写下「为什么不选另一个」，要求是一句指向判据的话；把落选候选和理由写进一条 ADR 草稿的 rejected alternatives（放 <code>docs/adr/</code> 或 <code>.scratch/</code>，照第 7 课的约定；目录照旧懒创建，第一次用到才建）。</li>
+    <li><strong>试一遍疼不疼。</strong>把选中的候选拿给第 15 课的两个 adapter（<code>JsonlStore</code>、<code>InMemoryStore</code>）各「纸面实现」一遍，疼在哪写一行；落选候选照做一遍当对照，看看选错会多疼多少。这是「换实现时疼不疼」的预演，也是最便宜的学费。</li>
+  </ol>
+
+  <p>第 4 步如果发现两个候选在「新增维度」上的账完全对不上预期（比如你以为 B 的接口不动就等于零成本，一算发现两个 adapter 的过滤语义要各写一份），这正是三轴对比要的效果：账摆在纸上，判断就不会凭印象。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这两套方案真的不同吗</h2>
+  <p>把两套候选和取舍理由交给 agent，让它按下面这份检查单过一遍。它查的是「比」这个动作有没有真的发生。</p>
+
+  <pre><code>读我纸面的两个接口候选和取舍理由（贴在下面），再读
+C:\Users\admin\.agents\skills\codebase-design\SKILL.md 与 DESIGN-IT-TWICE.md。
+
+逐条检查：
+1. 两个候选真的不同吗？调用示例并排比——只差命名、参数顺序就是换皮。
+2. 每个候选四件齐吗？接口、调用示例、缝后藏了什么、取舍。
+3. 对比按三轴写了吗？depth / locality / seam placement 各有一句具体的话，
+   还是只列了「B 功能更多」？
+4. 取舍理由钉在判据上吗？「为什么不选另一个」是不是一句指向判据的话？
+5. 选中的候选对第 15 课的两个 adapter 疼不疼？过滤语义会复制进两个 adapter 吗？
+   契约面多大？
+6. 落选方案和理由落到盘上了吗（ADR 的 rejected alternatives 或 .scratch/）？
+
+结论：两套方案比出真差异了吗？取舍理由站得住吗？
+哪一处是「候选不够不同」，哪一处是「理由没钉到判据」？</code></pre>
+
+  <p>读反馈时把意见分两类。一类是<strong>候选不够不同</strong>——对比失去意义，解法是换约束重造候选，别在修辞上硬找差异。另一类是<strong>理由没钉到判据</strong>——「B 更灵活」「A 更简单」这类话谁都会说，解法是把理由重写成三轴里的一笔账，别顺手给候选加功能凑差异。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>你的第一个想法不太可能是最好的：同一个问题造两个真正不同的候选——换约束去造，然后选。</li>
+    <li>比较看三笔账：接口的杠杆、变化的落点、缝的位置与契约面。功能多少是候选的介绍，不是判据。</li>
+    <li>选完写下「为什么不选另一个」：被否的方案是设计产物的一部分，假设变了它会被捡回来，省得再被重新发明一遍。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 3 章 p83–98——§4.6 Design Rationale（printed 3-11：设计理由包含「考虑过的替代方案、为选定一个拒绝其余而分析的取舍和判据」；「记录被否掉的决定和否掉它们的理由也是有用的」，供假设变化时重新审视）；§5 Software Design Strategies and Methods 导言（printed 3-11：多种策略「引导设计者先关注什么、如何进行、如何构造模块」）；§5.9 Constraint-Based Design（printed 3-12：约束「缩小设计空间，排除不可行或不可接受的替代方案」「迫使少数几个早期决定出现」）。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《08-design-docs》p7–8（好的设计文档「提出关键设计决定，重点写各自的取舍」，最好的设计文档覆盖备选设计并记录各自长处短处；本地路径 <code>courseware/cmu-17-313/pdfs/08-design-docs.pdf</code>）；SE-EDU《Design Approaches》（multi-level design、top-down/bottom-up/mix、agile design 与 full upfront design 的对照；本地路径 <code>courseware/se-education/book/designApproaches/print.html</code>）。</p>
+  <p><strong>经典来源：</strong>Ousterhout,《A Philosophy of Software Design》“Design It Twice”一章——「你的第一个想法不太可能是最好的」（书不在本地，此处经典转引；本地摘录 <code>courseware/ousterhout/aposd2ndEdExtract.pdf</code> 只含 ch.6 与 ch.21，第 14 课已用，「设计两次」章节不在摘录里）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）——<code>SKILL.md</code> 词汇表（depth / leverage / locality / seam）与 <code>DESIGN-IT-TWICE.md</code>（框问题空间、并行子代理各带一条设计约束、五件产出、depth / locality / seam placement 三轴散文对比、强判断与混合方案）；本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>（只作实践方式，不作理论来源）。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 17 课「架构：质量属性、视图与取舍」。这一课练的「比较」要上升一级：接口换成系统组件，判据从杠杆和缝扩展到质量属性和架构视图，取舍说明写给更远的读者。你在本课产出的两套候选和那条取舍理由，就是第 17 课取舍说明的原料——「为什么不选另一个」的句式，到架构级同样管用。</p>
+  <p>你的两套候选和取舍理由，贴给我，或让 agent 按上面的检查单过一遍。如果落选的候选没落到盘上，先别急着往下写——被否方案是设计产物，得跟设计放在一起。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0016-design-it-twice-card.html">设计两次参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

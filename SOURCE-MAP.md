@@ -29,12 +29,14 @@
 
 | 类型 | 本地来源 | 位置 | 用来讲什么 |
 |---|---|---|---|
-| 理论 | `courseware/swebok/swebok-v4.pdf` | 第 2 章 p67–82；第 3 章 p83–98 | 架构视图、质量属性、设计原则、设计记录 |
+| 理论 | `courseware/swebok/swebok-v4.pdf` | 第 2 章 p67–82（printed 2-1~2-16）；第 3 章 p83–98 | 架构视图、质量属性、设计原则、设计记录。第 17 课已核实：ch.2 §1.2 关注点与干系人（printed 2-3）、§2 与 §2.1 架构描述 / 视图与视点 / multiple views problem（printed 2-4~2-6）、§2.2 风格与模式（2-6~2-7）、§2.4 架构即重大决定（质量属性取舍是设计决定依据、architecture rationale、架构技术债，2-7）、§3.2.1 ASR 定义（2-9）、§4.1 「好的架构」与 ATAM 概述（2-10~2-11）；ch.3 §6.2 Quality Attributes 与 §6.3 Quality Analysis and Evaluation Techniques（PDF p95–96 = printed 3-13~3-14，质量属性运行时/非运行时分类、scenario-based techniques） |
 | 理论 | `courseware/se-education/book/designFundamentals/print.html` | 全章 | 设计 fundamentals |
+| 理论 | `courseware/se-education/book/designApproaches/print.html` | 全章 | multi-level design、top-down/bottom-up、agile design 与 full upfront design 的取舍 |
 | 理论 | `courseware/se-education/book/architecture/print.html` | 全章 | 架构风格、质量属性、取舍 |
 | 实践 | `courseware/cmu-17-313/pdfs/08-design-docs.pdf` | 全篇 | design doc 的结构与评审 |
 | 经典 | `courseware/ousterhout/aposd2ndEdExtract.pdf` | 摘录 | 深模块、接口与实现的区分 |
 | 经典 | Parnas, “On the Criteria To Be Used in Decomposing Systems into Modules”（1972） | 全文 | 信息隐藏 |
+| 经典 | Cockburn, “Hexagonal Architecture”（2005） | 全文 | ports & adapters、六边形架构（线上，无本地全文，经典转引） |
 
 ### 3. Construction（构造）
 
@@ -51,11 +53,11 @@
 
 | 类型 | 本地来源 | 位置 | 用来讲什么 |
 |---|---|---|---|
-| 理论 | `courseware/swebok/swebok-v4.pdf` | 第 5 章 | 测试级别、技术、度量、过程 |
+| 理论 | `courseware/swebok/swebok-v4.pdf` | 第 5 章 p117–136（printed 5-1~5-20） | 测试级别、技术、度量、过程；第 19 课已核实测试定义、oracle、EP、BVA、覆盖率、变异、彻底性度量 |
 | 理论 | `courseware/mit-6.031/classes/03-testing/index.html` | 全篇 | 划分、边界值、覆盖率、回归测试、stub |
 | 理论 | `courseware/se-education/book/testCaseDesign/print.html` | 全章 | 测试用例设计 |
-| 实践 | `courseware/cmu-17-313/pdfs/09-testing.pdf` | 全篇 | 测试的工程实践 |
-| 实践 | `courseware/cmu-17-313/pdfs/11-oracles.pdf` | 全篇 | oracle 从哪来 |
+| 实践 | `courseware/cmu-17-313/pdfs/09-testing.pdf` | 全篇（第 19 课用 p9、p11、p16、p18–20、p23、p25–33） | 测试的工程实践 |
+| 实践 | `courseware/cmu-17-313/pdfs/11-oracles.pdf` | 全篇（第 19 课用 p7、p18、p19） | oracle 从哪来 |
 | 进阶 | `courseware/cmu-17-313/pdfs/10-input-generation.pdf`、`12-pbt1.pdf`、`13-pbt2.pdf` | 全篇 | fuzz / property-based testing |
 | 实践 | `courseware/se-education/book/qualityAssurance/print.html` | 全章 | 质量保证与评审 |
 
@@ -130,6 +132,8 @@
 
 - 具体行业标准（如受监管行业的需求规格标准）没有本地全文；写到相关课时，只能说明「依行业而定」，不编具体条款。
 - 团队心理学、组织行为学的本地材料只有 CMU 的 Teams 讲义和 SE-EDU 的 Teamwork 一章，深度有限；团队内容不扩成主线。
-- 架构评估方法（ATAM 等）没有本地材料；第 17 课只讲质量属性与取舍，不展开完整评估方法。
+- 架构评估方法（ATAM 等）没有本地材料；第 17 课只讲质量属性与取舍，不展开完整评估方法。质量属性场景（quality attribute scenario）的六段写法出自 Bass/Clements/Kazman《Software Architecture in Practice》，本地无全文，第 17 课按经典转引只借骨架（SWEBOK ch.2 §4.1、ch.3 §6.3 只提及「scenario-based techniques」，够立据）。
+- seam 的正源 Feathers《Working Effectively with Legacy Code》（2004）与 Cockburn 的《Hexagonal Architecture》（2005）本地均无全文；第 15 课按「经典转引 + 标注」处理（同第 7 课 Nygard 的办法）。MIT 6.031《Testing》只有 stub / mock 的简短段落，fake / stub / mock 的细分留给第 22 课补来源。
+- Ousterhout 摘录（`courseware/ousterhout/aposd2ndEdExtract.pdf`）只含 ch.6 与 ch.21，**“Design It Twice” 一章不在摘录里**；第 16 课的「你的第一个想法不太可能是最好的」按经典转引处理，出处以 `codebase-design/DESIGN-IT-TWICE.md` 的转述佐证，不作本地一手来源。
 
 > AI生成

@@ -33,7 +33,7 @@
     <tbody>
       <tr><td class="what">决定 vs 需求</td><td>决定是「你要什么」（偏好/方向）；需求是「系统必须表现出什么、才算做到」（可检验的承诺）。决定可以是「快一点」，需求必须回答「多快算快」。</td></tr>
       <tr><td class="what">functional（功能性）</td><td>系统要表现出可观察的行为：要执行的政策和流程。</td></tr>
-      <tr><td class="what">non-functional（非功能性）</td><td>约束「做得多好、用什么跑」：技术约束（platform/语言/浏览器）+ 服务质量约束（性能/安全/可伸缩），最容易漏、最晚被发现。</td></tr>
+      <tr><td class="what">non-functional（非功能性，NFR）</td><td>约束「做得多好、用什么跑」：技术约束（platform/语言/浏览器）+ 服务质量约束（性能/安全/可伸缩），最容易漏、最晚被发现。</td></tr>
       <tr><td class="what">acceptance criteria（验收标准）</td><td>把需求写成「给定…当…那么…」（Given/When/Then），让它可被客观判定。</td></tr>
     </tbody>
   </table>
@@ -55,7 +55,7 @@
 <h2>验收标准怎么写（Given/When/Then）</h2>
 <pre><code>Given（给定）：前提，例如「一篇含引文的 Document」
 When（当）：  触发动作，例如「用户运行总结命令」
-Then（那么）： 预期结果，例如「输出两到三句，且每句能追溯到引文」</code></pre>
+Then（那么）： 预期结果，例如「输出两到三句（按句末标点计，每句不超 40 字），且每句能追溯到引文」</code></pre>
 <p><strong>验收标准里不许出现不可测的形容词</strong>（快、稳、方便、好用）——它们不是判据。要有数字：多少毫秒、多少并发、多少条。</p>
 
 <h2>非功能需求：最容易漏的那一节</h2>
@@ -69,12 +69,13 @@ Then（那么）： 预期结果，例如「输出两到三句，且每句能追
 <ol class="steps">
   <li>这还要在「无限快的电脑」上说出来吗？→ 要：功能；不要：非功能。</li>
   <li>这条有 Given/When/Then 吗？没有 → 缺验收标准。</li>
-  <li>这条是「命令叫什么、参数是什么」吗？→ 是：接口细节，不是需求，放第 7 课以后再定。</li>
+  <li>这条是「命令叫什么、参数是什么」吗？→ 是：接口细节，不是需求，第 8 课 Implementation Decisions 再定。</li>
 </ol>
 
 <h2>AI + Matt 怎么落地</h2>
 <p>本课无独立技能，回指两件已有工具：第 5 课 <code>grilling</code> 的产物当输入（每个决定的来源），第 4 课 <code>domain-modeling</code> 的 <code>GLOSSARY.md</code> 保证术语一致。</p>
-<p>AI 帮你：把决定清单降级成需求草稿（翻译成 Given/When/Then 初稿）；当检查员（拿品格清单逐条挑不可测/歧义/冲突）。</p>
+<p>技能包里没有「把决定转成需求」的命令（归类和数字是业务判断，包不替你做）。注意时间顺序：逼问结果只活在会话里，而 <code>to-spec</code> 会直接拿当前会话落规格——先落盘（<code>grill-with-docs</code> 边问边落 <code>GLOSSARY.md</code>、够格的决定才写 ADR，或让 agent 导出逼问记录），再手动改写成需求清单文件，都要做在 <code>to-spec</code> 之前。三个下手处：<strong>往前</strong>——开 <code>grilling</code> 时就要求问出质量约束（响应/并发/出错恢复/环境），NFR 成为待拍板的决定；<strong>中间</strong>——跑本卡的改写与检查；<strong>往后</strong>——NFR 写成带受益者的 user story 进第 8 课 <code>to-spec</code> 的 User Stories，不承诺的写进 Out of Scope。</p>
+<p>AI 帮你：把决定清单翻译成需求草稿（Given/When/Then 初稿）；当检查员（拿品格清单逐条挑不可测/歧义/冲突）。</p>
 <p><strong>AI 不能替你（你必须拍板）：</strong>功能/非功能的归类；验收标准里的数字（多少毫秒/并发/用户）——那是业务能接受的程度，不是可查的事实。非功能需求尤其危险：agent 会倾向不写，或写一个「看起来合理」的数。</p>
 <p><strong>怎么判断生效：</strong>每条功能需求都能从逼问记录找到来源；每条都有 Given/When/Then；至少一条非功能需求带数字；「要不要这功能」不在需求清单里。</p>
 
@@ -91,9 +92,9 @@ Then（那么）： 预期结果，例如「输出两到三句，且每句能追
 </div>
 
 <h2>写完怎么验</h2>
-<pre><code>读我这份需求清单，再读
-C:\Users\admin\.agents\skills\grilling\SKILL.md（回看决定来源），
-以及 SE-EDU《Specifying Requirements》和 SWEBOK 第 1 章的需求品格。
+<pre><code>读我这份需求清单，和我的逼问记录（文件或本会话记录），再读
+SE-EDU《Requirements》（需求的品格）、《Specifying Requirements》，
+以及 SWEBOK 第 1 章的需求品格（p50 一带）。
 
 逐条检查：
 1. 每条需求能不能从逼问记录找到来源？没有来源的是哪冒出来的？

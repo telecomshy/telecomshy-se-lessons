@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>测试设计参考卡 · 划分、边界与覆盖率</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 19 课</p>
+  <h1>测试设计参考卡</h1>
+  <p class="lede">测试是从几乎无限的输入里选出的有限样本。一组好测试满足三条：correct（正确，是规格的合法客户端）、thorough（彻底，抓得住真 bug）、small（小，少而快）。做法是划分输入空间、把边界值单列、用少量用例覆盖多个子域，再用覆盖率补漏；测试站在 port 上，同一批契约测试对两个 adapter 各跑一遍。覆盖率只说明代码跑过，不说明断言对。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>测试设计在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Testing &amp; Quality（测试与质量）</td><td>模块 4 开篇。前三个模块（需求、计划、设计）造出的产物，从这里开始被证据检验。</td></tr>
+      <tr><td class="skill">站在 port 上</td><td>第 15 课的 <code>Store</code> 契约是测试面：只认 <code>add</code> / <code>search</code>，不读 JSONL 行格式、不摸 <code>_entries</code>。同一批断言跑 <code>JsonlStore</code> 和 <code>InMemoryStore</code>，才是契约测试。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>第 20 课 TDD 把这份用例表放进红绿循环；本课只做循环之前的案头工作：测什么、用哪些输入、预期从哪来。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三条标准：正确、彻底、小</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>标准</th><th>什么意思</th><th>本课例子</th></tr></thead>
+    <tbody>
+      <tr><td class="what">correct（正确）</td><td>测试是规格的合法客户端，接受所有合法实现，不要求规格没承诺的行为。</td><td>只断言契约里的四键、顺序、大小写不敏感、副本；不断言 JSONL 行格式、私有字段、具体时刻或时间字符串。</td></tr>
+      <tr><td class="what">thorough（彻底）</td><td>能抓到程序员真会犯的 bug。</td><td>标题开头 / 中间 / 结尾、只在正文、大小写、空仓库、多条命中、空 query 都有代表。</td></tr>
+      <tr><td class="what">small（小）</td><td>用例少，写得快、跑得快、规格变了改得快。</td><td>十一条用例覆盖二十来个格子，加三四条不变量测试；两个 adapter 仍是秒级。</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="card-rule">
+  <p><strong>数量不是标准。</strong>四十个测试可以都长在同一个角落；两个测试也可以分别守住两条关键契约。判断看覆盖了哪些子域，不看跑了多少次。</p>
+</div>
+
+<h2>划分与边界：Store 的例子</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>划分</th><th>子域</th><th>契约依据</th></tr></thead>
+    <tbody>
+      <tr><td class="what">条目与 query 的关系</td><td>标题开头 / 标题中间或结尾 / 只在正文 / 不命中</td><td>「搜标题和正文」</td></tr>
+      <tr><td class="what">大小写关系</td><td>同大小写 / 不同大小写 / 不适用（未命中）</td><td>「大小写不敏感」</td></tr>
+      <tr><td class="what">仓库状态与命中数</td><td>空仓库 / 1 条命中 / 多条命中 / 有条目但 0 命中</td><td>「返回命中的副本列表」</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>这张表只放输入划分。边界值和不变量不是输入子域，下面分开列。</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>边界</th><th>为什么值得测</th></tr></thead>
+    <tbody>
+      <tr><td class="what">空仓库</td><td>集合的 0 边界；返回空列表，不抛错、不返回 <code>None</code></td></tr>
+      <tr><td class="what">1 条 / 多条</td><td>0、1、多三个状态；多条还要看顺序</td></tr>
+      <tr><td class="what">空 query</td><td>关键词的 0 长度边界；契约先定，再写预期</td></tr>
+      <tr><td class="what">单字符 query</td><td>最短的非空关键词；前缀和子串在这里最容易混</td></tr>
+      <tr><td class="what">query 等于整个标题</td><td>命中长度等于被搜文本的边界</td></tr>
+      <tr><td class="what">命中在标题第一个 / 最后一个字符</td><td>前缀、后缀的分界；<code>startswith</code> 这类 bug 藏在这</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>返回值不变量单独测：副本（改返回值不影响仓库）、条目恰好四个键、顺序与加入顺序一致；顺序在多条命中那条已有代表，独立测试可留可并。</p>
+
+<h2>一份可抄的测试策略</h2>
+<p>下面这份是<strong>示例决定</strong>，不是标准答案。抄之前先做两个判断：匹配用子串还是整词、空 query 返回什么；选完把 docstring、两个 adapter 和用例一起改，别让注释和代码行为打架。</p>
+<pre><code># tests/test_storage.py
+"""Store 契约的测试策略。
+
+输入划分（每条都要有代表）：
+- 条目与 query 的关系：标题开头 / 标题中间或结尾 / 只在正文 / 不命中
+- 大小写：相同 / 不同 / 不适用（未命中）
+- 仓库与命中数：空仓库 / 1 条命中 / 多条命中 / 有条目但 0 命中
+
+边界值（单独测）：
+- 空串 / 单字符 / 等于整个标题 / 命中在标题第一个或最后一个字符
+
+返回值不变量（单独测）：
+- 副本 / 恰好四键 / 顺序
+
+JsonlStore 专有：
+- 新路径 / 重开已有仓库
+
+示例决定：
+- 匹配是子串匹配，大小写不敏感（写进 docstring）。
+- 空 query 返回空列表（示例选择；先改两个 adapter，再补第 11 条用例）。
+"""
+
+import pytest
+
+from kb.storage import InMemoryStore, JsonlStore
+
+
+@pytest.fixture(params=["memory", "jsonl"])
+def store(request, tmp_path):
+    if request.param == "memory":
+        return InMemoryStore()
+    return JsonlStore(tmp_path / "kb.jsonl")
+
+
+@pytest.mark.parametrize(
+    "entries, query, expected",
+    [
+        ([], "pytest", []),
+        ([("PyTest 入门", "")], "PyTest", ["e0001"]),
+        ([("PyTest 入门", "")], "pytest", ["e0001"]),
+        ([("PyTest 入门", "")], "入门", ["e0001"]),
+        ([("笔记", "用 pytest 写测试")], "pytest", ["e0001"]),
+        ([("笔记", "正文")], "pytest", []),
+        (
+            [("PyTest 一", ""), ("笔记", "正文"), ("PyTest 二", "")],
+            "pytest",
+            ["e0001", "e0003"],
+        ),
+    ],
+)
+def test_search_matches_title_or_text_ignoring_case(store, entries, query, expected):
+    for title, text in entries:
+        store.add(title, text)
+    assert [entry["id"] for entry in store.search(query)] == expected</code></pre>
+<p>要补的独立测试：返回值是副本、条目恰好四个键；顺序已由多条命中那条覆盖，想更直白可以单列。再加一条 <code>JsonlStore</code> 重开后还能搜到、id 接着排的测试。样例只到七条，十一格其余的标题中间命中、单字符、整标题、空 query 按正文补。跑 <code>python -m pytest -q</code>；看两个 adapter 是否都被收集，用 <code>python -m pytest --collect-only -q</code>。如果选整词，先定义分词；第 3 条改成「Py Test 入门」查「Test」保留中间命中，第 10 条按分词规则定。</p>
+
+<h2>行业做法（无统一标准，只有主流与取舍）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>类型</th><th>要点 / 产物 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">等价类划分（EP）</td><td>主流</td><td>按行为把输入域切成互不重叠、合起来盖满的子域，每个子域挑一个代表。产物：划分表 + 用例。代价：切多细靠判断，切粗了漏 bug</td></tr>
+      <tr><td class="what">边界值分析（BVA）</td><td>主流</td><td>把边界作为单独子域：空集合、0/1/多、最短/最长、第一个/最后一个。产物：边界用例。代价：边界用例变多，契约不清时选不准</td></tr>
+      <tr><td class="what">组合策略</td><td>主流 / 取舍</td><td>一个用例覆盖多个子域，别做笛卡尔积；pairwise（成对组合）是折中（CMU p20 说约 50%–90% 缺陷）。代价：组合越多越彻底，也越大越慢</td></tr>
+      <tr><td class="what">覆盖率</td><td>主流</td><td>语句 / 分支 / 路径；100% 语句是常见目标，分支更值钱，路径不可行（MIT；SWEBOK 5-13）。产物：覆盖报告。代价：为凑覆盖率写的用例可能只测实现，仍要变异检查</td></tr>
+      <tr><td class="what">测试金字塔</td><td>主流 / 取舍</td><td>单元多、端到端少（CMU p11）；集成放中间是常见画法。产物：分层策略。代价：层级比例靠判断，系统不同会反过来（CMU p32）</td></tr>
+      <tr><td class="what">记录测试策略</td><td>主流</td><td>把划分、子域、每条用例覆盖了哪些子域写在测试文件顶部（MIT）。产物：可检查的策略注释。代价：要跟着契约更新</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：agent 列用例，人定预期</h2>
+<ul>
+  <li><strong>本课无独立技能</strong>（地图技能栏「—」）：契约怎么定、预期值从哪来、覆盖率停在哪，都是判断；下一课 <code>tdd</code> 才接红绿循环。</li>
+  <li><strong>agent 干三件</strong>：按参与者 / 子域 / 边界列候选表，并标出依据是契约还是实现猜测；写 pytest 骨架（fixture、parametrize、tmp_path）；做变异检查（一次改一个 adapter 的一处，跑红，还原）。</li>
+  <li><strong>人做四个决定</strong>：匹配语义（子串还是整词）、空 query 的语义（建议返回空列表，或明确「列出全部」）、哪些是契约哪些是实现、覆盖率停在哪。</li>
+  <li><strong>预期值的硬规矩</strong>：从契约或手算例子来，不让 agent 调用被测代码算预期。CMU《11-oracles》p19 的意思是，AI 生成的测试常变成 golden master（黄金基准），断言代码当前的行为。它会让测试全绿，因为它是照着实现写的。</li>
+  <li><strong>变异检查</strong>：只搜标题 / 标题改 <code>startswith</code> / 返回内部 dict；三次都要有测试变红。立一条硬规矩：不许改测试。</li>
+  <li><strong>怎么判断生效</strong>：<code>python -m pytest -q</code> 全绿；测试 ID 里有 <code>memory</code> 和 <code>jsonl</code>；覆盖率里两个 adapter 的契约行为都有代表；三次变异都被杀死；测试策略注释每格都有主。</li>
+</ul>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">覆盖率当目标</td><td>给每个没跑到的行补「调用一下、断言不抛异常」</td><td>覆盖率只找缺口；补的用例要能说出守的是哪条契约；用变异检查看会不会红</td></tr>
+      <tr><td class="what">测实现细节</td><td>断言 <code>_entries</code>、JSONL 第二行、精确时间字符串、内部调用次数</td><td>只通过 <code>Store</code> 断言；adapter 专有测试单独放</td></tr>
+      <tr><td class="what">用例越多越好 / 只写两三个</td><td>笛卡尔积几十个重复用例，或只有正常路径</td><td>一个子域一个代表，边界单列；每加一个用例问它新覆盖了哪个格子</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<pre><code>读 kb/storage.py 的 Store docstring 和 tests/test_storage.py。
+除了第 5 条要求的临时改动，不要改代码或测试；第 5 条每次改完必须还原。
+开始前确认契约改动已提交（git status 干净；没有就先 commit）；未提交时不要运行 git checkout。
+只审查，不重写。
+
+逐条检查：
+1. 测试策略注释里列了哪些划分？每个子域至少有一个用例吗？边界值单列了吗？
+2. 哪些断言依赖了实现细节（私有字段、JSONL 行格式、具体时刻或时间字符串、文件路径）？
+3. 预期值是手算/契约给的，还是调用被测代码算出来的？
+4. 覆盖率报告里哪些契约行为没跑到？哪些是防御/不可达代码？分别怎么处理？
+5. 逐个制造三个 bug：search 只看标题、标题匹配改成 startswith、
+   search 返回内部 dict。每次只改一个 adapter 的一处，另一个保持正确，
+   用 git diff 确认只有这一处；跑 python -m pytest -q，确认至少一条红；
+   用 git checkout -- kb/storage.py 还原；再 git diff 确认干净，才做下一个。
+   哪个 bug 活下来了？
+6. 测试名和断言能让没读过实现的人知道这个 store 保证了什么吗？
+
+结论：这组测试现在能抓住哪类 bug，抓不住哪类？下一步该补哪个子域？</code></pre>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>test case 测试用例、test suite 测试套件、oracle 判定器、equivalence partitioning（EP）等价类划分、partition 划分、subdomain 子域、boundary value analysis（BVA）边界值分析、black-box testing 黑盒测试、glass-box testing 白盒测试、statement coverage 语句覆盖、branch coverage 分支覆盖、path coverage 路径覆盖、unit testing 单元测试、integration testing 集成测试、system testing 系统测试、acceptance testing 验收测试、mutation 变异、mutant 突变体、testing pyramid 测试金字塔、pairwise testing 成对组合测试、golden master 黄金基准、fixture 测试夹具、parametrize 参数化、contract test 契约测试。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 5 章 p117–136（printed 5-1~5-20）——测试定义（5-1~5-2）、oracle（5-4~5-5）、Dijkstra（5-5）、测试四级（5-6~5-7）、等价类划分（5-10~5-11）、边界值分析（5-11）、结构测试与覆盖率（5-13）、测试过程度量与 ISO 29119（5-16）、变异测试（5-14~5-15、5-18）、彻底性度量不充分（5-20）。MIT 6.031《Testing》：correct / thorough / small、make it fail、partitioning、boundaries、multiple partitions、black/glass box、coverage、documenting testing strategy、unit/integration、iterative test-first。SE-EDU《Test Case Design》：EP、BVA、组合策略与两条启发式。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《09-testing》p9 基于规格的测试、p11 测试金字塔、p16 等价类、p18–19 边界值、p20 pairwise、p23 可测性、p25–33 七条测试原则；《11-oracles》p7 基于例子的 oracle、p18 differential testing、p19 golden master 与 AI 生成测试的警告。测试设计无统一标准；ISO/IEC/IEEE 29119 只借 SWEBOK p5-16 的一句概述。</p>
+  <p><strong>实践方式：</strong><code>pytest</code> / <code>pytest-cov</code> 官方文档（工具用法）；沙盒 <code>kb/storage.py</code> 的 <code>Store</code> 契约；<code>tdd</code> 技能是下一课的红绿循环，本课不展开。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0019-pytest-test-design.html">第 19 课：pytest 与测试设计：划分、边界、覆盖率</a> · <a href="course-map.html">课程地图</a> · <a href="0018-design-doc-card.html">第 18 课：设计文档参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

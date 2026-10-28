@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 10 课 · 纵向切片与阻塞边：先做哪个</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 2 · 计划与过程 · 第 10 课</p>
+  <h1>纵向切片与阻塞边：先做哪个</h1>
+  <p class="lede">第 8 课把模块一的共识写成了一份能开工的 spec，第 9 课想好了该用什么样的过程去排它。但 spec 说的是「要做出什么」，不是「先做哪一块」。你让 agent 一口气把 spec 做完，会撞上两堵墙：功能稍大，单个上下文窗口装不下；更麻烦的是你没法中途验收。这一课用 to-tickets 把那份 spec 拆成工单，先讲一个关键判断——别按层拆，要纵向切片，让每个工单都穿透全链路、能独立验收；再用阻塞边（blocking edge）回答「先做哪个」。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 35–45 分钟</span>
+  <span><b>前置</b> 第 8、9 课</span>
+  <span><b>产出</b> 一张带阻塞边的工单集 + 一张参考卡</span>
+  <span><b>主读物</b> SE-EDU《Project Planning》；SWEBOK 第 9、10 章</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清「拆工单」落在第 2 课八个活动里的哪一块，以及它和上一课过程、下一课估算的关系。</li>
+    <li>说清横向切片为什么会让每个中间产物都「跑不起来」，纵向切片为什么让每个工单可独立验收。</li>
+    <li>说清 tracer bullet 和 walking skeleton 这两个「先打通最小闭环」的经典做法，以及它们怎么回答「先做哪个」。</li>
+    <li>用 to-tickets 把一份 ready-for-agent 的 spec 拆成带阻塞边（blocking edge）的工单，并说清「先做哪一张」。</li>
+    <li>判断一张工单的依赖是否真的 gate 它，以及什么时候该用 expand-contract 而不是纵向切片。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：我们在哪</h2>
+  <p>第 2 课把软件工程拆成八个活动，这一课仍然属于 <strong>Process &amp; Management（过程与管理）</strong>，而且它是模块 2 的第二站。第 9 课是导读：它回答「拿到 spec 之后，用什么样的过程把它排出来」。这一课往下走一步，把过程落到具体动作——用 to-tickets 把那份 spec 拆成一张张工单。第 11 课（估算与度量）在它之后，给这些工单估工时；你在这里拆得对不对、有没有把阻塞边划准，会直接决定后面估得准不准。</p>
+  <p>为什么「拆工单」是软件工程的一部分，而不是管理词？SE-EDU 的《Project Planning》把项目计划的第一步就讲成 <strong>工作分解结构（Work Breakdown Structure，WBS）</strong>：把全部工作拆成更小、定义清晰的单元，单元之间可以有前置任务和工时估算（SE-EDU《Project Planning》, Work breakdown structure）。一句话：计划不是「列一份大目标」，而是「把大目标分解成能单点完成、能判断做完没有的小单元」。这一课练的，就是 SWEBOK 划给过程与管理的那一部分（SWEBOK v4, ch.9, p9-8 一带；回指第 9 课）。</p>
+  <p>这一课的原料，就是你第 8 课做好的那份 spec。第 8 课说过：它正是「第 10 课用 to-tickets 拆成工单的原料」。所以这一课不做新需求、不重谈过程选型，只做一件事：把「要做出什么」变成「第一件先做什么、第二件做什么、以及为什么」。</p>
+</section>
+
+<section>
+  <h2>问题与概念：别按层拆，要纵向切片</h2>
+  <p>先回到你手里的 spec。它叫「总结功能」：读一篇文档，把内容压成两到三句中文，标一条带引用的条目。它已经标成 <code>ready-for-agent</code>。现在你把手头唯一一份明确的说明书——agent 完成整份 spec，你觉得会发生什么？如果功能稍大，一个全新 agent 的上下文窗口根本装不下整份实现；你也没法在它做到一半时验收——你只能等它把一切都做完，才知道结果对不对，而那时已经返工了。</p>
+  <p>于是你本能地想了个替代办法：按层拆。建数据库表（schema）、写 API、写界面（UI）、最后补测试——这是大多数人第一次拆工单时最顺手的切法。可它恰恰掉进一个坑：这样切出来的每一张工单都只切到一个 layer，前几张做完时，系统连一个能跑的部件都没有。表建好了但没有数据，接口写好了但没人调用，UI 画出来了但后端没接上；唯一的「能跑的东西」要到最后一张工单拼完才出现。这时你发现方向错了，前面四张全部作废。这种「一次只切一层」的做法，叫 <strong>horizontal slice（横向切片）</strong>，它让每一份中间产物都无法独立验收，把风险全部堆到最后一张。</p>
+  <p>反过来的切法，是这一课的核心：<strong>vertical slice（纵向切片）</strong>。每一张工单都切一条窄窄的、但完整贯穿的路——同时穿过 schema、API、存储、UI、测试。举总结功能为例，第一张纵向切片可以是「读一篇 Markdown 文档，出一句中文摘要，落成一条带引用的条目」。这一张不大，但它真的动了所有层：有输入、有处理、有落库、有测试。做完这一张，你手里就有一个能跑的最小闭环，可以当场演示、当场验收；它跑通了你才接着做「两到三句」「超时」「排除派生条目」这些更深的切片。</p>
+  <p>这个思想有两个很扎实的一手出处。Hunt 和 Thomas 在《The Pragmatic Programmer》（1999）里叫它 <strong>tracer bullet（追踪弹）</strong>：真实子弹打中的不是「每一层都铺好再组装」，而是一条穿透整条弹道、能打到目标的最小真实路径——打中一颗，就证明你的整个技术栈能通。Freeman 和 Pryce 在《Growing Object-Oriented Software, Guided by Tests》（2009）里给出另一个名字 <strong>walking skeleton（行走骨架）</strong>：先让一个「从一头到另一头都能跑的最小骨架」站起来，再在骨头上长出肉。两个名字讲的是同一件事，只是 tracer bullet 强调「证明技术栈跑得通」，walking skeleton 强调「先给系统造一个可生长的骨架」。</p>
+  <p>「先做哪张」不是拍脑袋，而是看工单之间的依赖。每一张工单都会声明自己依赖哪些其他工单——它做完之前那些才可能开工。这个依赖关系叫 <strong>blocking edge（阻塞边）</strong>：一张工单「被哪些工单阻塞」。没有阻塞边的工单可以立即开工。取出所有「阻塞都已解决」的工单，就是现在能干活的集合——to-tickets 管它叫 <strong>frontier（前沿）</strong>。</p>
+  <p>这里要提醒一句：frontier 这个词你在第 5 课已经见过，但意义不同。第 5 课的 frontier 是 grilling 里的「设计树前沿」——那些还没被问清的决定；这里的 frontier 是「所有前置都已完成、现在就能开工的工单」。两个都是「下一步该做什么」的指针，但一个在需求阶段、一个在计划阶段。别把两处混成一个概念。</p>
+</section>
+
+<section>
+  <h2>行业做法：从 WBS 到先做最小闭环</h2>
+  <p>行业里把「拆工单」的做法摆开，能帮你看到你刚才学的两个判断是怎么长出来的。</p>
+
+  <h3>先看最经典的：WBS 与里程碑</h3>
+  <p>SE-EDU 把第一步叫做 <strong>WBS（Work Breakdown Structure，工作分解结构）</strong>：把全部工作拆成更小、更明确的单元，每个单元清楚「什么时候算做完」，需要的话标上前置任务和工时（SE-EDU《Project Planning》, Work breakdown structure）。它的三个点，恰好就是 to-tickets 落地的三件事：拆小、可验收（「算做完」）、声明前置依赖。它说明「拆工单 + 画依赖」不是新鲜招，而是项目计划最早就被认可的基本功。</p>
+  <p>接着是 <strong>milestone（里程碑）</strong>。SE-EDU 说，里程碑是一个阶段结束的标志，代表显著进展；决定某个里程碑交付哪些特性时，要参考依赖和优先级；而且，「有些项目不现实要为整个项目做详细计划」，可以用一个高层计划 + 接下来几个里程碑的详细计划（SE-EDU《Project Planning》, Milestones）。这句话跟你的处境直接对上了：你不需要一次把 34 课、把整个功能排到天衣无缝，你只要能把「接下来的几张工单」想清楚。纵向切片 + 阻塞边，正好帮你把「里程碑该先交付什么」算出来——先做 frontier 里那些低阻塞、能独立演示的切片。</p>
+
+  <h3>先做最小闭环：tracer bullet 与 walking skeleton</h3>
+  <p>行业里把「先做最小闭环」总结成两套都讲、各有侧重的做法。tracer bullet 的思路是：先找一条最窄、但能穿透整个系统的真实路径，把它打到端点；它跑通了，就证明整条技术链路成立，后面一层一层加厚是安全的。walking skeleton 的思路更偏生长：先搭一个「最薄但端到端都能跑」的骨架，之后的功能是在骨架里继续长肉，而不是重建。两者的共同点：都要一张「看起来很小、但已经会跑」的图。它们也都承认一件事——第一张工单不该是「最完整的」，而是「最关键的、能证明方向对的那条」。你拆工单时，第一张就该是这颗追踪弹。</p>
+
+  <h3>什么时候别用纵向切片：wide refactor</h3>
+  <p>纵向切片不是万能。有一种改动没法切成「一小条就能绿」：<strong>wide refactor（宽重构，大范围重构）</strong>。比如把数据库里的一个列名改了，或者改一个全库共享的类型——它的一次机械性改动，会在整个代码库成千上百个调用点同时报错，没有任何一张「纵向切片」能单独保持绿。这不是工单拆错了，是这种改动本质上是「扩出一个 blast radius（爆炸半径）横贯全库」的一次性改动。它的标准做法是 <strong>expand-contract（先扩后缩）</strong>：第一步先「扩」——把新形式放在旧形式旁边，什么都不动，什么都不坏；然后把调用点按爆炸半径分批迁移，每批一张工单、阻塞于「扩」这一步、旧形式还在所以每批都能绿；最后「缩」——没有调用者之后，删掉旧形式，这一步被所有迁移批阻塞。这个「宽重构是纵向切片的例外」的判据，是 to-tickets 的 SKILL.md 明写的（见实践来源），也是你拆工单时该带上的判断：如果发现某块改动拦不住「单张绿」，别硬塞进切片，改用 expand-contract。</p>
+
+  <p>所以「拆工单」这件事，业内没有一套必须照抄的标准——WBS 拆多细、milestone 用什么粒度、tracer 选哪条业务线，都是主流做法、按项目取舍。有一条普适的判断标准可以拿来做标尺：<strong>一张工单完成时，是否有一件「能跑、能演示、能单独验收」的东西出来</strong>。能出来，它才是合格的纵向切片；出不来，你就还欠着一次「横向切片」的重。这条标准，正是下面 to-tickets 干活时用同一根尺子量你。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：to-tickets 把 spec 拆成工单</h2>
+  <p>这套技能包里，把「把 spec 拆成工单」落地的，是 <code>to-tickets</code>。它和 to-spec 一样，是<strong>用户调用</strong>的技能：你在沙盒里主动让它跑，它不会被 agent 随手拉起。它有一个前置条件：仓库得先被 <code>/setup-matt-pocock-skills</code> 初始化过（第 3 课做过、沙盒的 <code>docs/agents/issue-tracker.md</code> 已经在）——否则它第一件事就是让你去跑 setup。</p>
+  <p>to-tickets 的流程有五步，其中两步特别值得你知道，因为它们正是这一课的理论在 agent 时代的落地方式。</p>
+  <p>第一步，<strong>先收集上下文、再探索代码库</strong>。它会先读那份 spec（或你给的 issue 编号/URL 的全文与评论），然后用项目 <code>GLOSSARY.md</code> 里的词汇写工单标题和描述（术语对齐第 4 课）、尊重已经落盘的 ADR（第 7 课）。它还会做一件很特别的事：找「为让实现更容易而提前重构」的机会——它的原话是 <strong>"Make the change easy, then make the easy change."</strong>。也就是说，如果先做一点重构，剩下的每个切片会更容易实现，它会先把那个 prefactor 排在第一。这是 WBS 时代没有的——经典的 WBS 假定「先按名拆解，再让各人去实现」，而 to-tickets 是「先想想哪块调整能让后续每张工单更小、更独立」，它是为「一次只做一件事、每个 agent 只做一张」的节奏服务的。</p>
+  <p>第二步，<strong>起草纵向切片，并标好阻塞边</strong>。它的核心规则，就是本课前半段那条：<code>&lt;vertical-slice-rules&gt;</code>——<strong>每个切片都切一条窄但完整穿过所有层的路（schema、API、UI、测试），不是横向切一层；一个完成的切片能独立演示或验证；每个切片的大小要能塞进一个全新的上下文窗口；任何 prefactor 都先做。</strong> 注意「塞进一个上下文窗口」——这是 to-tickets 给「拆多细」定下的一个可操作的标尺。SE-EDU 的 WBS 说「把工作拆小」，但没说小到多少；因为它假定实现者是人在翻文档；而在 agent 语境里，一次只能看到有限上下文，所以「小到一次放得进一个上下文」就成了一个能落地、可检查的判据。这就是 to-tickets 和经典理论最明显的差异：它把「小」从形容词具体成了一条工作约束。</p>
+  <p>第三步，<strong>把草稿摊给你，等四个问题。</strong>它会把拆好的工单列出来，每张给出标题、被谁阻塞（Blocked by）、它打通的是哪段端到端行为，然后问你四件事：粒度够不够（太粗 / 太细）？阻塞边对不对——每张工单是不是只依赖真正 gate 它的那些？有没有该合并或该再拆的？到这里，它做的只是建议；拆多深、阻塞划得准不准，是你要拍板的。</p>
+  <p>第四步，<strong>按阻塞顺序发布到 tracker</strong>。用你配置过的 tracker：本地文件，它会在 <code>.scratch/&lt;feature&gt;/issues/&lt;NN&gt;-&lt;slug&gt;.md</code> 下一个工单一个文件、从 <code>01</code> 起按依赖顺序排（阻塞在前），每张的 <code>Blocked by</code> 列出它依赖的工单号/标题，并标 <code>Status: ready-for-agent</code>；如果用真实的 issue tracker（GitHub、Linear），就一个 issue 一个工单、同样按依赖序发布、能标原生阻塞关系就标。</p>
+  <p>那「先做哪个」在 to-tickets 里怎么表达？它把「能做哪张」叫 <strong>frontier（前沿）</strong>：一个工单，只要它没有未完成的阻塞，就进 frontier。开发时你从 frontier 里挑，做完一张，它的阻塞就解除，它下游的工单可能跟着进 frontier。这一课说的「先做哪个」，落到工具上就是这个动作。注意——这里 front 的「frontier」是「现在就能开工的工单集」，它和第 5 课 grilling 里的「设计树前沿」（还没问清的决定）是同一个英文词、两种含义，别把它们看成一件事。</p>
+  <p>这里「人还」拍板的四件事，正好是 agent 不能替你做的那四件：<strong>粒度</strong>（拆多深，是你的工程判断）；<strong>阻塞边是否真实</strong>（某张工单到底是不是真依赖另一张，还是你只是以为它依赖）；<strong>合并与拆分</strong>（两张是否其实是一件事）；以及 <strong>wide refactor 怎么处理</strong>——如果某块改动「竖着切不开」，你判断要不要改成 expand-contract，而不是硬塞进纵向切片。至于「它自动化了什么」，它在做的是把「拆解 + 验收标准 + 阻塞边 + 排序 + 发布」这一整套机械劳动接走了，让「先做哪张」成为一张可点、可读、可更新的图。</p>
+</section>
+
+<section>
+  <h2>练习：把 spec 拆成带阻塞边的工单</h2>
+  <p>下面这个练习，就是让 to-tickets 把沙盒里「总结功能」那份 spec 拆成工单。它不写代码，只产出一套能开工的工单文件，并且你要能说出「先做哪张、为什么」。</p>
+
+  <ol class="steps">
+    <li><strong>先确认第 8 课那份 spec 落盘了。</strong>它应在 <code>.scratch/&lt;feature&gt;/spec.md</code>、带 <code>Status: ready-for-agent</code>。缺了就回第 8 课补——to-tickets 拆的是 spec，没 spec 它就无从拆。</li>
+    <li><strong>让 agent 用 to-tickets。</strong>给一句输入，比如「把总结功能那份 ready-for-agent 的 spec 用 to-tickets 拆成工单，发布到 issue tracker」。</li>
+    <li><strong>先看它列出的切片。</strong>是不是每张都穿透 schema / 数据 / 测试，而不是「先建表、再写 API、再画 UI」这种横向切片？第一张是不是一颗能证明「输入→摘要→落库→测试」跑得通的 tracer bullet？</li>
+    <li><strong>看阻塞边对不对。</strong>哪几张没有阻塞、可以立即开工（那就是 frontier）？哪张的阻塞依赖是真 gate 它、而不是「你顺手写上」的？</li>
+    <li><strong>拍板 + 看发布产物。</strong>确认粒度、是否合并/拆分；发布后到 <code>.scratch/&lt;feature&gt;/issues/</code> 看：是否从 <code>01</code> 起依赖序编号、每个文件一张工单、每张带 <code>Blocked by</code> 与 <code>Status: ready-for-agent</code>。</li>
+  </ol>
+
+  <p>写的时候如果发现自己「不知道第一张该做什么、某张工单为什么卡在另一张后面」，那不是 to-tickets 的问题，是你对「这条链路的关键最小闭环」还没想清楚——回这课「行业做法」一节，看 tracer bullet 那一段再拆一次。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这份工单拆得对吗</h2>
+  <p>判断工单拆得好不好，最好办法是让 agent 按下面这份检查单过一遍。它查的不是格式，而是「拆解本身站不站得住」。</p>
+
+  <pre><code>读我这份 to-tickets 产出的工单（.scratch/&lt;feature&gt;/issues/ 下所有文件），
+再读 C:\Users\admin\.agents\skills\to-tickets\SKILL.md、
+SE-EDU《Project Planning》（Work breakdown structure / Milestones 两节）。
+
+逐条检查：
+1. 每个工单是不是纵向切片？有没有谁拆成了「只做 schema / 只做 UI」这种横向切片，做完没有可演示的产物？
+2. 每个切片的验收标准是不是「能跑、能演示、能单独验证」的端到端行为，而不是层级的实现清单？
+3. 阻塞边对不对：每个工单只依赖真正 gate 它的工单？有没有漏掉该依赖、或多了不该依赖的？
+4. 有没有「只有等最后一张拼完才能跑」的工单序列？（若有，说明有人拆横了）
+5. 有没有遇到 wide refactor？如果有，有没有按 expand-contract（先扩后缩）而不是硬塞进纵向切片？
+6. 每张工单是不是都能装进一个全新上下文窗口？太粗的话建议在哪切开？
+
+逐条引用原文指出问题，最后给结论：这份工单现在可以开工吗？先做哪张、为什么？</code></pre>
+
+  <p>读反馈时，把意见分两类。一类是「拆横了」——出现了「只做一层」「最后才拼起来」的工单，这类要重拆成纵向。另一类是「阻塞边划错」——该依赖的没依赖、或画了假的依赖，这类直接把 <code>Blocked by</code> 改对。还要警惕一种：agent 可能在你看完前说「我直接开始实现第一张了吧」。它是在跳步，把你推进第 23 课（implement）才该做的事。本课的产物是一套工单文件 + 一张依赖图，不是实现；先想清「先做哪、为什么」，再谈做。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>先做哪个，不是按层从底层到顶层拆，而是纵向切片：每个工单一条窄而完整、能独立验收的链路（tracer bullet / walking skeleton，Hunt &amp; Thomas 1999；Freeman &amp; Pryce 2009）。</li>
+    <li>阻塞边（blocking edge）决定先后：取没有未完成阻塞的工单做 frontier，先从 frontier 开工；frontier 这个词在第 5 课是设计树前沿，这里是「可开工工单」，别混。</li>
+    <li>to-tickets 自动做拆解、验收标准、阻塞边、依赖序与发布，把「小」具体成「一个上下文窗口」；粒度、阻塞边是否真实、合并拆分、wide refactor 要不要 expand-contract，仍由你拍板。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SE-EDU《Project Planning》——Work breakdown structure（把全部工作拆成更小、更明确的单元，可带前置任务与工时估算，每单元清楚何时算做完）、Milestones（里程碑是阶段进展标志，交付哪些特性要参考依赖与优先级，可高层计划 + 近几个里程碑详设）；SWEBOK v4 第 9 章《Software Engineering Management》（过程计划、计划与风险，回指第 9 课 ch.9 p9-8~9-9）。</p>
+  <p><strong>实践方式：</strong><code>to-tickets</code>（用户调用）——探索仓库用 GLOSSARY + 尊重 ADR、找 prefactor 机会（Make the change easy）、按 vertical-slice-rules 起草纵向切片、四个确认问题、按阻塞顺序发布到 tracker（本地文件一张一卡/块文件，或真实 tracker 原生阻塞关系），打 <code>ready-for-agent</code>；本机路径 <code>C:\Users\admin\.agents\skills\to-tickets\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>行业经典：</strong>Hunt &amp; Thomas《The Pragmatic Programmer》(1999) 的 tracer bullet；Freeman &amp; Pryce《Growing Object-Oriented Software, Guided by Tests》(2009) 的 walking skeleton——两者的「先做一条能跑通的最小闭环」，就是本课「第一张工单」的出处。</p>
+  <p><strong>延伸：</strong>第 11 课「计划、估算与度量」——每个工单都带了阻塞边和「一个上下文窗口」的尺寸，正是第 11 课估算的依据。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 11 课「计划、估算与度量：为什么工时估算总是不准」。这一课把 spec 拆成了工单、每个工单都带阻塞边和「能装进一个上下文窗口」的尺寸——但「每一张要多久」还没回答。下一课就用这些工单做估算：先讲为什么人估工时总是偏乐观，再讲该用什么方法把它估成一个「有区间、带假设」的估计，而不是一个假精确的单点。</p>
+  <p>你的工单拆好后，贴给我，或直接让 agent 按上面的检查单过一遍。如果你发现自己「说不清第一张该做什么、阻塞边画得像猜的」，那不是 to-tickets 的问题，是你还没把「最小一条能验收的链路」找出来——可以回这课「行业做法」再读一遍，或回第 5 课再逼问一轮。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0010-tickets-card.html">工单参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>
