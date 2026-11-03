@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 23 课 · /implement：把一个工单真正做完</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 4 · 实现与测试 · 第 23 课</p>
+  <h1>/implement：把一个工单真正做完</h1>
+  <p class="lede">第 22 课练习的四个候选里，「写文件失败时报什么错」那个你当时没拍板，说好先定契约再断言。现在你定了：写文件失败抛 <code>StorageError</code>，带出原异常，仓库不留半截条目。决定落成一张工单，躺在 <code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>，验收标准四条，每条都能勾。你把工单引用丢给 agent，输入 <code>/implement</code>。几分钟后它宣布做完了，测试全绿。你一翻 diff：错误处理确实加上了，可它顺手把 <code>kb add</code> 的打印格式也换了；工单里「失败后仓库状态与失败前一致」那条找不到对应的测试。测试绿着，工单没完。「做到什么程度算完」得有一组判据说了算——验收标准、测试、静态检查、review、提交，哪个算数、怎么排，就是这一课的内容。第 19 课管样本、第 20 课管时机、第 21 课管形状、第 22 课管隔离，四课攒的是测试的判据；这一课把判据装进一张工单（ticket）的生命周期：从红到绿，再通过 review（评审）。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 20 课（红绿循环）、第 22 课（替身判断）；第 10 课的工单形状</span>
+  <span><b>产出</b> 一个从红到绿、再通过 review 的工单：契约补进 docstring、错误行为的测试、一份两轴报告、一次提交</span>
+  <span><b>主读物</b> SWEBOK v4 第 4 章（Software Construction）</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：样本、时机、形状、隔离攒的是测试判据，这一课把判据装进一张工单的生命周期，从红绿循环走到 review。</li>
+    <li>解释「做完」为什么不是一个信号而是一组判据：验收标准、测试、静态检查、review、提交各管一段。</li>
+    <li>分清 validation（确认）和 verification（验证），说出「测试全绿」只回答了其中一半。</li>
+    <li>照 to-tickets 的本地模板写一张带验收标准的工单，把契约空洞拍板成一句句能勾的话。</li>
+    <li>跑通 <code>/implement</code>：说清它的输入、步骤顺序和产物，指出人在哪四个点拍板。</li>
+    <li>用一张检查单判断工单真的做完没有，认出三种假象：没完、假完、过完。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：四课的判据，装进一张工单</h2>
+  <p>第 2 课把软件工程拆成八个活动。模块 4 的四课一直在 Construction（构造）和 Testing &amp; Quality（测试与质量）之间来回：第 19 课在测试活动里选样本，第 20 课在构造活动里定时机，第 21 课立测试的形状，第 22 课处理隔离的代价。四课合起来回答的是「什么样的测试算数」。可测试只是工单收尾时要过的关卡之一——工单从开工到交付，中间还要过静态检查、评审和提交。这一课仍在 Construction 里，但换的问题是：一张工单做到什么程度算完。</p>
+  <p>工单本身不是这一课造的。第 10 课的 <code>to-tickets</code> 把 spec（规格说明）拆成一张张纵向切片，落在 <code>.scratch/&lt;feature&gt;/issues/&lt;NN&gt;-&lt;slug&gt;.md</code>：每张写明 What to build、Blocked by、Status，以及一组 <code>- [ ]</code> 的 acceptance criteria（验收标准）。当时的规矩是只拆不做——「先做哪张、为什么」想清楚再谈做。今天轮到做：<code>/implement</code> 拿的就是那张文件，做完该把验收标准勾满。第 10 课还留了个词：frontier（前沿），指阻塞全解、可以开工的工单集合；<code>/implement</code> 一次做一张 frontier 上的工单。</p>
+  <p>往后两课各接走一块。第 24 课把今天人手跑的检查链交给 CI（Continuous Integration，持续集成）自动跑；第 25 课展开 review 的读法。今天只把 review 当收尾关卡，看它产出什么、你裁决什么。</p>
+</section>
+
+<section>
+  <h2>问题与概念：「做完了」是一组判据，不是一个信号</h2>
+  <p>回到开头那张工单。agent 喊「做完了」的那一刻，它手里的证据是「测试全绿」。这个信号回答了一个问题：写出来的测试都过了。它没回答另外两个问题：工单要的行为是不是都做出来了、diff 里有没有夹带工单没要的东西（那点顺手的改动就是后者的证据）；做出来的东西是不是符合开工前定的契约（「仓库状态与失败前一致」没人测，等于没验）。</p>
+  <p>这种「绿了但没完」不是偶然。SWEBOK 讲构造阶段的测试时说得很克制：「Construction testing aims to reduce the gap between when faults are inserted into the code and when those faults are detected（构造测试的目标是缩短故障被引入代码到故障被发现之间的间隔）」（SWEBOK v4, ch.4, §3.4, printed 4-7）。缩短间隔、降低修复成本，测试的作用就是这个；它从来没承诺「绿 = 正确」。同一节还提醒，构造测试多由写代码的人自己做，就是单元测试和集成测试两种，本来就不是全部测试。</p>
+  <p>那构造阶段的「质量」靠什么保证？SWEBOK 给了一张清单，列在 §3.6「Construction Quality」（printed 4-8~4-9）里：unit testing and integration testing（单元测试与集成测试）、test-first development（测试先行开发）、assertions and defensive programming（断言与防御式编程）、debugging（调试）、inspections（检查会）、technical reviews（技术评审，含安全评审）、static analysis（静态分析）。测试排在第一项，后面还有六项。清单后面那句话是给你的：「The specific technique or techniques selected depend on the software constructed and on the skill set of the software engineers performing the construction activities（选哪一种或哪几种技术，取决于构造的软件和做构造活动的工程师的技能）」——挑哪几样、各做到什么程度，靠判断。</p>
+  <p>把这张清单对准开头的工单，还能看出更细的分工。SE-EDU《Quality Assurance》开篇把质量保证拆成两半：「Quality Assurance = Validation + Verification」，并且解释「Validation: are you building the right system（确认：你造的是不是对的系统）」「Verification: are you building the system right（验证：你是不是把系统造对了）」，还补了一句「What is more important is that both are done, instead of limiting to only verification（要紧的是两样都做，而不是只做验证）」。拿这副眼镜看：测试全绿是 verification 的证据，工单的验收标准逐条勾满才是 validation 的证据——工单该有的行为一个不少、不该有的一个没多。这门课的测试再好，也只在验证这半边使劲。</p>
+  <p>验收标准为什么能担这个角色？因为它是开工前写下的「做完长什么样」。第 10 课的工单模板里那几行 <code>- [ ]</code> 就是为这一刻准备的：把契约的空洞拍板成一句句能勾的话，勾满即完。这一步顺带解决测试的预期值从哪来——第 20、21 课说过，预期值必须来自独立的真相来源，验收标准就是那个来源。反过来，标准写得勾不动（「错误处理要完善」），测试就没法为它作证。</p>
+  <p>最后补一个时间维度。SWEBOK §4.17「Feedback Loop for Construction」（printed 4-14）说：「Early and continuous feedback for the construction activity is one of the most important advantages of agile development and DevOps（构造活动的早期、持续反馈是敏捷开发和 DevOps 最重要的优点之一）」。判据不是攒到收尾才跑一遍的清单；越早跑，故障被引入到被发现的间隔越短，开头那个「先入内存再写文件」的半截条目问题就越可能在第一轮红里冒出来。这一课要定的判据，下一课的 CI 会替你高频地跑。</p>
+</section>
+
+<section>
+  <h2>行业做法：完成清单怎么配到工单上</h2>
+  <p>先立标尺。「一张工单做到什么程度算完」没有统一标准。敏捷圈的 Definition of Done（完成的定义）是框架给的做法名，谈不上规范条文；受监管行业另有一套，学校和小团队又松得多。下面三条是流传最广的主流做法，每条写清怎么做、产物、代价，最后一条带取舍。</p>
+
+  <h3>验收标准先行，逐条可勾</h3>
+  <p>做法是开工前把「做完长什么样」写成能跑、能看、能勾的句子。写「<code>JsonlStore</code> 写文件失败时抛 <code>StorageError</code>，异常带出原异常」，不写「错误处理要完善」；写「失败后仓库状态与失败前一致，再 <code>add</code> 不跳号」，不写「保证数据完整」。产物是工单上的勾选项，代价是要花时间写标准——但这笔时间通常从省下的返工里赚回来。标准逐条可勾还有个隐藏好处，它逼你把契约空洞拍板掉：抛什么、返回什么、状态留不留，写标准时必须答，答不了的写成「未决问题」，别让测试替你猜。这条做法没有单一出处，它长在 to-tickets 的工单模板里，也长在各家「acceptance criteria」的写法里。</p>
+
+  <h3>一个工单一次交付，小步走</h3>
+  <p>工单的粒度决定交付的形状。Google 的工程实践指南《Small CLs》把这件事说得很具体：CL（changelist，变更列表，一次送审的变更）「the right size for a CL is one self-contained change（合适的大小是一次自包含的变更）」，通常「just one part of a feature, rather than a whole feature at once（一个功能的一部分，而不是整个功能）」；多小算小没有硬规矩，「100 lines is usually a reasonable size for a CL, and 1000 lines is usually too large（100 行通常合理，1000 行通常太大）」，「Reviewers rarely complain about getting CLs that are too small（评审人很少抱怨变更太小）」。同一篇还定了两条跟本课直接相关的规矩：「Tests are expected for all Google changes（所有变更都得带测试）」，相关测试代码跟功能放同一个 CL；「It's usually best to do refactorings in a separate CL from feature changes or bug fixes（重构最好跟功能、修复分开成另一个 CL）」——小的顺手清理（改个局部变量名）可以混，大的拆开。小步的账在同一篇里摆着：小变更评审快且全、不易引入 bug、方向被否时损失小、回滚容易。代价是拆分本身要设计，第 10 课拆工单时你已经付过一次。</p>
+
+  <h3>质量门按风险配，评审补测试的盲区</h3>
+  <p>收尾固定跑什么？这道收尾关卡常被叫作 quality gate（质量门）。把 SWEBOK §3.6 那张清单缩成日常可跑的三样：静态检查、测试、评审。三样的分工不同。静态检查不执行代码就能找问题，SE-EDU《Quality Assurance》列的常见收获是「unused variables, unhandled exceptions, style errors（未用变量、未处理异常、风格错误）」，lint（代码检查器）是它的子集，专找能让代码更干净的地方。测试跑行为，但 SE-EDU 在讲 formal verification（形式化验证）时顺手给了句实话：「testing can only prove the presence of errors, not their absence（测试只能证明错误存在，不能证明错误不存在）」——绿了是「没抓到」，不是「没有」。评审看前两样看不见的东西，SE-EDU 总结 code review（代码评审）是「the systematic examination of code with the intention of finding where the code can be improved（系统地检查代码，找出可以改进之处）」，它比测试强在三点：「detect functionality defects as well as other problems such as coding standard violations（抓功能缺陷之外的问题，比如违反编码规范）」「verify non-code artifacts and incomplete code（能验非代码产物和没写完的代码）」「does not require test drivers or stubs（不需要测试驱动件和桩件）」；弱点也明说：「It is a manual process and therefore, error prone（人工过程，因而易错）」。配法跟着风险走：小工具项目三样跑完就行；安全攸关的系统再往上加。选哪几样、各多严，就是 SWEBOK 那句「取决于软件和工程师」的取舍。</p>
+  <p>三条合起来正好回答开头的分工：验收标准管 validation，测试和静态检查管 verification，评审管两者都看不见的规范、可读性和设计。少配一样，就有一类问题要等到更贵的地方才被发现。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：/implement 的一条龙</h2>
+  <p>落地的技能是 <code>implement</code>，地图第 23 课技能栏里那个。它的调用类型要写清：frontmatter 里有 <code>disable-model-invocation: true</code>，所以模型不会自己拉起它——它由你输入 <code>/implement</code> 触发。为什么这样设计不难猜：它做的是「把一张工单交付出去」，开工的决定在你。它的 <code>SKILL.md</code> 短短十七行，把上面行业做法的判据排成了一条固定顺序的流水线。逐句对着看：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>技能原文</th><th>它在判据清单上管哪段</th><th>谁在做</th></tr></thead>
+      <tbody>
+        <tr><td class="what">「If the user passes a ticket reference, fetch it from the issue tracker and state its title before starting.」</td><td>对准工单：先报标题再开工，validation 的起点</td><td>agent 取工单、报标题；你确认它拿的是哪张</td></tr>
+        <tr><td class="what">「Call the Skill tool with "tdd" where possible, at pre-agreed seams.」</td><td>红绿循环进工单：每轮一个行为，测试先行</td><td>agent 跑循环；你拍板 seam 和步幅</td></tr>
+        <tr><td class="what">「Run typechecking regularly, single test files regularly, and the full test suite once at the end.」</td><td>静态检查加测试的反馈节奏：快信号高频、全量一次兜回归</td><td>agent 跑；你盯着红绿</td></tr>
+        <tr><td class="what">「Once done, call the Skill tool with "code-review" to review the work.」</td><td>评审收尾：两个轴审这份 diff</td><td>agent 汇总报告；每条意见你裁决</td></tr>
+        <tr><td class="what">「Commit your work to the current branch.」</td><td>提交落盘，交付留痕</td><td>agent 提交；你看过 diff 再认</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>中间那一行「Call the Skill tool with "tdd"」接的是第 20 课的循环，「at pre-agreed seams（在事先约定的接缝上）」接的是 <code>tdd</code> 技能的纪律：「Test only at pre-agreed seams… No test is written at an unconfirmed seam（只在事先约定的接缝上测试……未经确认的接缝不写测试）」——agent 开工会列出候选 seam 跟你确认，你要认的就是这个。注意那句「where possible」：它给不走红绿的工单留了口子，纯重构、文档、配置类的工单没有「先写失败测试」的用武之地，硬套反而造出同义反复的测试。还有第 20 课记过的口径差异在这里继续生效：<code>tdd</code> 说「Refactoring is not part of the loop. It belongs to the review stage（重构不在循环里，属于 review 阶段）」，跟 Google「重构单独成 CL」是同一条分界线——功能的交付里不混结构改动。</p>
+  <p>流水线是 agent 跑的，四个拍板点在你。第一，<strong>工单边界和验收标准</strong>：边界是拆工单时定的，to-tickets 的 quiz 拿粒度和阻塞边问你、由你拍板；验收标准写进工单模板，发布前由你过目——本课练习里干脆由你自己写。<code>/implement</code> 只是执行这些决定；标准没写好的工单，做完了也说不清。第二，<strong>seam</strong>：测试打在哪条公开边界上，<code>tdd</code> 会来问你，认错 seam 整批测试跟着错。第三，<strong>节奏和例外</strong>：一轮做多大、什么时候允许跳出循环（比如发现该先做点铺垫）、这单要不要走红绿，你说了算。第四，<strong>review 的裁决</strong>：两轴报告只列意见，怎么判在你——改不改、怎么改、记不记未决问题，都在你；第 25 课会教怎么读它。</p>
+  <p>怎么判断这套流程真的生效？就看开头定的判据落没落：验收标准逐条勾满、各条有证据（哪个测试、哪次手敲）；全量测试绿；两轴报告在手、每条意见有裁决；git log 里这张工单一段清晰的记录。四个都齐，才是「做完」。技能和行业做法的差异也交代一句：SWEBOK 说质量技术「取决于软件和人」，<code>implement</code> 把默认顺序替你排好了——流水线省了你每次组装的功夫，代价是默认顺序未必适合每张工单，「where possible」和四个拍板点就是留给你的调节阀。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>动手前认三个坑。它们的共同点是把某个信号当成了「完成」本身，忘了完成是一组判据。</p>
+  <ul>
+    <li><strong>测试全绿就收工。</strong>绿只证明写了的测试都过了：工单要的行为可能没测全，工单没要的改动可能混进来。防法：收工前把验收标准从头勾一遍，每条要出证据；勾不出证据的那条，要么补测试，要么承认标准写错了。</li>
+    <li><strong>review 报告当判决书。</strong>两条路都错：意见照单全收，等于把设计判断外包给评审；一概不理，等于把评审当走过场。防法：每条意见给裁决——改、不改、还是记进未决问题，各带一句理由，改完再跑全量。</li>
+    <li><strong>顺手把邻近的问题也修了。</strong>改个顺眼的命名、补个「以后有用」的参数，diff 一胖，评审和回滚都跟着胖。<code>code-review</code> 的工单轴（Spec）会把这类改动点名为 scope creep（范围蔓延）：「behaviour in the diff that wasn't asked for（diff 里没人要求的行为）」。防法：看见邻近问题就记进工单或未决问题，本次交付只交付工单要的。</li>
+  </ul>
+  <p>三个坑的防法指向同一个动作：<strong>收工前对着判据清单走一遍，每条出证据</strong>。清单在下一节，练习里就用它。</p>
+</section>
+
+<section>
+  <h2>练习：一张错误行为工单，走完 /implement</h2>
+  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>，工单就是第 22 课候选 (c) 那个没拍板的问题：<code>JsonlStore</code> 写文件失败（权限、磁盘满）时报什么。产出五样：一张工单文件（<code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>）、写进 <code>Store</code> docstring 的错误契约、错误行为的测试（进 <code>tests/test_storage.py</code>）、一份两轴报告（存 <code>.scratch/error-handling/review-report.md</code>）、一次提交。做过第 19–22 课练习的，现成的回归网全程当裁判；没做过的也不缺素材——这张工单的测试面是 <code>JsonlStore.add</code> 的失败路径，不依赖 <code>delete</code> 和 CLI 的缝。</p>
+
+  <ol class="steps">
+    <li><strong>拍板契约，把工单写出来。</strong>先把三个契约空洞拍板掉：写失败抛什么、返回什么、状态留不留。示例决定是三件事：失败时抛自定义异常 <code>StorageError</code>（带出原异常）；失败时没有返回值——异常就是出口，成功路径仍然返回新条目副本，第 15 课的承诺不变；仓库不留半截条目。这是示例，不是标准答案，拍板权在你。再读 <code>kb/storage.py</code> 找行为缺口：<code>JsonlStore.add</code> 先 <code>self._entries.append(entry)</code> 再写文件，写失败时内存里留了半截条目，下次 id 还会跳号。把这些写成验收标准，照第 10 课 to-tickets 的本地模板落盘到 <code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>：What to build 一句行为，Acceptance criteria 四条（示例：写失败抛 <code>StorageError</code> 并带原异常、失败时无返回值且成功路径行为不变、失败后仓库状态与失败前一致、错误契约写进 <code>Store</code> docstring），每条后面留一行「证据从哪来」，Blocked by 写 None，Status 写 <code>ready-for-agent</code>。</li>
+    <li><strong>提交工单，记下固定点，开工。</strong>工单文件写完先单独提交一次（<code>git add .scratch/error-handling</code> 后 commit），再跑 <code>git log -1 --oneline</code> 记住这个 commit——收尾的 review 拿它当比较基点，diff 里就只有实现，不会把工单文件自己卷进来。然后输入 <code>/implement</code> 加工单引用。它会报工单标题、按 <code>tdd</code> 的纪律列 seam 跟你确认（候选是 <code>Store.add</code> 这条公开边界；写文件失败怎么造——按第 22 课的判断，mock 文件系统的错误路径可以，断言仍落在行为上）、一轮一个行为跑红绿循环、常跑类型检查和单文件测试、最后跑一次全量。你在 seam、步幅两处拍板；<code>where possible</code> 允许你叫停红绿，但这张工单该走。</li>
+    <li><strong>收尾的 review：拿报告，做裁决。</strong><code>code-review</code> 要两样料：比较基点，它拿不到就问你——给开工前那个 commit；spec 源，它按提交里的 issue 引用、你传的路径、<code>docs/</code>、<code>specs/</code>、<code>.scratch/</code> 下跟分支或功能同名的文件这个顺序找，找不到也会问——指工单文件就行。两轴报告存进 <code>.scratch/error-handling/review-report.md</code>（反馈回路的检查单会读它），先分清哪条是规范轴（Standards）、哪条是工单轴（Spec），这个读法第 25 课展开，今天只要求每条给裁决：改、不改、记未决问题，各写一句理由。裁决后有改动就再跑全量。</li>
+    <li><strong>验收：逐条出证据。</strong>验收标准一条条勾，每条写上证据（测试名或手敲命令）。「失败后仓库状态与失败前一致」这条的证据要拆成可观察点来出：两条各自命中的 <code>search</code> 对照（别用空 query——第 21 课提醒过它别当观察全仓库的口子）、失败后再 <code>add</code> 一条看 id 接不接得上、重开仓库确认文件里没有半截条目。然后做一次变异检查：把抛错改成吞错返回 <code>None</code>，错误行为的测试要红，还原。最后看 <code>git log</code>：这张工单是一段清晰的记录，还是一大坨？契约决定写进 <code>Store</code> 的 docstring——错误行为也是契约的一部分；拍板不了的记进 design doc 的「风险与未决问题」。</li>
+  </ol>
+
+  <p>做完的标准是这几条：验收标准逐条勾满、各条有证据；<code>python -m pytest -q</code> 全量绿；变异被杀死；两轴报告每条意见都有裁决；提交信息指向这张工单。工单文件里每条标准的「证据从哪来」那一行填满，就是判据清单走完的样子。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这张工单真的做完了吗</h2>
+  <p>把仓库交给 agent，让它按下面这份检查单审一遍。它查的是判据清单走完没有，不是代码写得好不好。</p>
+
+  <pre><code>读 .scratch/error-handling/issues/01-jsonl-write-failure.md、kb/storage.py、
+tests/、git log 和 .scratch/error-handling/review-report.md（两轴报告）。
+只审查，不重写。开始前确认 git status 干净；没有就先 commit。
+
+逐条检查：
+1. 验收标准逐条勾了吗？每条后面有证据吗（测试名或手敲命令）？
+2. 全量测试绿吗？错误行为的测试有过实现前的红吗（看提交记录或 .scratch 的记录）？
+3. 错误契约写进 Store 的 docstring 了吗？抛什么、返回什么、状态留不留写清了吗？
+4. diff 里有没有工单没要的东西（范围蔓延）？
+5. code-review 两轴报告的每条意见都有裁决吗（改 / 不改 / 记未决，带理由）？
+6. 提交信息指向工单了吗？git log 里这张工单是一段清晰的记录吗？
+
+结论：这张工单算做完吗？哪条判据还差证据？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>没完</strong>：验收标准没勾就收工的，回去补证据，补不出说明标准写得勾不动，先改标准。<strong>假完</strong>：测试绿着但某条标准其实没测到，两个可能——测试漏了，或者标准写错了，想清哪个错再动。<strong>过完</strong>：diff 里有工单外的改动，挪出去，值得做的单独开一张工单。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>工单做完不是「测试绿」一个信号，是一组判据：验收标准逐条有证据、测试绿、静态检查过、review 有裁决、提交落盘——测试绿只回答了 verification，validation 要靠验收标准。</li>
+    <li>完成判据没有统一标准，配法跟着风险走；把「做完长什么样」写成工单里能勾的验收标准，做完就有了客观尺子，测试的预期值也有了来源。</li>
+    <li><code>/implement</code> 把判据排成一条龙：红绿循环在中间，review 在收尾，提交收口；agent 跑流程，工单边界、seam、节奏、review 裁决四个判断在你。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4, ch.4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——§3.4 Construction Testing（PDF p105 = printed 4-7，「Construction testing aims to reduce the gap between when faults are inserted into the code and when those faults are detected」、构造测试多由写代码者自做的单元与集成测试）；§3.6 Construction Quality（PDF p106–107 = printed 4-8~4-9，质量手段七项清单与「The specific technique or techniques selected depend on the software constructed and on the skill set of the software engineers performing the construction activities」）；§4.17 Feedback Loop for Construction（PDF p112 = printed 4-14，「Early and continuous feedback… one of the most important advantages of agile development and DevOps」）；§4.16 Test-First Programming（printed 4-14，第 20 课已用，本课回指）；§3.7 Integration（printed 4-9，CI「automated by a pipeline that builds and tests each integration」，留给第 24 课）。SE-EDU《Quality Assurance》（本地 <code>courseware/se-education/book/qualityAssurance/print.html</code>）——「Quality Assurance = Validation + Verification」与「What is more important is that both are done」；“Code Reviews”（定义、Pull Request 评审 / 结对编程 / 正式检查会三种形式、相对测试的三点优势与「manual process and therefore, error prone」）；“Static Analysis”（不执行代码、unused variables / unhandled exceptions / style errors、linters 是子集）；“Formal Verification”（「testing can only prove the presence of errors, not their absence」）。</p>
+  <p><strong>行业做法：</strong>Google Engineering Practices《Small CLs》（<a href="https://google.github.io/eng-practices/review/developer/small-cls.html">google.github.io/eng-practices</a>，在线）——「one self-contained change」、「just one part of a feature」、「100 lines is usually a reasonable size… 1000 lines is usually too large」、「Reviewers rarely complain about getting CLs that are too small」、「Tests are expected for all Google changes」、重构单独成 CL（小清理例外）、「Don't Break the Build」。「一张工单做到什么程度算完」没有统一标准，以上是主流做法和取舍；SWEBOK §3.6 的手段清单即取舍依据。</p>
+  <p><strong>实践方式：</strong><code>implement</code> 技能 <code>SKILL.md</code>（工单输入、tdd 调用句、类型检查 / 单文件 / 全量的节奏、code-review 收尾、提交）；<code>code-review</code> 技能（固定点、spec 源、两轴报告；第 25 课展开）；<code>to-tickets</code> 技能（工单模板、frontier）；<code>tdd</code> 技能（seam 确认、循环规则、重构在循环外）；沙盒 <code>kb/storage.py</code>。本机路径 <code>C:\Users\admin\.agents\skills\</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 24 课「CI：让检查自动跑」。这一课的判据清单今天靠你人手跑一遍，下一课把它交给 CI：一条 push 就跑格式化、lint、测试，谁忘了跑都躲不过去。今天留下的验收标准和错误行为测试，就是检查链上线后最先被守护的东西。</p>
+  <p>练习里没拍板的契约问题，照老规矩落盘：写进 <code>Store</code> 的 docstring 或 design doc 的「风险与未决问题」。契约没定，下一课让 CI 守什么都说不清。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0023-implement-card.html">/implement 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

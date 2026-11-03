@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双轴审查参考卡 · 读 diff 与裁决</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 25 课</p>
+  <h1>双轴审查参考卡</h1>
+  <p class="lede">规范轴问「守不守这个仓库成文的规矩」，工单轴问「做的是不是工单要的」；证据来源不同，分列不合并。读 diff 有顺序：广角、主文件、其余。意见的分量看来源不看语气——引得到规则或工单原文的才是硬违规，坏味道永远是判断题。裁决是人的活：带理由、带严重度、落盘。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>双轴审查在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Testing &amp; Quality（测试与质量）</td><td>第 23 课把 review 当工单收尾关卡，第 24 课把机械检查交给链（「Skip anything tooling enforces」从那课生效），这一课展开留给人的半边：报告怎么读、diff 怎么看、意见怎么裁。开模块 5「验收与维护」。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 23 课那张工单的 diff 与 <code>.scratch/error-handling/review-report.md</code>；工单文件当 spec 源。SWEBOK ch.12 §3.4.5：评审是静态活动，依据是成文标准。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>第 26 课接走诊断：裁决里「它有时才坏」的问题，先要一条会红的命令。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：意见凭什么值得改代码</h2>
+<div class="card-rule">
+  <p><strong>两轴定名与分档：</strong>规范轴（Standards）＝代码守不守仓库成文的写法规矩，证据是标准文件＋规则原文；工单轴（Spec）＝做的是不是工单要的，证据是工单里的行。技能：「Do not merge or rerank findings, because the two axes are deliberately separate」「Don't pick a single winner across axes」。同一轴内分两档：<strong>hard</strong>（硬违规）引得到成文规则，<strong>judgement</strong>（判断题）只有坏味道观察——「documented-standard breaches can be hard, but baseline smells are always judgement calls」；SE-EDU：「smells don't always indicate a problem」。SWEBOK ch.12 §3.4.5：评审「examine software engineering artifacts … concerning standards established by the organization or project」，且不执行代码。</p>
+</div>
+
+<h2>行业做法：标尺、顺序、分量</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">放行看整体代码健康，不看完美</td><td>Google《The Standard of Code Review》：「favor approving a CL once it is in a state where it definitely improves the overall code health … even if the CL isn't perfect」；「no such thing as "perfect" code—there is only better code」；判据顺序：技术事实和数据 &gt; 个人观点，风格指南是绝对权威，没规则就「accept the author's」；小瑕疵加「Nit:」前缀放行</td><td>放行或退回的决定＋带标签的意见；代价是标尺松紧是团队取舍</td></tr>
+      <tr><td class="what">diff 按顺序读：广角 → 主文件 → 其余</td><td>Google《Navigating a CL in review》三步：先看「Does the change make sense?」，方向不对立刻回绝；再找主文件先看，大设计问题「send those comments immediately」；其余按序过、别漏文件，可先读测试找「本来该干什么」。对应 ISO/IEC 20246 的 scenario-based / checklist-based reviews</td><td>主文件上先到的设计意见；顺序只对小 diff 有效，找不出主文件就该让它拆（第 23 课 Small CLs）</td></tr>
+      <tr><td class="what">给意见配分量，争执收在代码外</td><td>严重度标签必改 / Nit / Optional / FYI（「labeling the severity … differentiating required changes from guidelines or suggestions」）；评论代码不评论人、说清为什么；pushback 先想「they are closer to the code than you are」；「下次再清理」通常等于不清（「unless the developer does the clean up immediately … it never happens」）——坚持现在清或开 bug 指给自己；LGTM With Comments 可先放行留意见；作者侧（《How to handle reviewer comments》）：别往心里去；解释只写在评审工具里对后来读者无用（「Explanations written only in the code review tool are not helpful to future code readers」，出自《How to write code review comments》的「Accepting Explanations」）</td><td>带标签的意见＋落盘的裁决；代价是每条都记要勤快</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>评审本身是主流做法（SWEBOK：「Reviews should be part of the software engineering culture」），怎么读、怎么裁没有统一标准，以上是 Google 公开指南的主流做法和取舍。</p>
+
+<h2>AI + Matt：code-review 的双轴流水线</h2>
+<ul>
+  <li><strong>调用类型：模型调用。</strong>frontmatter 无 <code>disable-model-invocation</code>，<code>implement</code> 收尾拉起（「Once done, call the Skill tool with "code-review" to review the work.」），你也可以手动点名「review since X」。前置：issue tracker 由 <code>/setup-matt-pocock-skills</code> 配好；沙盒的 tracker 是 local-markdown 约定（<code>docs/agents/issue-tracker.md</code>），工单文件就是 tracker 里的 issue，spec 源指它就行。</li>
+  <li><strong>五步流程：</strong>固定点（「Whatever the user said is the fixed point」，三点 diff <code>git diff &lt;fixed-point&gt;...HEAD</code> 对 merge-base，先验 ref 与非空 diff）→ spec 源（issue 引用 → 传参路径 → <code>docs/</code>、<code>specs/</code>、<code>.scratch/</code> 下跟分支或功能匹配的文件 → 问你；没有就报「no spec available」）→ standards 源（<code>CODING_STANDARDS.md</code> / <code>CONTRIBUTING.md</code> ＋永远随行的 Fowler 坏味道基线十二条；「The repo overrides」「Always a judgement call」）→ 两个并行子代理（各新上下文，每份「Under 400 words」）→ 汇总（两轴分列、不合并不排名、跳过工具管的）。</li>
+  <li><strong>人拍板四件：</strong>固定点给谁（错则整份报告错）；spec 源指哪；每条裁决（改 / 不改 / 记未决，带理由带严重度）；分档复核（「hard」要核来源，smell 永远是判断题）。</li>
+  <li><strong>生效判据：</strong>每条意见指向具体行、引了来源、hard 与 judgement 分开、工具管的不出现；再加注入实验——塞一处工单外改动，工单轴要点名 scope creep，塞一处坏味道，规范轴只给判断题。</li>
+  <li><strong>与经典差异：</strong>经典流程的评审是多人角色制（SE-EDU《Quality Assurance》“Formal inspections”：author / moderator / secretary / inspector 四个角色），技能用两个子代理的独立视角代替；子代理不是同行，报告照样易错（SE-EDU：「manual process and therefore, error prone」），裁决留在人手上。</li>
+</ul>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">按语气分轻重</td><td>口气笃定就当硬违规，客气就当建议</td><td>分档只看来源：引到规则或工单原文才是硬，「possible」和坏味道永远是判断题</td></tr>
+      <tr><td class="what">为抛光不放行</td><td>一条 Nit 拖三天，非要「完美」</td><td>标尺是「明确改善整体代码健康」；Nit / Optional 允许不改，下次顺手再说</td></tr>
+      <tr><td class="what">裁决停在报告里</td><td>「不用改」只在脑子里，两周后没人记得</td><td>裁决连理由落盘（写在意见下面或记进未决问题）；解释能变代码就变代码</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习四样产物</h2>
+<ul>
+  <li><strong>读法记录：</strong>广角判断（该不该做、主文件是哪个、设计过关吗）两三行，记进 <code>.scratch/error-handling/review-notes.md</code>。</li>
+  <li><strong>两轴报告：</strong>真跑 <code>code-review</code>（固定点＝第 23 课工单提交后那个 commit，spec 源＝工单文件），存 <code>.scratch/error-handling/review-report.md</code>；做过 23 课练习的就地重跑覆盖，新旧两份报告的差异正是「评审易错」的证据。</li>
+  <li><strong>裁决与分档：</strong>每条意见标 hard / judgement、给裁决（改 / 不改 / 记未决）带一句理由、配严重度（必改 / Nit / Optional / FYI），写在报告每条意见下面；复核有没有凭语气判、为 Nit 拖、漏落盘。</li>
+  <li><strong>注入实验：</strong>实验分支 <code>review-experiment</code> 塞两处——工单外的小改动（比如把 <code>kb add</code> 的输出从只打印 id 改成打印「+ e0001」）＋一处坏味道（比如辅助函数叫 <code>handle()</code>）——再跑 <code>code-review</code>：工单轴要点名 scope creep，规范轴给坏味道的只能是判断题（此时工单轴报「要求全没做」是预期噪声）。实验报告不必落盘，观察记两行进 <code>review-notes.md</code>，做完弃分支。</li>
+</ul>
+<p>没做第 23 课练习的：先补做第 23 课练习，或用下面这份示例报告走第 3、4 步（分档、裁决），注入实验照本卡描述纸上判断。示例按第 23 课那张工单的形状构造，行号以你的实际 diff 为准：</p>
+<pre><code>## Standards
+- kb/storage.py:44 两处 except OSError 都写成
+  `except OSError as e: raise StorageError(...) from e`，同样形状出现两次。
+  possible Duplicated Code（判断题；可提取一个 _wrap_os_error）。
+- tests/test_storage.py:31 新测试名叫 test_it，看不出测什么。
+  Mysterious Name（判断题）。
+
+## Spec
+- 工单验收标准第 2 条「失败时无返回值，成功路径仍返回新条目副本」只测了
+  失败路径：成功路径的返回副本没有对应测试。quote 工单行。
+- diff 里 kb/cli.py 的 add 输出从只打印 id（print(entry["id"])）改成打印
+  「+ e0001」，工单没有这条要求。scope creep。quote 工单行（验收标准四条均未涉及输出格式）。</code></pre>
+<p>对着它练：哪两条是硬、哪两条是判断题（答案：Spec 两条都引得到工单行，按硬的一类对待——可对可错的事实；Standards 两条都是坏味道观察，永远是判断题，判断题不配「必改」）；每条给裁决带理由带严重度。</p>
+
+<h2>练习怎么验</h2>
+<pre><code>读 .scratch/error-handling/review-report.md（两轴报告与裁决）、
+.scratch/error-handling/review-notes.md 和对应的 diff（git diff &lt;固定点&gt;...HEAD）。
+只审查，不重写。开始前确认 git status 干净；没有就先 commit。
+
+逐条检查：
+1. 报告两轴分列吗（## Standards / ## Spec）？有没有混排或跨轴排名？
+2. 每条意见指向具体行、引了来源吗（规范轴引标准文件加规则，工单轴引工单行）？
+3. 硬违规和判断题分档了吗？分档跟来源对得上吗——坏味道是不是被判成了硬违规？
+4. 工具管的东西（格式化、lint）有没有混进报告？
+5. 每条意见有裁决吗（改 / 不改 / 记未决）？带理由和严重度（必改 / Nit / Optional / FYI）吗？
+6. 裁决有没有只凭语气？有没有为 Nit 拖着不放行？裁决和理由落盘了吗？
+
+结论：这份裁决站得住吗？哪条要重判？</code></pre>
+<p>意见分三类：<strong>没引来源</strong>（退回补引，引不出就降级成判断题）、<strong>分档错</strong>（smell 当硬违规压人的，重判）、<strong>裁决没留痕</strong>（理由补上落盘，没理由等于没裁）。</p>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>code review 代码评审、peer review 同行评审、diff 差异对比、CL（changelist，变更列表）、fixed point 固定点、规范轴（Standards）／工单轴（Spec）、hard violation 硬违规、judgement call 判断题、code smell 代码坏味道、scope creep 范围蔓延（第 23 课）、severity 严重度、LGTM（Looks Good To Me）／Nit、checklist-based review 基于检查单的评审、scenario-based review 基于场景的评审、moderator 主持人 / secretary 记录 / inspector 检查人（检查会角色）、merge-base 共同祖先。坏味道示例双语：Mysterious Name 神秘命名、Duplicated Code 重复代码、Feature Envy 依恋情结、Speculative Generality 夸夸其谈通用性（Fowler《Refactoring》ch.3，经典转引）。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.12 §3.4.5（PDF p258–259 = printed 12-13~12-14，评审是静态分析活动、依据成文标准、peer review 定义与 code review 的 pull request 形态、早发现省修复、「Reviews should be part of the software engineering culture」、ISO/IEC 20246:2017 五种评审类型）；ch.4 §3.6（printed 4-8~4-9，technical reviews 是构造质量七项手段之一）。SE-EDU《Refactoring》（本地 <code>courseware/se-education/book/refactoring/print.html</code>）——code smell 定义与坏味道例子。SE-EDU《Quality Assurance》——“Code Reviews” 定义与「manual process and therefore, error prone」、“Formal inspections” 四角色（author / moderator / secretary / inspector）。</p>
+  <p><strong>行业做法：</strong>Google Engineering Practices（本地全套 <code>courseware/google-eng-practices/review/</code>）——审查者指南六章（standard / looking-for / navigate / speed / comments / pushback）与提交者指南《How to handle reviewer comments》。评审怎么读、怎么裁没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>实践方式：</strong><code>code-review</code> 技能 <code>SKILL.md</code>（固定点、spec 源顺序、smell 基线、并行子代理、报告格式）、<code>implement</code> 技能（收尾调用句）。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0025-two-axis-review.html">第 25 课：双轴审查与读 diff</a> · <a href="course-map.html">课程地图</a> · <a href="0024-ci-card.html">第 24 课：CI 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

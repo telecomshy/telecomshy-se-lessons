@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 21 课 · 好测试的形状：行为、边界、可读性</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 4 · 实现与测试 · 第 21 课</p>
+  <h1>好测试的形状：行为、边界、可读性</h1>
+  <p class="lede">你让 agent 给 <code>delete</code> 补三个测试，它补完了，<code>python -m pytest -q</code> 全绿。细看断言：一个在戳 <code>store._entries</code> 这个私有属性，一个绕过接口直接读 <code>kb.jsonl</code> 数行，一个的预期值是照实现里的 id 公式算出来的。三个测试都绿，但没有一个在验 <code>delete</code> 的承诺。等哪天把 <code>InMemoryStore</code> 的内部容器从 list 换成 dict，行为一点没变，戳 <code>_entries</code> 的那条红得莫名其妙，另外两条照绿——红得冤枉，绿也不说明问题。第 19 课管样本——测什么；第 20 课管时机——什么时候写；这一课管形状：测试写出来长什么样，才算规格的合法客户端。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 19 课（测试设计）、第 20 课（红绿循环）</span>
+  <span><b>产出</b> 三个只测行为、不测实现的测试（从三个绑实现的坏测试改造而来）</span>
+  <span><b>主读物</b> MIT 6.031《Specifications》“Testing and specifications”</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：第 19 课选样本、第 20 课定时机，这一课立形状的标准，测的是同一批测试「像不像规格」。</li>
+    <li>用自己的话解释「测试是规格的客户端」：断言只许要求规格承诺的东西，实现换了，测试不该碎。</li>
+    <li>用三条标准体检一个测试：行为断在公开可观察的结果上、观察从接口看、名字和断言读起来像规格。</li>
+    <li>认出三种坏形状：戳私有结构、绕过接口从旁路验证、照实现算预期值，并说出各自坏在哪条标准上。</li>
+    <li>做一次重构实验拿证据：内部实现换掉、行为不变，好测试一行不动、全绿；坏测试有的红有的绿，合起来看清每条测试押注在哪。</li>
+    <li>让 agent 按三条标准写测试和体检旧测试，自己裁决断言的度和规格句。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：样本、时机都定了，剩下的问题是形状</h2>
+  <p>第 2 课把软件工程拆成八个活动。第 19 课在 Testing &amp; Quality（测试与质量）里做样本设计：对着 <code>Store</code> 契约划分输入、挑边界、定预期值。第 20 课转入 Construction（构造），把用例表按红绿循环的节奏写成代码。这一课回到 Testing &amp; Quality：什么样的测试算好，是测试活动自己要回答的质量问题。三条标准立在纸上，落笔的动作仍然发生在构造的循环里，两个活动在这里咬合。</p>
+  <p>为什么挑这个时候做体检？第 20 课的练习刚攒出一张回归网：<code>delete</code> 的四组红绿测试，加上第 19 课留下的 <code>search</code> 契约测试，都绿着。趁这批测试还新，给它们做一次体检最省力：改形状的成本随测试数量涨，拖到几百条再动，没人愿意。往后第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界——mock 是绑实现的重灾区，今天立的判据到时候直接用；第 23 课的 <code>/implement</code> 在工单里跑红绿循环；第 24 课让 CI（Continuous Integration，持续集成）自动跑。测试面还是第 15 课那个 <code>Store</code> port（端口）：测试只认 <code>add</code>、<code>search</code>、<code>delete</code> 三个公开方法。</p>
+</section>
+
+<section>
+  <h2>问题与概念：测试是规格的客户端</h2>
+  <p>第 19 课立过一条规矩：测试不该读 <code>kb.jsonl</code> 的行格式，也不该摸 <code>store._entries</code>。那条规矩只说了「别这么干」，这一课回答它为什么错、错在哪条标准上、怎么给测试拿证据。先把开头那三个测试摆出来看，它们都绿，都对着 <code>delete</code> 写，毛病各不相同：</p>
+  <pre><code># 坏测试一：断言伸进实现的私有结构
+def test_delete_removes_entry():
+    store = InMemoryStore()
+    entry = store.add("PyTest 入门", "正文")
+    store.delete(entry["id"])
+    assert entry not in store._entries          # 戳私有属性
+
+# 坏测试二：绕过接口，从旁路验证
+def test_delete_persists(tmp_path):
+    path = tmp_path / "kb.jsonl"
+    store = JsonlStore(path)
+    entry = store.add("PyTest 入门", "正文")
+    store.delete(entry["id"])
+    assert path.read_text().count("\n") == 0    # 直接查落盘文件
+
+# 坏测试三：预期值照实现的算法算出来
+def test_next_id_after_delete():
+    store = InMemoryStore()
+    first = store.add("PyTest 入门", "正文")
+    store.delete(first["id"])
+    expected = f"e{len(store._entries) + 1:04d}"  # 抄实现当前的 id 公式当预期值
+    assert store.add("笔记", "")["id"] == expected</code></pre>
+  <p>不对劲的地方要能说清。第一条测试的断言盯着 <code>_entries</code> 这个容器，可 <code>delete</code> 的承诺是「搜不到这条」，不是「内部容器里没有这个对象」；哪天容器从 list 换成 dict，或者条目在容器里改成墓碑标记，测试就红，而行为没变。第二条绕开 <code>Store</code> 直接查 <code>kb.jsonl</code>，验证的其实有一半是 <code>JsonlStore</code> 的文件格式；文件格式是实现细节，契约里没写。第三条更隐蔽：它把实现里的 id 生成公式抄来当预期值，在这个实现下要什么给什么，行为对错它都绿；实现哪天换了 id 算法它会红，那种红也跟 bug 无关——第 20 课循环三顶出来的那个 id 撞车 bug，它一个都抓不住。照抄有个前提：第 20 课循环三修过 id 之后，你实现里的算法多半已经不是 <code>len+1</code>，坏测试照抄你当前的算法才绿得起来。它顺手也戳了 <code>_entries</code>，但主要的病是同义反复：就算把 <code>len(store._entries)</code> 换成走公开接口数出来的条数，只要预期值还是照实现的算法算的，它照样同义反复。</p>
+  <p>不对劲的地方合起来是三条标准要管的事。先说清一个词：标题里的「边界」指的是接口的边界——测试从哪条缝上看——和第 19 课边界值分析说的输入边界是两回事。</p>
+
+  <h3>概念：像每个客户端一样遵守契约</h3>
+  <p>MIT 6.031 的《Specifications》从一个换实现的例子讲起。同一个 <code>find</code>，原来从头往后搜，后来改成两头对搜，速度上去了。两版行为有差别：值出现多次时，旧实现总返回最小下标，新实现返回先撞见的那个。可如果规格只承诺「返回某个下标 <code>i</code>，使 <code>arr[i] == val</code>」，客户就没理由依赖「最小下标」这件事，两版实现可以随便换。这个判断叫 <strong>behavioral equivalence（行为等价）</strong>：两种实现等不等价，不在实现本身，在客户依赖了什么——而规格写明了客户能依赖什么（MIT 6.031, Specifications, “Behavioral equivalence”）。</p>
+  <p>把测试放进这个框架，就有了本课的核心说法。《Specifications》的 “Testing and specifications” 一节写得很直白：玻璃盒测试也要守规格——「你的实现可能提供比规格更强的保证，或者在规格没定义的地方有特定行为，但你的测试用例不许指望这些行为。测试用例必须 correct（正确的），像每个其他客户端一样遵守契约」（MIT 6.031, Specifications, “Testing and specifications”）。同一节给了个越界的例子。规格说 <code>find</code> 返回满足 <code>arr[i] == val</code> 的任意下标，实现恰好总是返回最小的那个，于是测试写下 <code>assertEquals(0, i)</code>——讲义给它的评语是「bad test case: assumes too much, more than the postcondition promises（坏测试：要得太多，超出后置条件的承诺）」。守规矩的写法是 <code>assertEquals(7, array[i])</code>：只断言规格承诺的那件事。测试是规格的客户端，写断言时你的身份和写业务代码调它的那个人一模一样，规格没给的一律不能要。</p>
+  <p>这条框架直接给出三条标准。测试的「形状」拆开来无非三件事：断言落在哪（行为）、从哪儿看（边界）、写下来像什么（可读性）。<code>tdd</code> 技能的「What a good test is」和「Seams」给的是同一组标准的实践版：「Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification（测试通过公开接口验证行为，不验证实现细节。代码可以整个换掉，测试不该跟着换。好测试读起来像一份规格）」（<code>tdd/SKILL.md</code>）。下面逐条立标准，每条配一个反面例子：前两条从刚才的坏测试里取，可读性的反面另给一个。</p>
+
+  <h3>行为：断言落在规格承诺的结果上</h3>
+  <p>第一条标准管断言的落点。所谓行为，是调用者通过公开接口能观察到的东西：返回值、抛出的异常、以及用公开方法查得到的状态。对 <code>delete</code> 来说，行为是三件——删存在的条目后 <code>search</code> 搜不到、删不存在的 id 按契约返回 <code>False</code>、<code>JsonlStore</code> 重开后删除仍成立。每一条都从接口观察得到，每一条都写在第 20 课拍板的契约里。反面就是坏测试一和坏测试三：<code>store._entries</code> 是私有结构，<code>f"e{len(...) + 1:04d}"</code> 是实现的算法，两者都不在契约上。判据一句话：把断言逐条对着 <code>Store</code> 的 docstring 问「这条承诺写在哪」，写在别处的断言就是越界。</p>
+
+  <h3>边界：站在缝上看，不绕道旁路</h3>
+  <p>第二条标准管观察的通道。第 15 课定过 seam（接缝）：测试站在公开边界上看行为，不伸手进实现。坏测试二犯的正是这个规——它验证删除的方式是去读 <code>kb.jsonl</code>，而 <code>kb.jsonl</code> 的行格式是 <code>JsonlStore</code> 的私事，接缝在 <code>Store</code> 的方法上，不在文件里。MIT 6.031 讲 unit test（单元测试）的隔离时给过同款论证：测 <code>extract()</code> 的用例不该调用 <code>load()</code>，「如果 <code>load()</code> 不满足它的后置条件，<code>extract()</code> 的测试不该红」；绕道旁路还会把失败归因搅浑——红了你说不清是删除没删掉，还是文件格式换了写法（MIT 6.031, Specifications, “Testing units”）。隔一层接缝看，代价是有些内部状态看不到，换来的是实现换了测试不碎。</p>
+
+  <h3>可读性：名字和断言合起来像规格</h3>
+  <p>第三条标准管写下来的形状。测试的读者有两种：几个月后忘了实现的你，和没读过实现的协作者（包括接手的 agent）。<code>tdd</code> 技能举的正面例子是「user can checkout with valid cart（用户可以用有效的购物车结账）」——一句话说清存在什么能力，不透露它怎么做到。反过来，<code>test_delete_rewrites_jsonl</code> 这种名字描述的是实现怎么写，实现一换名字就撒谎。断言同理：一条断言说一个可验证的事，几条断言合起来把一个行为说完整。断言和名字合起来，应该能当 <code>delete</code> 契约的一份可执行摘要。</p>
+</section>
+
+<section>
+  <h2>行业做法：怎么把形状标准落进日常</h2>
+  <p>先立标尺：什么样的测试算「好」，没有统一标准。测试设计的技术有教材可依，测试代码的写法属于主流做法和取舍。下面几条每条都写清做法和代价。</p>
+
+  <h3>选样可以看实现，断言必须守规格</h3>
+  <p>测试设计的教材把选测试用例的口径分成三种，SE-EDU《Test Case Design》的 “Black box versus glass box” 一节写得很清楚：black-box（黑盒测试，也叫 specification-based 基于规格的）只凭规格的外部行为设计用例；white-box（白盒测试，也叫 glass-box 玻璃盒测试或 implementation-based 基于实现的）按对实现的了解设计用例；gray-box（灰盒测试）借一点实现知识，比如排序在 1000 个元素处分用两种算法，就围着这个分界补用例。第 19 课「黑盒先写、白盒补漏」说的就是这三种怎么搭配。这里要补的是断言侧的规矩，MIT 6.031 说得不含糊：玻璃盒只管帮你找到「能走到实现不同部分」的新用例，检查这些用例仍要「以实现无关的方式，跟着规格走」（MIT 6.031, Specifications, “Testing and specifications”）。一句话分工：选样可以盯着实现，断言必须盯着规格。</p>
+
+  <h3>基于规格写测试，躲开实现偏见</h3>
+  <p>CMU 17-313 的《09-testing》在 “Specification Testing” 一页列了按规格写测试的四条好处：avoids implementation bias（躲开实现偏见）、robust to changes in the implementation（实现变了不碎）、tests don’t require familiarity with the code（写测试不用先熟悉代码）、tests can be developed before the implementation（实现还没写就能开发测试）（CMU 17-313《09-testing》, p9）。四条好处其实是同一件事的两面：测试只认规格，实现就不用反过来照顾测试。代价在另一头：规格含糊时，按规格写测试会把含糊照抄进测试，所以第 20 课的规矩仍然成立——写不出预期值的地方，先把契约补定。这条是主流做法，不是标准：规格本身质量差的项目里，照规格写测试只是把问题复印了一份。</p>
+
+  <h3>测试代码也是代码，按代码质量的规矩写</h3>
+  <p>可读性标准不用另发明，生产代码的可读性准则照搬过来就行。SE-EDU《Code Quality》把 readability（可读性，也叫 understandability 可理解性）列为代码质量最重要的维度之一，理由是代码迟早要「被其他开发者阅读、理解和修改」，哪怕不交给别人，「你终有一天会成为自己代码的陌生人」；“Name Well” 一节要求名字「准确地向读者解释被命名的东西」；注释一节的规矩是 “Explain WHAT and WHY, not HOW”——说明做什么和为什么，怎么做留给代码本身（SE-EDU《Code Quality》，“Guideline: Maximize Readability”“Guideline: Name Well”“Guideline: Comment minimally but sufficiently”）。这本书讲的是生产代码，搬进测试文件是业界的常见延伸：测试名当规格句写，注释只留「这条覆盖哪个子域、为什么值得测」，删掉复述代码的废话。产物是能独立读懂的测试文件，代价是起名和改写多花几分钟。</p>
+
+  <h3>断言写多细：一个行为是共识，断言条数是取舍</h3>
+  <p>一个测试验证一个行为，这一点没有争议。有争议的是断言条数。<code>tdd</code> 技能的 <code>tests.md</code> 写的是 one logical assertion per test（一个测试一条逻辑断言），口径偏严；业内的常见做法是「几条断言合起来描述一个行为」可以接受，比如 <code>delete</code> 的「删不存在的 id」既断返回值又断仓库没变，两句话拼起来才是完整承诺。拆成两个测试也行，代价是 arrange 那几行要写两遍。这里的判断标准是行为的边界，断言条数本身不是判据：断言之间讲的是同一件事就放一起，讲的是两件事就拆开。</p>
+
+  <h3>什么时候可以测实现：三个正当例外</h3>
+  <p>「不测实现」不是铁律，有三个说得通的例外。第一个是玻璃盒选样，上文说过，断言仍守规格。第二个是遗留代码的 characterization test（特征测试）：代码没有规格、又不敢动时，先把现状行为锁进测试当安全网，明知它测的是实现——这是 Feathers《Working Effectively with Legacy Code》（2004）的经典做法，模块 5 维护课会展开，本地无全文，按经典转引。它和第 19 课见过的 golden master（黄金基准）是同族技术，CMU 的讲义干脆把 characterization test 列作 golden master 的别名（CMU 17-313《11-oracles》, p19）。区别在用法：锁遗留代码的现状当重构安全网是正当手段；把现状当承诺写进断言、拿它验新功能就成了病根——同一份讲义提醒「这正是 AI 生成的测试常常变成的样子——它们断言代码当前做的一切」，坏测试三的同义反复就是它的近亲。第三个是规格没写但你想锁住的行为：正确顺序是先把它补进契约再写测试，否则测试就在替你猜。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：判据在技能里，裁决在人</h2>
+  <p>落地的技能还是 <code>tdd</code>，地图第 21 课技能栏里那个，调用类型和第 20 课说的一样：frontmatter 没有 <code>disable-model-invocation</code>，模型可以在相关流程里拉起，你也可以手动输入。上一课用它管循环的时机，这一课用它管测试的形状：行为、可读性两条标准出自 “What a good test is”，边界那条出自 “Seams”，「Anti-patterns」三条里的 implementation-coupled（绑实现的测试：mock 内部协作者、测私有方法、绕过接口从旁路验证）和 tautological（同义反复的测试：预期值按实现的算法重算）正是坏测试一、二、三的判例，第三条 horizontal slicing（横向切片）归第 20 课管。<code>tests.md</code> 里的正反例子——「user can checkout with valid cart」对「checkout calls paymentService.process」、「createUser makes user retrievable」对「createUser saves to database」、手算字面量对重算式——就是这些判例的完整版，体检时逐条对照。</p>
+  <p>agent 在这套标准下干三件事。写新测试时按三条标准落笔：断言只走公开接口，预期值来自契约或手算例子，名字写成规格句。体检旧测试时给每个测试一句「坏在哪」的初判，标出它撞了哪条标准。改造测试时把越界的断言换成接口上看得见的等价断言，比如把「<code>_entries</code> 里没有这个对象」换成「<code>search</code> 搜不到这条」。技能还有一条贯穿的纪律，第 20 课引过原话：测试只写在事先确认的缝上，缝要先写下来跟你确认（<code>tdd/SKILL.md</code>「Seams」）；测试名的用词先读项目的 <code>GLOSSARY.md</code> 对齐领域语言，沙盒没有 <code>GLOSSARY.md</code>，就以 <code>Store</code> docstring 里的词为准。</p>
+  <p>你要拍板三件。<strong>行为清单</strong>：哪些可观察结果算数。<code>delete</code> 的三条承诺是第 20 课你拍的板，这一课的测试只能断到那里为止。<strong>断言的度</strong>：规格承诺到哪就断到哪。agent 顺手多断言的细节——精确的 id 字符串、文件行数、异常的具体类型——删还是留，你对照契约裁决；想锁住某个细节，先把它补进契约。<strong>规格句</strong>：每个测试名配的那句「它保证了什么」，最终的验收人是没读过实现的读者。</p>
+  <p>怎么判断这套标准真的生效。第 20 课的变异检查证明过「该红的会红」：故意写坏实现，测试要红。这一课补另一个方向的证据——「不该碎的不碎」：把内部实现换掉而行为不变，好测试一行不动，押注实现的坏测试该红的红、该绿的绿，每条测试押的是什么也跟着现形。两个证据合起来才完整：会红说明测试抓得住行为，不碎说明测试没押注实现。技能和行业说法的差异也交代一句：one logical assertion per test 是技能的严口径，业内断言粒度更松；「reads like a specification」把规格句写进测试名，同样是技能口径，行业里更常见的是名字符合命名准则、规格写在测试策略注释里（第 19 课做过）。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>动手前认三个坑。它们的共同点是拿「绿」当形状合格证，忘了绿只说明测试跟当前实现一致。</p>
+  <ul>
+    <li><strong>绿了就算合格。</strong>绑实现的测试也绿，同义反复的测试在当前实现下也绿。防法：拿变异检查和重构实验当合格证，单看绿不下结论。</li>
+    <li><strong>断言越细越负责。</strong>把 id 格式、文件行格式、异常精确类型全断上，看着严格，其实把实现的自由全没收了，规格没承诺的断言是越界。防法：每条断言对着契约问「这条承诺写在哪」；想锁住细节，先补契约再断言。</li>
+    <li><strong>测试名写实现。</strong><code>test_delete_rewrites_jsonl</code> 这类名字在描述 HOW（怎么做），实现一换就撒谎。防法：名字写 WHAT（做什么）——<code>test_delete_survives_reopen</code> 说的是承诺，读名字的人不用读实现。</li>
+  </ul>
+  <p>三个坑的防法指向同一个动作：<strong>拿契约当尺子，逐条对断言</strong>。契约是第 20 课拍板落进 docstring 的那份，对不上就删断言或者补契约，没有第三条路。</p>
+</section>
+
+<section>
+  <h2>练习：三个坏测试，改成三个好测试</h2>
+  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>。产出两样：三个只测行为的测试落进 <code>tests/test_storage.py</code>（跟第 19、20 课的回归网放一起），坏测试的样子连同「坏在哪」的体检结论记进 <code>.scratch/shape-notes.md</code>。坏测试写在临时文件里跑，不进 <code>tests/</code>——仓库里不留下会红的测试。</p>
+  <p>起点按你的情况分两条路。做过第 20 课练习的，<code>delete</code> 已经实现，四组红绿测试在回归网里，坏测试和好测试都拿 <code>delete</code> 的三个行为当素材：删存在的条目、删除后重开仍成立、删除不回收 id。没做过的，用 <code>add</code> 和 <code>search</code> 当素材，三个坏法照样成立：验 <code>add</code> 的副本去戳 <code>_entries</code>、验 <code>add</code> 落盘去读 <code>kb.jsonl</code>、给 <code>add</code> 的 id 或 <code>created_at</code> 照实现算预期值。下面的步骤以 <code>delete</code> 为主线写，另一条路把方法名换掉即可。</p>
+
+  <ol class="steps">
+    <li><strong>写三个坏测试，让它们全绿。</strong>写在 <code>.scratch/bad_tests.py</code> 之类的临时文件里，照三个坏法各写一个：戳私有结构（<code>assert entry not in store._entries</code>）、旁路验证（<code>assert path.read_text().count("\n") == 0</code>）、照实现算预期（把 id 的预期写成实现当前算法的翻版，比如 <code>expected = f"e{len(store._entries) + 1:04d}"</code>——你实现里的算法是什么就抄什么）。跑 <code>python -m pytest .scratch/bad_tests.py -q</code> 确认全绿。这一步要看到的是：绿不代表形状对，三个坏测试的绿和好测试的绿长得一模一样。</li>
+    <li><strong>三条标准体检，每个测试写一句「坏在哪」。</strong>逐个测试回答三个问题：断言落在规格承诺的结果上了吗（对 <code>Store</code> docstring 逐条问「这条承诺写在哪」）？观察是从 <code>Store</code> 的公开方法看的，还是绕道了 <code>_entries</code>、<code>kb.jsonl</code>？名字和断言读起来像规格吗，像实现笔记？结论一句话写进 <code>.scratch/shape-notes.md</code>，例如「坏测试二坏在边界：删除的证据去文件里找，文件格式不在契约上」。坏测试常常一身多病，记最主要的那条。</li>
+    <li><strong>改造：三个好测试写进 <code>tests/test_storage.py</code>。</strong>每条断言都能指到契约的一句话，观察全走公开接口，名字写成规格句。预期值从契约和手算例子来——第 20 课拍板的决定（删不到返回 <code>False</code>、删到返回 <code>True</code>、id 不复用、<code>JsonlStore</code> 删除持久化）就是断言的上限。「仓库不变」也从公开接口看：用两条各自命中一个条目的 <code>search</code> 对照（参考卡里 <code>search("笔记")</code> 的写法），别数 <code>_entries</code>；空 query 返回什么第 19 课就没定，别拿它当观察全仓库的口子。写之前先对照回归网：第 20 课已经有的同名测试（比如 <code>test_delete_existing_entry_removes_it</code>）改造后就地替换或改名，一个名字只留一个 <code>def</code>；跟循环四重合的断言合并进重开那条测试，别把同一件事写两遍。写完跟回归网一起跑，<code>python -m pytest -q</code> 全绿。</li>
+    <li><strong>顺手体检旧回归网。</strong>第 19、20 课留下的测试也过一遍三问。它们大多形状没问题——断言都走公开接口；但有一类细节值得看：<code>assert second.add("新条目", "")["id"] == "e0003"</code> 断言 id 的精确取值，这不算越界，「按加入顺序递增、删掉不复用」是契约明文，能指到承诺的断言就留得下。指出契约上找不到的断言，按第 3 步的办法处理。</li>
+    <li><strong>重构实验：换实现，看谁红、看谁绿。</strong>把两个 adapter 的 <code>_entries</code> 改名成 <code>_items</code>（一处机械替换，行为不变）。跑两遍：戳 <code>_entries</code> 的两条坏测试应该红，红在它们押注了这处内部结构；读 <code>kb.jsonl</code> 的那条照绿——它押的是落盘格式，改名动不了它，想弄红它得换落盘写法（比如整个文件改存一行 JSON 数组）。<code>tests/test_storage.py</code> 应该一行不动、全绿。红的和绿的合起来是一张押注表：每条测试押在哪处实现上，一次实验看得清清楚楚。哪个好测试跟着红了，说明改造没干净，回去对着三问再修。做完把改名还原（<code>git diff</code> 确认只动了实现，还原后再确认干净）。</li>
+    <li><strong>变异检查和规格句收尾。</strong>做一次变异：把 <code>JsonlStore.delete</code> 改成只删内存、不改文件，确认三个好测试里有测试变红，还原。该红的会红、不该碎的不碎，两个证据都拿到了。最后把三个测试名读给一个没读过实现的人（或者让 agent 只看测试文件）听，让它复述每个测试保证了什么；说不清的，改名。</li>
+  </ol>
+
+  <p>做完的标准是这几条：三个好测试在 <code>tests/test_storage.py</code> 里全绿，每条断言指得到契约；<code>.scratch/shape-notes.md</code> 里有三个坏测试的样貌和三句「坏在哪」；重构实验里押注内部结构的坏测试红、好测试一行不动全绿；变异检查杀死了变异；测试名经得起复述。没拍板的契约问题照老规矩落进 design doc 的「风险与未决问题」，别让测试替你猜。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这三条测试算规格的合法客户端吗</h2>
+  <p>把仓库交给 agent，让它按下面这份检查单审一遍。它查的是形状，测试条数不在检查范围里。</p>
+
+  <pre><code>读 kb/storage.py 的 Store docstring、tests/test_storage.py、.scratch/shape-notes.md。
+只审查，不重写；第 5、6 条要求的临时改动每次改完必须还原。
+开始前确认 git status 干净；没有就先 commit。未提交时不要运行 git checkout。
+
+逐条检查：
+1. 三个测试的断言全部过 Store 的公开方法观察吗？
+   有没有碰 _entries、直接读 kb.jsonl、或其它旁路？
+2. 逐条断言对着 docstring 问「这条承诺写在哪」。指不到的断言是越界，
+   列出来：哪些该删，哪些该先把承诺补进契约？
+3. 测试名说的是 WHAT 还是 HOW？对没读过实现的人，名字加断言
+   能复述出 delete 保证了什么吗？
+4. 预期值从契约或手算例子来吗？有没有照实现的算法重算？
+5. 把两个 adapter 的 _entries 改名成 _items，跑 python -m pytest -q，
+   测试应该一行不动、全绿；红了就指认哪条测试押注了实现。
+   用 git checkout -- kb/storage.py 还原，git diff 确认干净。
+6. 把 JsonlStore.delete 改成只删内存不改文件，确认有测试变红后还原。
+   （这条是补第 20 课的证据：该红的还得会红。）
+7. 坏测试有没有混进 tests/？.scratch/shape-notes.md 里每个坏测试
+   有「坏在哪」的一句话吗？
+
+结论：哪条测试是「合法客户端」？哪条还要改？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>越界断言</strong>：规格没承诺的断言，删掉或者先把承诺补进契约，再决定去留。<strong>旁路观察</strong>：从文件、私有属性拿证据的测试，把证据来源换回公开接口。<strong>名字写实现</strong>：改成规格句，让没读过实现的人读得懂。三类分开处理，别把「断言越界」和「名字难读」搅在一起说。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>测试是规格的客户端：断言只许要求规格承诺的东西，实现可以整个换掉，测试不该碎。</li>
+    <li>形状拆成三条标准：行为断在公开可观察的结果上，观察站在缝上看，名字和断言合起来像规格。</li>
+    <li>形状合格要两个证据：变异检查证明该红的会红，重构实验证明不该碎的不碎。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031《Specifications》（本地 <code>courseware/mit-6.031/classes/06-specifications/index.html</code>）——“Behavioral equivalence”（行为等价在客户眼里、规格写明客户能依赖什么）；“Testing and specifications”（even glass box tests must follow the specification、「Test cases must be correct, obeying the contract just like every other client」、<code>find</code> 的越界断言 <code>assertEquals(0, i)</code>「assumes too much, more than the postcondition promises」、玻璃盒「testing different parts of the implementation, but still checking those test cases in an implementation-independent way」）；“Testing units”（好单元测试只对一个规格，测 <code>extract()</code> 不该因 <code>load()</code> 不达标而红）。MIT 6.031《Testing》（本地 <code>courseware/mit-6.031/classes/03-testing/index.html</code>）——black box / glass box 定义与「preserve the implementor's freedom」；Summary 的 Ready for change：「Correct test suites only depend on behavior in the spec, which allows the implementation to change within the confines of the spec」。SE-EDU《Test Case Design》（本地 <code>courseware/se-education/book/testCaseDesign/print.html</code>）“Black box versus glass box”——黑盒（specification-based / responsibility-based）、白盒（implementation-based）、灰盒三口径。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《09-testing》（本地 <code>courseware/cmu-17-313/pdfs/09-testing.pdf</code>）p9 “Specification Testing”——按规格写测试的四条好处（avoids implementation bias、robust to changes in the implementation、不用先熟悉代码、实现前可开发）。CMU 17-313《11-oracles》p7 example-based oracle「doubles as documentation of intended behavior」、p19 golden master 警告（AI 生成的测试常断言代码当前做的一切）。SE-EDU《Code Quality》（本地 <code>courseware/se-education/book/codeQuality/print.html</code>）——“Guideline: Maximize Readability”（可读性是代码质量最重要的维度之一、你终会成为自己代码的陌生人）、“Guideline: Name Well”（名字要解释被命名的东西）、“Guideline: Comment minimally but sufficiently”（Explain WHAT and WHY, not HOW）。测试代码的写法没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>经典转引：</strong>Feathers, <em>Working Effectively with Legacy Code</em>（2004）——characterization test。本地无全文，按经典转引处理。</p>
+  <p><strong>实践方式：</strong><code>tdd</code> 技能的 “What a good test is”、<code>tests.md</code> 正反例子、“Anti-patterns” 的 implementation-coupled 与 tautological 两条（<code>mocking.md</code> 留给第 22 课）；沙盒 <code>kb/storage.py</code> 的 <code>Store</code> 契约。本机路径 <code>C:\Users\admin\.agents\skills\</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 22 课「测试替身：fake、stub、mock 的边界」。这一课立的判据是「不测实现」，下一课遇到它的真问题：为了把测试隔离开，有时候不得不把协作者替掉——fake 假件、stub 桩件、mock 模拟对象替到什么程度算测实现？<code>tdd</code> 技能的 <code>mocking.md</code> 就在处理这条边界。你留下的三个好测试和三条标准，到时候就是判「该不该 mock」的尺子。</p>
+  <p>练习里没拍板的契约问题，照老规矩落盘：写进 <code>Store</code> 的 docstring 或 design doc 的「风险与未决问题」。契约含糊，断言的度就没法裁。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0021-test-shape-card.html">好测试的形状参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 22 课 · 测试替身：fake、stub、mock 的边界</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 4 · 实现与测试 · 第 22 课</p>
+  <h1>测试替身：fake、stub、mock 的边界</h1>
+  <p class="lede">你让 agent 给 <code>kb add</code> 补个测试，它交回来一个全绿的测试：store 是个 <code>MagicMock()</code>，断言写着 <code>store.add.assert_called_once_with("PyTest 入门", "正文")</code>。把它拿去跑第 21 课的三把尺子——行为尺过不去，它断的是「调了什么」，不是「调完能观察到什么」；把 <code>main</code> 里的位置参数改成关键字参数，行为一点没变，测试红了。可 agent 也是好意：CLI 里写死了 <code>JsonlStore(Path("kb.jsonl"))</code>，不把 store 换掉，测试就得跟真文件打交道。隔离的代价就在这：为了把测试隔离开，有时不得不把协作者替掉，替到什么程度算测实现？第 19 课管样本、第 20 课管时机、第 21 课管形状，这一课管隔离——fake（假件）、stub（桩件）、mock（模拟对象）的边界。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 21 课（好测试的形状）；第 15 课的 <code>Store</code> port</span>
+  <span><b>产出</b> 一条注入缝、一个 fake 支撑的 CLI 测试，以及一个写下来的「不该 mock」判断</span>
+  <span><b>主读物</b> Fowler《Mocks Aren't Stubs》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：样本、时机、形状都立过了，这一课处理隔离的代价——协作者替掉之后，测试会不会跟着绑上实现。</li>
+    <li>用自己的话解释 test double（测试替身）是统称，dummy（哑件）、fake、stub、spy（间谍件）、mock 各自做什么，以及为什么名字各家乱用、分界在验证方式。</li>
+    <li>分清 state verification（状态验证）和 behavior verification（行为验证），说出 mock 的断言为什么天然绑实现。</li>
+    <li>按边界判断该不该替、替成什么：系统边界和自有协作者的处理不同，fake 要简单到不太可能有 bug。</li>
+    <li>给代码造一条注入缝（dependency injection，依赖注入），用现成的 <code>InMemoryStore</code> 当 fake 测 CLI 行为，并写下至少一个「不该 mock」的判断。</li>
+    <li>用重构实验和变异检查给替身测试拿证据：该碎的碎、不该碎的不碎。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：形状立完了，轮到隔离的代价</h2>
+  <p>第 2 课把软件工程拆成八个活动。模块 4 一直在 Testing &amp; Quality（测试与质量）和 Construction（构造）之间来回：第 19 课在 Testing &amp; Quality 里选样本，第 20 课在 Construction 里定时机，第 21 课回到 Testing &amp; Quality 立形状的标准——测试是规格的客户端，行为、边界、可读性三把尺子，外加两个证据（变异检查证明该红的会红，重构实验证明不该碎的不碎）。这一课还在这个来回里，但问题换了一个：测试要隔离，隔离就要把协作者（collaborator，被测代码要打交道的对象）替掉，而替身本身就是一段「假装是协作者」的实现。三把尺子说「不测实现」，替身却把实现的一个侧面搬进了测试。替到什么程度算越界，是这一课要回答的。</p>
+  <p>测试面还是那套 <code>kb</code>：第 15 课立的 <code>Store</code> port（端口）加两个 adapter（适配器），今天多测一个 <code>kb/cli.py</code>。往后第 23 课的 <code>/implement</code> 在工单里跑红绿循环，替身判断会跟着循环走；第 24 课让 CI（Continuous Integration，持续集成）自动跑整张网。今天留下的注入缝和「不该 mock」判断，到时候直接用。</p>
+</section>
+
+<section>
+  <h2>问题与概念：替身是替掉实现，不是替掉契约</h2>
+  <p>先看清楚开头那个测试哪里不对。它长这样：</p>
+  <pre><code>from unittest.mock import MagicMock
+
+def test_add_calls_store_add():
+    store = MagicMock()
+    main(["add", "PyTest 入门", "正文"], store=store)
+    store.add.assert_called_once_with("PyTest 入门", "正文")   # 断的是调用</code></pre>
+  <p>它绿，而且绿得很稳——为了让测试能把替身递进去，agent 还顺手给 <code>main</code> 加了个 <code>store</code> 参数，生产代码被它改了。这个改动本身没错，错的是测试断的东西（练习第 1 步会把这个缝收成规范写法）。问题是它验的东西跟 <code>kb add</code> 的承诺没有关系：命令行程序的承诺是「跑完 <code>add</code>，打印新条目的 id，条目存进仓库、搜得到」。这条测试对打印了什么、存没存进去一概不问——把 <code>print</code> 整行删掉它照绿，把返回的 id 打印成垃圾它也照绿。它验的是「<code>main</code> 内部调用了 <code>store.add</code>，参数是这两个」，也就是 <code>main</code> 的实现怎么写的。拿第 21 课的尺子量：行为尺，断言没落在规格承诺的结果上；边界尺，「内部调用了谁、用什么参数调」是接缝另一侧的交互，站在公开边界上看不见它；可读性尺，测试名写的是 HOW。再拿两个证据里的一个试它：把位置参数改成 <code>store.add(title=args.title, text=args.text)</code>，行为完全不变，这条测试红了。红得和 bug 无关，这就是绑实现。</p>
+  <p>可是 agent 的顾虑是真的。<code>kb/cli.py</code> 里写死了 <code>JsonlStore(Path("kb.jsonl"))</code>，测 <code>add</code> 就得在工作目录里造真文件、测完收拾，上一轮的 <code>kb.jsonl</code> 还会串进下一轮。想让测试又快又干净，就得把 CLI 依赖的 store 换掉。这个「换个假的顶上去」的动作有个统称：<strong>test double（测试替身）</strong>，名字来自电影里的 Stunt Double（特技替身）——正主在，替身代它出镜（Fowler, “Mocks Aren't Stubs”）。</p>
+
+  <h3>五种替身：先看动作，再看名字</h3>
+  <p>替身的细分词汇在业内出了名的乱。MIT 6.031 里就记录着这种混用：「A stub for a class is often called a mock object（类的桩件常被叫作 mock object）」（MIT 6.031, Testing, “Unit and integration testing”）；Fowler 讲替身分类时也说「The vocabulary for talking about this soon gets messy… all sorts of words are used: stub, mock, fake, dummy（谈论这件事的词汇很快就乱套了——什么词都有人用）」，然后声明他跟着 Meszaros《xUnit Test Patterns》的口径走。所以下面这张表背名字意义不大，记每种替身「做什么、怎么验证」才有用。五种定义都出自 Fowler 文中对 Meszaros 的转述：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>替身</th><th>它做什么</th><th><code>kb</code> 里的对应物</th><th>验证走哪条路</th></tr></thead>
+      <tbody>
+        <tr><td class="what">dummy 哑件</td><td>被传来传去，但从来不被真的用到，只占参数的位置</td><td>暂无；构造函数要传 store 又不关心它的场合</td><td>不参与验证</td></tr>
+        <tr><td class="what">fake 假件</td><td>有能工作的实现，但抄了近道，不适合进生产（「in memory database 是个好例子」）</td><td><code>InMemoryStore</code>：真的存、真的搜，只是不过文件</td><td>状态验证</td></tr>
+        <tr><td class="what">stub 桩件</td><td>对测试里安排好的调用给硬编码的答复，安排之外的一概不答</td><td>照 SE-EDU 的 <code>StorageStub</code> 样子写一个「只认 <code>search("入门")</code>」的 <code>Store</code></td><td>状态验证</td></tr>
+        <tr><td class="what">spy 间谍件</td><td>桩件再加一层记录：被怎么调的、调了几次，记下来供断言</td><td>给 <code>InMemoryStore</code> 套一层「记下调用过什么」的壳</td><td>两种都可能（Fowler 口径：走行为验证的桩件就叫 spy）</td></tr>
+        <tr><td class="what">mock 模拟对象</td><td>预先写好期望：「应该被这样调用」，这组期望本身就是对调用方的一份规格</td><td>开头那个 <code>MagicMock()</code> 加 <code>assert_called_once_with</code></td><td>行为验证（只有 mock 强制走这条）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里藏着本课真正的分界线。Fowler 的原话是：「Of these kinds of doubles, only mocks insist upon behavior verification. The other doubles can, and usually do, use state verification（这些替身里只有 mock 强制行为验证，其他几种可以、而且通常走状态验证）」。这句话里有个松动处要交代：spy 的归类各家有出入——Fowler 把走行为验证的桩件直接叫作 Test Spy，Meszaros 的模式页里 spy 又是「mock 断言报不回来时的替代品」。本课按 Fowler 口径记，表格里 spy 那行写的就是这个口径。<strong>state verification（状态验证）</strong>是跑完之后看结果：调用结束后检查被测对象和协作者的状态对不对，断言落在「变成了什么」上。<strong>behavior verification（行为验证）</strong>是盯着过程看：被测对象有没有按预期的方式调用协作者，断言落在「怎么调的」上。开头的坏测试断言 <code>assert_called_once_with</code>，正是行为验证；<code>tests/test_storage.py</code> 里那些「删完搜不到」的断言，全是状态验证。第 21 课说「mock 是绑实现的重灾区」，机制就在这里：行为验证把「SUT（system under test，被测系统）怎么跟协作者说话」写成了断言，而怎么说话属于实现。fake 之所以相对安全，是因为它站在契约后面——测试通过公开接口看结果，fake 只是把契约另一侧的实现换了个便宜版本。</p>
+  <p>这就是「替身替的是实现，不是契约」的意思。<code>InMemoryStore</code> 和 <code>JsonlStore</code> 实现的是同一个 <code>Store</code> 契约，第 15 课说「两个 adapter 才是真缝」，今天兑现红利：测试站在 <code>Store</code> 的方法上观察，底下是真文件还是内存，测试既看不见也不必看见。替身越界发生在它开始顶替契约本身的时候——mock 掉 <code>store</code> 还回头断言「调没调、调了几次」，契约里可没有「必须调用一次 <code>add</code>」这条。</p>
+</section>
+
+<section>
+  <h2>行业做法：边界清单和两派取舍</h2>
+  <p>先立标尺。「该不该 mock」没有统一标准，只有边界清单和取舍；fake / stub / mock 的细分也没有标准，Meszaros / Fowler 口径是流传最广的一套，不是唯一的一套。下面每条都标清它是什么、怎么做、什么时候用、产物和代价。</p>
+
+  <h3>只在系统边界上替，自有协作者留真件或契约内的 fake</h3>
+  <p>什么值得替成 mock？答案跟着「谁说了算」走。外部的、你控制不了的、慢的或者不确定的东西——支付接口、邮件服务、时钟、随机数——这些是 system boundary（系统边界），真去连它们，测试就又慢又脆。Google SRE 的《Testing for Reliability》把这件事当作常规手段：「Dependency injection… is an extremely powerful technique for creating mocks of complex dependencies so that an engineer can cleanly test a component. A common example… is to replace a stateful database with a lightweight mock that has precisely specified behavior（依赖注入是给复杂依赖造 mock 的强力手段，常见例子是把有状态的数据库换成行为被精确定义的轻量 mock）」；他们的 release test（发布测试）还会整个换成对端团队维护的 fake backend（假后端），前端照测（Google SRE Book, “Testing for Reliability”）。反过来，你自己写的类、你自己的模块，替掉它们换不来隔离，只换来一份跟实现绑定的副本。这批东西要么用真的，要么用同一个契约下的 fake。<code>kb</code> 里两者的分界清楚：<code>Store</code> 是自有 port，用 <code>InMemoryStore</code> 这个契约内的 fake；<code>kb.jsonl</code> 的真文件测试走 <code>tmp_path</code>，那本来就是验证的一部分。</p>
+
+  <h3>为可替而设计：把依赖从缝上递进去</h3>
+  <p>替身要能顶上去，前提是协作者能被换掉。SE-EDU《Testing》的 “Dependency Injection” 一节给的动作是：「Dependency injection is the process of 'injecting' objects to replace current dependencies with a different object. This is often used to inject stubs to isolate the [SUT] from its [dependencies]（依赖注入就是把对象『注』进来，用另一个对象顶替当前依赖，常用来注入桩件、把被测对象跟它的依赖隔开）」。书里的例子是给 <code>Payroll</code> 加一个 <code>setSalaryManager</code>，测试时注一个 <code>SalaryManagerStub</code> 顶替真的 <code>SalaryManager</code>。Python 里更常见的形态是加一个带默认值的参数：调用方什么都不用改，测试想换就换。产物是接口上多一个参数，代价是接口多担一份承诺——第 14 课的规矩在这里照用：缝开在既有 port 上（<code>Store</code>），不把新的实现细节漏进接口。顺带说清 fake 的质量要求，SE-EDU 给桩件下的定义里有一句，拿来说所有替身都合适：实现要「so simple that it is unlikely to have any bugs（简单到不太可能有 bug）」。替身是测试的地基，地基本身出 bug，红了你都不知道该怪谁。</p>
+
+  <h3>classical 还是 mockist：一个真实的取舍</h3>
+  <p>行为验证用多少，在业内是两派。Fowler 把它们叫 classical TDD（古典派，也叫 Detroit 派）和 mockist TDD（mock 派，也叫 London 派）：古典派「能用真对象就用真对象，真对象别扭才上替身」，mock 派「凡是带点行为的协作者都替成 mock」。两派各有理由。mock 派的账：失败隔离得干净——bug 在哪，红的测试就只在哪个被测对象名下，古典派里一个底层 bug 会涟漪式地红一片；还有设计压力，逼着对象长出行为、开出 role interface（角色接口）。古典派的账：测试只认结果不认过程，重构随便改内部结构测试都不碎；而且古典测试顺带是 mini-integration tests（微型集成测试），客户对象的测试常常撞见两个类交互处的 bug，mock 测试丢掉了这个便宜。Fowler 自己站古典派，理由是「mockist tests are thus more coupled to the implementation… Coupling to the implementation also interferes with refactoring（mock 测试跟实现耦合更紧，也干扰重构）」，还有一条更狠的：「expectations on mockist tests can be incorrect, resulting in unit tests that run green but mask inherent errors（mock 测试的期望本身可能写错，结果是测试全绿、错误被盖住）」。但他也留了话：被涟漪式红困扰、或者对象普遍贫血时，值得试试 mock 派。这是取舍，两边都成立，课程不替你选。</p>
+  <p>行为验证也有正当场合。Fowler 给的判例是 cache（缓存）：「The whole point of a cache is that you can't tell from its state whether the cache hit or missed（缓存的要点就是你从状态上看不出它命中没命中）」，状态根本不可观察，这时连最坚定的古典派也该断言行为。同理，如果「恰好发一封邮件、不能发两封」是契约写明的承诺，断言调用一次就不是越界——第 21 课例外三的顺序在这里照用：想锁「怎么交互」，先把交互方式写进契约，再写断言。契约没写就断调用次数，锁的是实现的巧合。</p>
+
+  <h3>替身盖不住集成：接缝另一侧总得有人验</h3>
+  <p>隔离换来速度和干净，代价是替身把接缝另一侧藏起来了。SE-EDU《Testing》的 “Integration Testing” 说得很直白：集成测试要抓的是 glue code（胶水代码）里的 bug，「These bugs are often the result of misunderstanding what the parts are supposed to do vs what the parts are actually doing（这些 bug 常来自各部分『以为对方该做什么』和『实际做了什么』之间的误会）」——fake 再好，验的也是你对契约的理解，理解错了 fake 陪着你错。SWEBOK 把集成列为独立测试层级，典型策略有 top-down（自顶向下）、bottom-up（自底向上）、sandwich（三明治）和 big bang（大爆炸）几种（SWEBOK v4, ch.5, §2.1.2, printed 5-7）；教科书里的细节是：自顶向下缺的下层用桩件顶，自底向上缺的上层用 driver（驱动件）撑起来（SE-EDU《Integration》，“Top-down versus bottom-up integration”）。所以 Fowler 收尾时给了一句硬要求：「whichever style of test you use, you must combine it with coarser grained acceptance tests that operate across the system as a whole（不管你用哪一派，都必须配上跨整个系统的粗粒度验收测试）」。对 <code>kb</code> 来说，这条落成两件事：持久化测试用 <code>tmp_path</code> 真文件跑 <code>JsonlStore</code>，CLI 的默认装配也留一条真件测试——替身测试只是图快，兜底还得靠真件测试。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：技能里的两份清单</h2>
+  <p>落地的技能还是 <code>tdd</code>，这次用它一直留着没展开的 <code>mocking.md</code>——第 20、21 课都只提了一句「留给第 22 课」。调用类型和前两课说的一样：frontmatter 没有 <code>disable-model-invocation</code>，模型可以在相关流程里拉起，你也可以手动输入。<code>mocking.md</code> 是技能对本课问题的直接回答，它给的是两份清单。第一份：「Mock at <strong>system boundaries</strong> only（只在系统边界上 mock）」——external APIs（外部接口，支付、邮件）、databases（数据库，「sometimes — prefer test DB」，有时可 mock，更该用测试库）、time/randomness（时间与随机数）、file system（文件系统，「sometimes」）。第二份：「Don't mock（别 mock）」——your own classes/modules（你自己的类和模块）、internal collaborators（内部协作者）、anything you control（任何你控制得了的东西）。开头那个 <code>MagicMock</code> 撞的就是第二份清单的第一条。</p>
+  <p>清单之外，<code>mocking.md</code> 还管「为可 mock 而设计」，两条：依赖用注进去的，别在函数内部自己造（它举的反例是函数里直接 <code>new StripeClient(process.env.STRIPE_KEY)</code>，正例是 <code>paymentClient</code> 从参数进来）；接口做成 SDK 风格——每个操作一个具名方法，别做通用的 <code>fetch(endpoint, options)</code>，否则 mock 里还得写条件逻辑。<code>Store</code> 的 <code>add</code> / <code>search</code> 就是具名方法的样子。<code>tests.md</code> 里的反例「checkout calls paymentService.process」是这条边界的判例：mock 掉内部的 <code>paymentService</code> 再断言它的方法被调用，它的红旗清单里包括「mocking internal collaborators」「asserting on call counts/order」「test breaks when refactoring without behavior change」这三条；正例「user can checkout with valid cart」走的是状态验证。<code>tests.md</code> 这个反例就是第 21 课 implementation-coupled（绑实现）反模式的实例，两者对得上；对原文时以 <code>tdd/SKILL.md</code> 和 <code>mocking.md</code> 为准。</p>
+  <p>agent 在这套规矩下干三件事。给替身归类：手里的东西是 dummy、fake、stub、spy 还是 mock，站在哪条缝上，一句话写下来。按三把尺子写替身测试：断言走公开接口和可观察结果，预期值从契约或手算例子来，名字写成规格句。对「要不要替」的候选逐个给初判：该 mock、该用 fake、还是该用真件，附理由。你要拍板三件。<strong>归类和缝</strong>：agent 的归类只是初判，判错方向整批测试跟着错，尤其是把 fake 当 mock 用（对它断言调用）或把 mock 当 fake 用（拿它的返回值当契约）。<strong>该不该 mock</strong>：清单是死的，场景是活的——「sometimes」那两档（数据库、文件系统）判的就是你手上有没有更真的替代品。<strong>要不要为可测性开缝</strong>：给 <code>main</code> 加 <code>store</code> 参数是接口变动，即便有默认值兜着，也值得你过一眼它有没有把实现细节漏进承诺。</p>
+  <p>怎么判断这套做法真的生效，还是那两个证据，这次打在替身上。重构实验：把 <code>main</code> 里 <code>store.add(args.title, args.text)</code> 改成关键字参数，行为不变——mock 版测试该红（它押注了调用方式），fake 版测试该绿，红绿合起来就是押注表。变异检查：把 <code>add</code> 分支的 <code>print</code> 改成打印别的，fake 版测试要红——该红的还得会红，上一课的证据不能丢。技能口径和行业说法的差异也交代一句：<code>mocking.md</code> 的立场接近古典派——「别 mock 你的自有协作者」这话 mock 派不会同意，在 mock 派看来自有协作者照样值得替成 mock 来驱动设计；两派的账在行业做法一节摆过了，技能选了一边，你按场景调。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>动手前认三个坑。它们的共同点是把「隔离」当目的，忘了隔离只是手段，测试最终要为行为作证。</p>
+  <ul>
+    <li><strong>什么替身都用 mock。</strong>mock 框架最顺手，于是 store、时钟、自己的类一路 mock 下去，断言里塞满调用次数和参数匹配。防法：先问替身归哪类、站在边界还是自有协作者上；自有协作者优先真件或契约内的 fake。</li>
+    <li><strong>在 fake 里重新实现被替的东西。</strong>fake 的价值是「简单到不太可能有 bug」，照着真实现抄一套逻辑进 fake，bug 跟着抄进来，测试红了分不清怪谁。防法：stub 给硬编码的答复，fake 抄近道，别在替身里重算业务。</li>
+    <li><strong>替身全绿就当能跑通。</strong>fake 全绿只证明「跟你的契约理解一致」，胶水代码的误会它陪着你错。防法：留真件测试兜底——<code>tmp_path</code> 上的持久化测试、默认装配的冒烟测试，接缝另一侧总得有人验。</li>
+  </ul>
+  <p>三个坑的防法指向同一个动作：<strong>每个替身写一行「它替谁、站在哪条缝、怎么验证」</strong>。这行字写得出来，该不该 mock 的判断就有依据；写不出来，多半是还没想清测试在验什么。</p>
+</section>
+
+<section>
+  <h2>练习：给 CLI 造缝、写一个 fake，判一个「不该 mock」</h2>
+  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>。产出三样：生产代码里一条注入缝（<code>kb/cli.py</code>，本课唯一的生产代码改动）、<code>tests/test_cli.py</code> 里 fake 支撑的 CLI 测试、<code>.scratch/double-notes.md</code> 里替身归类和「不该 mock」的判断。做过第 19–21 课练习的，<code>tests/test_storage.py</code> 是现成的回归网，全程当裁判；没做过的也不缺素材——这课的测试面是 <code>add</code> 和 <code>search</code>，不依赖 <code>delete</code>。</p>
+
+  <ol class="steps">
+    <li><strong>造注入缝，默认行为一点不变。</strong>打开 <code>kb/cli.py</code>，把 <code>main</code> 的签名改成 <code>def main(argv: list[str] | None = None, store: Store | None = None) -> int:</code>，装配那行改成 <code>if store is None: store = JsonlStore(STORE_PATH)</code>。这就是依赖注入在 Python 里的常见形态：调用方什么都不用改，测试想换就换。改完手敲冒烟：<code>python -m kb add "PyTest 入门" "正文"</code>、<code>python -m kb search 入门</code>，行为跟改之前一模一样才算过。<code>__main__.py</code> 不用动。</li>
+    <li><strong>写 fake 测试，替身记一行归类。</strong>在 <code>tests/test_cli.py</code> 里用现成的 <code>InMemoryStore</code> 当 store 传进 <code>main</code>，测 CLI 的可观察行为：跑完 <code>add</code> 打印了新条目的 id，跑完 <code>search</code> 打印了命中的行。捕获打印用 pytest 内置的 <code>capsys</code> 夹具（捕获标准输出，断言 <code>capsys.readouterr().out</code>）。断言照第 21 课的三把尺子写：落在打印结果和返回码上，不戳 <code>store._entries</code>；名字写 WHAT。写完给替身记一行归类进 <code>.scratch/double-notes.md</code>：「<code>InMemoryStore</code> 是 fake——实现能工作只是不过文件（近道），走 <code>Store</code> 契约，断言是状态验证」。对照表里五个名字，说清它为什么不是 stub（不是硬编码答复）、不是 mock（没有对调用的期望）。</li>
+    <li><strong>写一个 mock 版对照组，做重构实验。</strong>照开头那个坏样子写一条 <code>MagicMock</code> 测试，放进 <code>.scratch/mock_test.py</code>（不进 <code>tests/</code>——仓库里不留下会红的测试），跑 <code>python -m pytest .scratch/mock_test.py -q</code> 确认绿；这个文件留给反馈回路第 5 条用。然后把 <code>main</code> 里的 <code>store.add(args.title, args.text)</code> 改成 <code>store.add(title=args.title, text=args.text)</code>——行为完全不变——再跑：mock 版该红，fake 版全绿。红绿合起来是押注表，结论记进 <code>.scratch/double-notes.md</code>：mock 押的是调用方式，fake 押的是行为。做完把参数改回原样，<code>git diff</code> 确认只动了 <code>kb/cli.py</code> 的缝和测试文件。</li>
+    <li><strong>「不该 mock」判断：四个候选逐个判。</strong>把判断和理由写进 <code>.scratch/double-notes.md</code>，每条给结论（该 mock / 该 fake / 该用真件）加一句依据：(a) 给 CLI 测试造 <code>MagicMock</code> 当 store，断言 <code>add</code> 被调用一次；(b) 给持久化测试 mock 掉 <code>Path.open</code>，验证「写文件时写的是删除后的内容」（没做过第 20 课练习的换成「新增后的内容」，判法相同）；(c) 给「写文件时报错」的错误分支 mock 写入失败；(d) 给 <code>created_at</code> mock <code>datetime.now</code>。判断参考（不是标准答案）：(a) 不该——mock 自有协作者，断言落在调用上；(b) 不该——<code>tmp_path</code> 真文件就是更好的替代品，mock 文件系统还得模仿 <code>open</code> 的行为，替身比被替的复杂，断言也绕到了文件格式这个旁路上；(c) 可以——权限、磁盘满这类错误路径用真文件难造，这正是文件系统「sometimes」的「时」，但断言仍落在行为上（抛什么、返回什么），不是「<code>write</code> 被调了几次」，而且错误分支抛什么、返回什么契约还没定，先拍板写进契约再断言，拍不了就记进未决问题；(d) 现在不该——没有测试依赖时间的取值，第 19 课的口径是断时区为 UTC、微秒为 0，不断言具体时刻和字符串长相，真要锁时间行为，先把时钟像 <code>Store</code> 一样收成协作者再替。</li>
+    <li><strong>真件兜底，收尾拿证据。</strong>给默认装配补一条真件测试：用 <code>monkeypatch.chdir(tmp_path)</code> 切到临时目录，跑 <code>main(["add", "PyTest 入门", "正文"])</code> 不传 store，确认 <code>kb.jsonl</code> 落在临时目录、搜索搜得到。这条不带替身，验的是缝的默认侧——它就是第 19 课留到后面的「命令行界面加 store」集成测试的先手。然后做一次变异：把 <code>add</code> 分支的 <code>print(entry["id"])</code> 改成 <code>print("ok")</code>，fake 测试该红，还原。最后跑 <code>python -m pytest -q</code> 全量回归，连 19–21 课的旧测试一起绿。</li>
+  </ol>
+
+  <p>做完的标准是这几条：<code>python -m kb</code> 两个命令手敲行为不变；<code>tests/test_cli.py</code> 里 fake 测试全绿，断言全走可观察结果，没有一条断言调用次数或参数；<code>.scratch/double-notes.md</code> 里有替身归类、重构实验的红绿结论、四个候选的判断加依据；变异被杀死；全量回归绿。判断拿不准的候选（比如 <code>datetime.now</code>）照老规矩记进 design doc 的「风险与未决问题」，别让测试替你猜。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这批替身站对位置了吗</h2>
+  <p>把仓库交给 agent，让它按下面这份检查单审一遍。它查的是替身的归类、位置和验证方式。</p>
+
+  <pre><code>读 kb/cli.py、tests/test_cli.py、tests/test_storage.py、.scratch/double-notes.md。
+只审查，不重写；第 5 条要求的临时改动每次改完必须还原。
+开始前确认 git status 干净；没有就先 commit。未提交时不要运行 git checkout。
+
+逐条检查：
+1. 每个替身在 double-notes.md 里有归类吗（dummy/fake/stub/spy/mock）？
+   归类跟它的实际动作对得上吗（断言调用的就是 mock，硬编码答复的是 stub）？
+2. tests/test_cli.py 的断言全部落在可观察结果上吗？
+   有没有 assert_called_*、调用次数或参数匹配这类行为验证？
+3. 测试跑在哪个替身上？自有协作者（Store）有没有被 mock？
+4. JsonlStore 的持久化测试用 tmp_path 真文件，还是 mock 了文件系统？
+   默认装配有真件测试兜底吗？
+5. 把 main 里 store.add(args.title, args.text) 改成关键字参数。
+   先跑 python -m pytest -q，fake 测试该全绿（.scratch 不会被默认收集）；
+   再单独跑 python -m pytest .scratch/mock_test.py -q，mock 版该红。
+   用 git checkout -- kb/cli.py 还原，git diff 确认干净。
+6. 「不该 mock」的四个候选各有结论和依据吗？依据能指到
+   mocking.md 的清单或第 21 课的三把尺子吗？
+
+结论：哪些替身站对了位置？哪个判断还要改？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>归类错了</strong>：把 fake 当 mock 用（对它断言调用）或把 mock 当 fake 用（拿返回值当契约），先改归类再改测试。<strong>位置错了</strong>：自有协作者被 mock、文件系统被不必要地 mock，换真件或契约内的 fake。<strong>验证方式错了</strong>：断言落在调用上的，改成断可观察结果；行为真是承诺的，先补契约再断言。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>测试替身是统称，名字各家乱用；真正的分界是验证方式——状态验证看「变成了什么」，行为验证看「怎么调的」，mock 的断言落在调用上，天然绑实现。</li>
+    <li>替身站在缝上替的是实现：系统边界才考虑 mock，自有协作者用真件或契约内的 fake，fake 要简单到不太可能有 bug。</li>
+    <li>隔离有代价：替身验不到接缝另一侧，真件测试兜底，重构实验和变异检查给替身测试拿证据。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>Fowler, “Mocks Aren't Stubs”（本地 <code>courseware/fowler/mocks-arent-stubs.html</code>，文内日期 2 January 2007）——test double 统称与 Stunt Double 命名、转引 Meszaros《xUnit Test Patterns》的五种替身定义（Dummy / Fake / Stub / Spy / Mock）、「only mocks insist upon behavior verification」、state verification 与 behavior verification、classical（Detroit）与 mockist（London）TDD 两派的账、cache 的行为验证例外、「mockist tests are thus more coupled to the implementation… interferes with refactoring」、「expectations on mockist tests can be incorrect, resulting in unit tests that run green but mask inherent errors」、「you must combine it with coarser grained acceptance tests」、古典测试是 mini-integration tests。SE-EDU《Testing》（本地 <code>courseware/se-education/book/testing/print.html</code>）——“Stubs”（隔离论证、stub 定义「same interface… so simple that it is unlikely to have any bugs… hard-coded… for a limited set of predetermined inputs」、<code>StorageStub</code> 例子、「Mocks, Fakes, Dummies, Spies」）；“Integration Testing”（glue code bug 与「misunderstanding what the parts are supposed to do vs what the parts are actually doing」）；“Dependency Injection”（注入替身、<code>SalaryManagerStub</code> 例子）。SE-EDU《Integration》（本地 <code>courseware/se-education/book/integration/print.html</code>）“Top-down versus bottom-up integration”——top-down 「requires the use of stubs in place of lower level components」、bottom-up 需要 drivers。MIT 6.031《Testing》（本地 <code>courseware/mit-6.031/classes/03-testing/index.html</code>）“Unit and integration testing”——stub 段与「A stub for a class is often called a mock object」「Stubs are an important technique when building large systems, but we will generally not use them in 6.031」（术语混用的实证）。</p>
+  <p><strong>行业做法：</strong>Google SRE Book《Testing for Reliability》（本地 <code>courseware/google-sre/testing-reliability/index.html</code>）——mocks of complex dependencies、stateful database 换 lightweight mock、fake backend 版本由对端团队维护。SWEBOK v4 ch.5 §2.1.2 Integration Testing（PDF p123 = printed 5-7）——集成测试层级与 top-down / bottom-up / sandwich / big bang 策略。替身细分与「该不该 mock」没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>经典说明：</strong>Meszaros, <em>xUnit Test Patterns</em>（2007）本地无书，五种替身的定义经 Fowler 上文转述引用。</p>
+  <p><strong>实践方式：</strong><code>tdd</code> 技能的 <code>mocking.md</code>（边界两份清单、Designing for Mockability）、<code>tests.md</code>（「checkout calls paymentService.process」反例与红 flags）、<code>SKILL.md</code>「Anti-patterns」的 implementation-coupled 条；沙盒 <code>kb/cli.py</code> 与 <code>kb/storage.py</code>。本机路径 <code>C:\Users\admin\.agents\skills\</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 23 课「<code>/implement</code>：把一个工单真正做完」。这一课留下的判断到时候直接用：<code>/implement</code> 在工单里跑红绿循环，跑到要隔离的地方就面临今天的选择——替谁、替成什么、断言断在哪。你留下的注入缝、fake 测试和「不该 mock」的判断，就是循环里的默认答案。</p>
+  <p>练习里拿不准的替身判断，照老规矩落盘：写进 <code>.scratch/double-notes.md</code> 或 design doc 的「风险与未决问题」。判断悬着，测试就会替你选边。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0022-test-doubles-card.html">测试替身参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

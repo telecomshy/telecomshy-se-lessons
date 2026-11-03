@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>好测试的形状参考卡 · 行为、边界、可读性</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 21 课</p>
+  <h1>好测试的形状参考卡</h1>
+  <p class="lede">测试是规格的客户端：断言只许要求规格承诺的东西，实现可以整个换掉，测试不该碎。形状拆成三条标准——行为断在公开可观察的结果上、观察站在缝上看、名字和断言合起来像规格。合格证是两个证据：变异检查证明该红的会红，重构实验证明不该碎的不碎。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>好测试的形状在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Testing &amp; Quality（测试与质量）</td><td>第 19 课选样本、第 20 课在 Construction 定时机，这一课立「什么样的测试算好」的标准；落笔动作仍在红绿循环里。</td></tr>
+      <tr><td class="skill">站在 port 上</td><td>观察全走 <code>Store</code> 的公开方法（<code>add</code> / <code>search</code> / <code>delete</code>），不碰 <code>_entries</code>、不读 <code>kb.jsonl</code>。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>三条标准是第 22 课判「该不该 mock」的尺子；mock 是绑实现的重灾区。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三条标准，逐条对着坏测试看</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>标准</th><th>问什么</th><th>坏测试（对应 tests.md 的坏法）</th></tr></thead>
+    <tbody>
+      <tr><td class="what">行为</td><td>断言落在规格承诺的结果上吗？返回值、异常、公开方法查得到的状态，逐条对 docstring 问「这条承诺写在哪」。</td><td><code>assert entry not in store._entries</code>（戳私有结构）；<code>expected = f"e{len(store._entries) + 1:04d}"</code>（照实现算预期，同义反复）</td></tr>
+      <tr><td class="what">边界</td><td>观察从缝上看吗？证据从公开接口来，还是绕道私有属性、文件格式、数据库表？</td><td><code>assert path.read_text().count("\n") == 0</code>（旁路验证，文件格式不在契约上）</td></tr>
+      <tr><td class="what">可读性</td><td>名字和断言合起来像规格吗？名字写 WHAT 不写 HOW，没读过实现的人读得懂吗？</td><td><code>test_delete_rewrites_jsonl</code>（描述实现怎么写，实现一换名字就撒谎）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：像每个客户端一样遵守契约</h2>
+<div class="card-rule">
+  <p><strong>behavioral equivalence（行为等价）在客户眼里：</strong>两种实现等不等价，不在实现本身，在客户依赖了什么，而规格写明客户能依赖什么（MIT 6.031《Specifications》）。测试用例「必须 correct，像每个其他客户端一样遵守契约」：实现可能提供比规格更强的保证，测试不许指望（“Testing and specifications”）。越界例子：规格只承诺返回满足 <code>arr[i] == val</code> 的任意下标，<code>assertEquals(0, i)</code> 就是「assumes too much, more than the postcondition promises」，守规矩的写法是 <code>assertEquals(7, array[i])</code>。</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>口径</th><th>规矩</th><th>出处</th></tr></thead>
+    <tbody>
+      <tr><td class="what">黑盒 black box</td><td>只凭规格的外部行为设计用例（specification-based / responsibility-based）</td><td>SE-EDU《Test Case Design》</td></tr>
+      <tr><td class="what">白盒 / 玻璃盒 glass box</td><td>按对实现的了解选样，但断言仍守规格、实现无关</td><td>SE-EDU 同节；MIT 6.031《Specifications》</td></tr>
+      <tr><td class="what">灰盒 gray box</td><td>借一点实现知识选样（如排序在 1000 处分算法）</td><td>SE-EDU《Test Case Design》</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>一句话分工：<strong>选样可以盯着实现，断言必须盯着规格。</strong>第 19 课「黑盒先写、白盒补漏」管选样，这句管断言。</p>
+
+<h2>改造前后对照（练习的三个）</h2>
+<pre><code># 坏：预期值照实现当前的算法抄（同义反复）
+def test_next_id_after_delete():
+    store = InMemoryStore()
+    first = store.add("PyTest 入门", "正文")
+    store.delete(first["id"])
+    expected = f"e{len(store._entries) + 1:04d}"   # 实现的算法是什么就抄什么
+    assert store.add("笔记", "")["id"] == expected
+
+# 好：预期值从契约（id 不复用）+ 手算例子来
+def test_delete_does_not_reuse_ids(store):
+    ids = [store.add(f"条目{i}", "")["id"] for i in range(1, 4)]
+    store.delete(ids[1])
+    assert store.add("新条目", "")["id"] == "e0004"</code></pre>
+<p>另外两对：坏测试一（戳 <code>_entries</code> 验删除）改成 <code>test_delete_existing_entry_removes_it</code>（删到返回 <code>True</code>，再搜为空）；坏测试二（读 <code>kb.jsonl</code> 数行）改成 <code>test_delete_survives_reopen</code>（重开后删除仍成立，证据从 <code>search</code> 来，比如 <code>search("笔记")</code> 那种写法）。断言上限是第 20 课拍板的契约：删不到返回 <code>False</code>、删到返回 <code>True</code>、id 不复用、<code>JsonlStore</code> 删除持久化。跟第 20 课回归网撞名的测试（比如 <code>test_delete_existing_entry_removes_it</code>）改造后就地替换或改名，一个名字只留一个 <code>def</code>；跟循环四重合的断言合并进 <code>test_delete_survives_reopen</code>，别把同一件事写两遍。</p>
+
+<h2>两个证据，缺一不可</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>证据</th><th>做法</th><th>证明什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">该红的会红（变异检查）</td><td>把 <code>JsonlStore.delete</code> 改成只删内存不改文件，测试要红，还原</td><td>测试抓得住行为，不是同义反复（第 20 课的证据）</td></tr>
+      <tr><td class="what">不该碎的不碎（重构实验）</td><td><code>_entries</code> 改名 <code>_items</code>，行为不变；好测试全绿、戳 <code>_entries</code> 的坏测试红，押注落盘格式的照绿（正好看清押注在哪）</td><td>测试押注的是规格，不是实现</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>临时改动的纪律照旧：先确认 <code>git status</code> 干净，改完 <code>git diff</code> 留证，还原后再确认干净。</p>
+
+<h2>什么时候可以测实现：三个正当例外</h2>
+<ul>
+  <li><strong>玻璃盒选样：</strong>照实现找新用例可以，断言仍以实现无关的方式检查。</li>
+  <li><strong>characterization test（特征测试）：</strong>遗留代码没规格又不敢动时锁现状当安全网，明知它测实现（Feathers 2004 经典转引，模块 5 展开）。</li>
+  <li><strong>想锁住规格没写的行为：</strong>先补进契约再写测试，否则测试在替你猜。反面是 golden master：AI 生成的测试常「断言代码当前做的一切」（CMU 11-oracles p19）。</li>
+</ul>
+
+<h2>AI + Matt：判据在技能里，裁决在人</h2>
+<ul>
+  <li><strong><code>tdd</code> 的调用类型</strong>：frontmatter 无 <code>disable-model-invocation</code>，模型可拉起、用户可手动；本课用 “What a good test is” 和 “Anti-patterns”（implementation-coupled、tautological）当判据，<code>tests.md</code> 正反例子当判例。</li>
+  <li><strong>先定缝</strong>：测试只写在事先确认、跟你确认过的缝上；测试名读 <code>GLOSSARY.md</code> 对齐领域语言（沙盒没有就用 <code>Store</code> docstring 的词）。</li>
+  <li><strong>agent 干三件</strong>：按三条标准写新测试、给旧测试一句「坏在哪」初判、把越界断言换成接口上看得见的等价断言。</li>
+  <li><strong>人拍板三件</strong>：行为清单（哪些可观察结果算数，上限是契约）、断言的度（指不到承诺的断言删还是补契约）、规格句（名字对没读过实现的人说得清吗）。</li>
+  <li><strong>差异</strong>：one logical assertion per test 是技能严口径，业内常允许多条断言合说一个行为；「reads like a specification」写进测试名是技能口径，行业更常见名字符合命名准则、规格写进测试策略注释。</li>
+</ul>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">绿了就算合格</td><td>绑实现的测试也绿，同义反复的在当前实现下也绿</td><td>拿变异检查和重构实验当合格证，单看绿不下结论</td></tr>
+      <tr><td class="what">断言越细越负责</td><td>id 格式、文件行数、异常精确类型全断上，没收实现的自由</td><td>逐条对契约问「承诺写在哪」；想锁细节先补契约</td></tr>
+      <tr><td class="what">测试名写实现</td><td><code>test_delete_rewrites_jsonl</code> 描述 HOW，实现一换就撒谎</td><td>名字写 WHAT：<code>test_delete_survives_reopen</code> 说的是承诺</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<pre><code>读 kb/storage.py 的 Store docstring、tests/test_storage.py、.scratch/shape-notes.md。
+只审查，不重写；第 5、6 条要求的临时改动每次改完必须还原。
+开始前确认 git status 干净；没有就先 commit。未提交时不要运行 git checkout。
+
+逐条检查：
+1. 三个测试的断言全部过 Store 的公开方法观察吗？
+   有没有碰 _entries、直接读 kb.jsonl、或其它旁路？
+2. 逐条断言对着 docstring 问「这条承诺写在哪」。指不到的断言是越界，
+   列出来：哪些该删，哪些该先把承诺补进契约？
+3. 测试名说的是 WHAT 还是 HOW？对没读过实现的人，名字加断言
+   能复述出 delete 保证了什么吗？
+4. 预期值从契约或手算例子来吗？有没有照实现的算法重算？
+5. 把两个 adapter 的 _entries 改名成 _items，跑 python -m pytest -q，
+   测试应该一行不动、全绿；红了就指认哪条测试押注了实现。
+   用 git checkout -- kb/storage.py 还原，git diff 确认干净。
+6. 把 JsonlStore.delete 改成只删内存不改文件，确认有测试变红后还原。
+   （这条是补第 20 课的证据：该红的还得会红。）
+7. 坏测试有没有混进 tests/？.scratch/shape-notes.md 里每个坏测试
+   有「坏在哪」的一句话吗？
+
+结论：哪条测试是「合法客户端」？哪条还要改？</code></pre>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>behavioral equivalence 行为等价、specification 规格、client 客户端、black box testing 黑盒测试、glass box testing 玻璃盒测试（白盒测试）、gray-box 灰盒测试、implementation bias 实现偏见、characterization test 特征测试、golden master 黄金基准（第 19 课）、seam 接缝（第 15 课）、port 端口（第 15 课）、fake 假件 / stub 桩件 / mock 模拟对象（第 22 课展开）、test-first programming 测试先行编程（第 20 课）、回归网（第 20 课）。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031《Specifications》：“Behavioral equivalence”、“Testing and specifications”（glass box 也守规格、「obeying the contract just like every other client」、find 越界断言、「implementation-independent way」）、“Testing units”（单元测试只对一个规格）。MIT 6.031《Testing》：black box / glass box 与「preserve the implementor's freedom」、Summary “Ready for change”。SE-EDU《Test Case Design》“Black box versus glass box”：黑盒 / 白盒 / 灰盒三口径。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《09-testing》p9 “Specification Testing” 四条好处；《11-oracles》p7、p19。SE-EDU《Code Quality》：“Maximize Readability”“Name Well”“Comment minimally but sufficiently”。测试代码的写法没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>经典转引：</strong>Feathers《Working Effectively with Legacy Code》（2004）characterization test；本地无全文，标注转引。</p>
+  <p><strong>实践方式：</strong><code>tdd</code> 技能（<code>SKILL.md</code>、<code>tests.md</code>；<code>mocking.md</code> 留给第 22 课）；沙盒 <code>kb/storage.py</code>。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0021-test-shape.html">第 21 课：好测试的形状：行为、边界、可读性</a> · <a href="course-map.html">课程地图</a> · <a href="0020-tdd-card.html">第 20 课：红绿循环参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

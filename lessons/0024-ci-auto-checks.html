@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 24 课 · CI：让检查自动跑</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 4 · 实现与测试 · 第 24 课</p>
+  <h1>CI：让检查自动跑</h1>
+  <p class="lede">第 23 课收尾那晚，全量测试是你亲手敲的，类型检查和单文件测试是 agent 在它的会话里跑的。第二天 agent 改完搜索的匹配规则，回你一句「测试跑过了」。你没法验证这句话：终端在它的会话里，退出码你没见过。就算它真跑了，也只保证了那一次——下次换台机器、换个 agent、或者你自己半夜赶工，检查还跑不跑，全看记性。</p>
+  <p class="lede">回头看第 23 课那组判据：五条里「全量测试绿」「静态检查过」不需要判断就能出答案，每样都是一个命令、一个退出码；「验收标准逐条有证据」「review 有裁决」要人来判断，命令只能摆出事实；「提交落盘」是动作，不是检查。本课把「静态检查过」细拆成格式化、lint（代码检查器）两条命令，再把测试一起挂上固定时机，把不用判断的那部分交给机器自动跑——这就是这一课要配的检查链：一条 push 就会跑的 CI（Continuous Integration，持续集成）pipeline（流水线）。核心问题只有一个：什么该被自动跑，什么留在人手上。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 30–40 分钟</span>
+  <span><b>前置</b> 第 23 课（工单的判据清单）；第 19–22 课的测试在链上跑</span>
+  <span><b>产出</b> 一条 push 就会跑的检查链：README 里的命令清单、<code>.github/workflows/ci.yml</code>、存量清理的独立提交、三次「故意弄坏」的证据记录</span>
+  <span><b>主读物</b> SWEBOK v4 第 4 章（Software Construction）</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：第 23 课的判据清单靠人手跑，这一课把其中机械可判的部分交给机器，构造的反馈回路变成流水线。</li>
+    <li>把判据分成两类——机械可判的和需要判断的——说出前者该自动跑、后者留在人手上。</li>
+    <li>解释 CI 是什么、流水线在每次提交时做什么，引 SWEBOK 的原文而不只报缩写。</li>
+    <li>写出一份命令清单：每样检查一条命令，落进 README；本地和 CI 跑同一条，CI 用只检查模式。</li>
+    <li>给沙盒配一条 GitHub Actions 检查链，故意弄坏三次，证明它每次都红在该红的那一步。</li>
+    <li>认出三个误区：链绿当终点、规则一把抓、红着红着成常态。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：上一课的判据，今天还靠你亲手跑</h2>
+  <p>第 2 课把软件工程拆成八个活动。模块 4 的前五课一直在 Construction（构造）和 Testing &amp; Quality（测试与质量）之间来回：第 19 课选样本、第 20 课定时机、第 21 课立形状、第 22 课处理隔离，第 23 课把四课攒下的测试判据装进一张工单的生命周期。那张判据清单有五条：验收标准逐条有证据、全量测试绿、静态检查过、review 有裁决、提交落盘。今天这条清单还靠人手跑：哪条跑没跑、谁跑的，全凭记性。</p>
+  <p>这一课还在 Construction 里，但要往 Configuration &amp; Operations（配置与运维）借一点视角，因为「谁来跑检查」开始变成一个和构建、发布有关的问题。SWEBOK 讲构造的反馈回路时已经点了名：「Early and continuous feedback for the construction activity is one of the most important advantages of agile development and DevOps（构造活动的早期、持续反馈是敏捷开发和 DevOps 最重要的优点之一）」，而且这种快反馈是靠「techniques and practices in the DevOps pipeline, such as automated building and testing（DevOps 流水线上的技术和实践，比如自动构建和自动测试）」做到的（SWEBOK v4, ch.4, §4.17, printed 4-14）。第 23 课引过这句话的前半截，今天接住后半截：判据要跑得早、跑得勤，跑这个动作本身就不能依赖谁的记性。</p>
+  <p>SWEBOK 把 CI 放在配置管理那一章里讲。ch.8 §6.1「Software Building」（printed 8-13）说：「In continuous integration, software building is performed automatically when changes to CIs are committed to a source control repository（在持续集成里，软件构建在配置项有变更提交到源码仓库时自动进行）」——注意这里的 CIs 是 configuration item（配置项），不是持续集成的缩写，SWEBOK 的原词撞了车，读的时候留神。构建自动化的思路和检查自动化是同一个：固定时机、固定步骤、不靠人记得。往后第 25 课接走留在人手上的那半边，展开 review 的读法。</p>
+</section>
+
+<section>
+  <h2>问题与概念：把不需要判断的检查交给机器</h2>
+  <p>先分清判据的两种性质。第 23 课的五条判据里，「全量测试绿」「静态检查过」是机械可判的：每样对应一个命令，跑完看退出码，答案非黑即白——本课把「静态检查过」拆成格式化、lint 两条命令，类型检查暂不进链。「验收标准逐条有证据」「review 有裁决」是需要判断的：命令只能摆出事实，对不对要人来定；「提交落盘」是动作，不是检查。这个划分不是本课发明的。Matt 技能包的 <code>retro</code> 技能在讲「怎么给仓库立规矩」时就把违规分了两类：mechanical（机械的）违规——固定语法模式、禁用 API、文件位置这类——「gets a deterministic check, full stop（就该配一个确定性检查，没得商量）」，而且「Default to building the check over writing the rule（默认去建检查，而不是写规则）」；真正的 judgement call（判断题）——跨文件一致性、「和周围风格相符」这类——才留给 <code>CODING_STANDARDS.md</code> 让人来裁。同一条清单的「Automated checks」条目里还有一句更直接的：「A repo with no guardrail (no pre-commit hook and no CI job running its lint/typecheck/test command) is itself a finding: an un-linted repo is a standing missed opportunity, not a neutral default（一个没有护栏的仓库——没有提交钩子、没有跑 lint、类型检查、测试命令的 CI 任务——本身就是个问题：没跑过 lint 的仓库是常年错失的机会，不是中性的默认状态）」。</p>
+  <p>于是「什么该被自动跑」有了答案的形状：凡是能写成确定性检查的判据，都该自动跑；自动不了的才留在人手上。再往前走半步，就是 CI。SWEBOK 对它的描述很克制：「Today, continuous integration (CI) has been widely adopted in practice. A software team using CI integrates its work frequently, leading to multiple integrations per day. CI is usually automated by a pipeline that builds and tests each integration to detect errors and provide fast feedback.（如今持续集成已在实践中广泛采用。用 CI 的团队频繁集成各自的工作，一天集成多次。CI 通常由一条流水线自动化：对每次集成做构建和测试，以发现错误、提供快速反馈。）」（SWEBOK v4, ch.4, §3.7, printed 4-9）。三个要素都在这句话里：频繁集成是纪律，流水线是自动化手段，快速反馈是目的。本课要配的就是这条流水线，它在每次你 push 的时候跑一遍格式化、lint、测试。</p>
+  <p>为什么这几样值得自动跑？SWEBOK 的运维章给过一条通用理由：「repetitive tasks are automated to reduce delays, increase quality, and ensure a consistent and stable operational environment（重复性任务被自动化，以减少延迟、提高质量、确保一致稳定的运行环境）」，同一章 §1.5 还有一句更贴测试的：「Because manual testing is inefficient, error-prone and non-scalable, testing must be automated as much as possible throughout the entire software process（人工测试低效、易错、不可扩展，所以测试必须在整个软件过程中尽可能自动化）」（SWEBOK v4, ch.6, §1.4–1.5, printed 6-5）。跑检查正是最典型的重复性任务：每天跑同样的命令、判同样的退出码，人来做既慢又容易漏，机器做又快又稳。流水线具体干什么，配置管理章说得更细：工具「monitor the project's source control system and initiate a pipeline of steps to be undertaken every time a change is committed（监视项目的源码管理系统，每次有变更提交就启动一串步骤）」，步骤包括取一份全新源码、编译链接，还「often combined with steps to validate coding standards via automated static analysis, execute unit tests and determine code coverage metrics（常结合这些步骤：用自动静态分析验证编码规范、执行单元测试、测定代码覆盖率）」（SWEBOK v4, ch.8, §6.1, printed 8-13）。格式化、lint、测试三样，就是这段话里「编码规范 + 单元测试」的日常版。</p>
+  <p>还有一件事要先说清：自动跑的前提是每样检查都能写成一条命令。第 19 课你已经会敲 <code>python -m pytest -q</code>，格式化和 lint 也各有各的命令。命令清单是本地和流水线之间的合同：两边跑同一条命令，「我本地是好的」才有资格成为一句话。Google 的发布工程实践把这条合同写成了推荐：「Release engineering recommends that the continuous build test targets correspond to the same test targets that gate the project release（发布工程建议持续构建的测试目标与守着发布关口的测试目标一致）」。检查链要配的东西，其实就是这份合同加一个不靠记性的执行者。</p>
+</section>
+
+<section>
+  <h2>行业做法：每样一条命令、两个时机、一条不许断的线</h2>
+  <p>先立标尺。CI 本身是主流做法，SWEBOK 的措辞是「widely adopted in practice」；但一条链上具体跑什么、跑多严，没有统一标准，是跟着项目风险走的取舍。下面三条主流做法各有各的用处，最后单独讲红了怎么办——那才是取舍真正咬人的地方。</p>
+
+  <h3>每样检查一条命令，CI 只检查不修复</h3>
+  <p>做法是把格式化、lint、测试各写成一条能单独敲的命令，放进一份谁都查得到的清单——可以是一个 <code>Makefile</code>、一个 command runner（命令运行器）的配置，也可以就是流水线文件里的一行行 <code>run</code>。Missing Semester 2026《代码质量》讲命令运行器时说的就是这件事：「you don't want to make your developers memorize commands like <code>uv run ruff check --fix</code>. With a command runner, this can turn into <code>just lint</code>（你不会想让开发者背下 <code>uv run ruff check --fix</code> 这种命令，用命令运行器它可以变成 <code>just lint</code>）」。本地照着清单敲，CI 也照着清单跑，两边一字不差。还有个容易忽略的差别：CI 里跑工具要用 check-only mode（只检查模式），同一篇讲得明确——「the script running in CI will not directly make changes to your code: it will run tools in "check-only" mode rather than "fix" mode（CI 里跑的脚本不直接改你的代码，它用只检查模式而不是修复模式跑工具）」。本地可以跑 <code>ruff format .</code> 让工具顺手把格式改掉，CI 只能报「哪里不合格式」然后失败——流水线擅自改代码，等于把「谁来改」的决定从人手里拿走了。产物是那份命令清单，代价是清单要维护：改了检查命令，本地和 CI 两处都得跟着改。</p>
+
+  <h3>两个时机：钩子管快，CI 管权威</h3>
+  <p>同一批检查可以挂在两个时机上。第一个是 pre-commit hook（提交钩子）：git 在你每次 commit 前自动跑你指定的脚本，Missing Semester 说「Projects commonly use pre-commit hooks to run formatters and linters, and sometimes tests, automatically before every commit（项目常用提交钩子在每次提交前自动跑格式化器、linter，有时也跑测试）」。它的好处是反馈快——问题在你手边就地解决；它的死穴也明摆着：钩子在你自己机器上，git 有后门可以跳过它，而且换台机器就没装。所以第二个时机才是权威：CI 服务在你 push 之后跑，跑在远端、默认跳不过去。Missing Semester 列了三种触发，各有各的用途：「every time you push code (or on every pull request, or on a schedule)（每次 push 代码时、每个 pull request 时、或按计划）」——push 抓主分支上新混进来的错，pull request 抓贡献者交进来的东西，定时跑抓的是外部依赖悄悄破坏的行为。配法跟着需要走：小项目只配 push 一种就够；有人给你提贡献的仓库，pull request 那道也配上。产物是两个时机各一份配置，代价是两份配置里的命令清单要保持同一份。</p>
+
+  <h3>不许断的线：红了修或回滚</h3>
+  <p>检查链的价值全在它说红就红。Google 的持续测试系统是这么用的：「A continuous test system runs unit tests against the code in the mainline each time a change is submitted, allowing us to detect build and test failures quickly（持续测试系统每次有变更提交就对主干代码跑单元测试，让我们很快发现构建和测试失败）」，还有一项做法叫「Push on Green」：「deploy every build that passes all tests（所有测试通过的构建就发布）」——绿是可以直接当放行信号用的，前提是大家信它绿得诚实。这种信任来自处置纪律：红了就修或者回滚，不让它过去。这条纪律第 23 课引过 Google 的说法「Don't Break the Build（别弄坏构建）」，现在它从一句口号变成一个能执行的动作：谁提交的东西让链红了，谁修或者谁回滚，红着的线不允许过夜。这里没有标准条文，是团队约定的取舍；单人开发加 agent 的组合反而更需要它——agent 一天能交好几个提交，红了没人管的话，三天后链上就是一片红，谁也不知道哪些是真的坏。按经验判断，宁可链红着吵你，也不要它安静地失效——前者你立刻知道，后者要到出事才知道。</p>
+  <p>三条合起来正好回答开头的问题。机械可判的检查（格式化、lint、测试）进链，挂在固定时机上，用只检查模式跑同一条命令清单；链红了有处置规矩。留给人手的是需要判断的两半：review 和验收——第 23 课说过，测试绿只回答了 verification（验证），validation（确认）要靠人对着验收标准出证据。这些判断没法自动化，自动化的只是替你把事实摆上桌的那部分。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：没有专门的 CI 技能，分工写在别的技能里</h2>
+  <p>先交代一件事：技能包里没有独立的 CI 技能，课程地图第 24 课的技能栏就是「—」。最接近的 <code>setup-pre-commit</code> 沾了 pre-commit 这个词，但它走的是 Node.js 的 Husky + lint-staged 那套，和 Python 沙盒对不上，本课不用它。真正和检查链有关的话，写在三个技能的边角里，合起来正好是「什么自动跑、什么留人手」的完整分工。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>技能</th><th>它的原话</th><th>在分工里管哪段</th></tr></thead>
+      <tbody>
+        <tr><td class="skill"><code>implement</code></td><td class="what">「Run typechecking regularly, single test files regularly, and the full test suite once at the end.」</td><td>检查的节奏：快信号高频、全量兜底。这是检查链的人肉版；命令是同一份，跑的时机和范围不同——链上线后，本地跑快信号、push 时跑全量</td></tr>
+        <tr><td class="skill"><code>retro</code></td><td class="what">「a mechanical one … gets a deterministic check, full stop」「Default to building the check over writing the rule」「A repo with no guardrail … is itself a finding」</td><td>划线：机械违规配确定性检查，判断题才写进标准文档；没有护栏的仓库是要修的问题</td></tr>
+        <tr><td class="skill"><code>code-review</code></td><td class="what">「Skip anything tooling enforces.」</td><td>收口：工具管的评审不重复看。评审的精力留给机器看不见的那半边</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>三句话连起来是一条完整的流水线：机械的事让检查做（<code>retro</code>），检查按节奏跑（<code>implement</code>），人只裁机器答不了的（<code>code-review</code>）。这也解释了为什么本课不单独立技能——检查链是仓库的基础设施，不是某次对话里的动作，技能包管的是对话里的流程，基础设施靠配置文件和你的约定。</p>
+  <p>agent 在这件事里能干什么？写流水线文件、配工具规则、跑本地命令核对退出码，这些它都能做，命令照抄就能跑。三个判断在你。第一，<strong>链上跑什么、多严</strong>：lint 规则开哪些、格式化用哪个工具，这是项目约定，agent 只能给建议。第二，<strong>红了算谁的</strong>：处置规矩——修、回滚、还是临时豁免——是你定的约定，agent 该照办而不是自行豁免。第三，<strong>什么不进链</strong>：需要判断的东西塞进链里，只会得到一条假权威的链，留给人。</p>
+  <p>怎么判断这套东西真的生效？只有一个笨办法：故意弄坏，看它红。链从来没红过，跟链不存在没有区别——这就是 <code>retro</code> 说「没有护栏本身就是问题」的另一面。上线时就弄坏三次，每次红在该红的那一步，你才有资格信它绿的时候。练习里就做这个。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p>动手前认三个坑。它们的共同点是把「链配好了」当成了目的，忘了链只是一台替你摆事实的机器。</p>
+  <ul>
+    <li><strong>链绿当终点。</strong>绿只证明机械检查没抓到东西，行为对不对仍然没人答——第 23 课那句「testing can only prove the presence of errors, not their absence（测试只能证明错误存在，不能证明错误不存在）」在这里照样成立。防法：链当守门员，验收照旧走第 23 课的判据清单，别用绿代替出证据。</li>
+    <li><strong>规则一把抓。</strong>图省心把所有 lint 规则全开，第一次跑就红一片，修不过来就在配置里全局豁免，链从此形同虚设。防法：先跑工具的默认规则集，存量问题一笔一笔清（格式化可以让工具批量改），误报逐条禁用并写一句理由——每加一条规则都是一个决定，不是一次勾选。</li>
+    <li><strong>红着红着成常态。</strong>链红了没人修，第二天更红，一周后所有人学会无视它。防法：定死处置规矩——红了要么修要么回滚，谁弄红谁处理；要跳过检查（比如 <code>git commit --no-verify</code> 跳过钩子）必须留一句话说明为什么，别让跳过变得无痛。</li>
+  </ul>
+  <p>三个坑的防法指向同一个动作：<strong>链红了就是在报消息，规矩得定好谁接、怎么处置</strong>。上线前的三次弄坏，就是让你先看清它报消息的样子。</p>
+</section>
+
+<section>
+  <h2>练习：给沙盒配一条会红的检查链</h2>
+  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>，任务是配一条 push 就跑的检查链，跑格式化、lint、测试三样。工具用 ruff（格式化和 lint 一个工具管）加 pytest，类型检查这门课不进链——静态类型语言的链里通常会加 typecheck（类型检查），Missing Semester 的 CI 一节顺带提过，你以后要加就是清单里多一行命令。两个时机里的 pre-commit hook 本课不配：它是本地的、可跳过的，权威在 CI；你自己的仓库想配，命令还是这三条。产出四样：写进 README 的命令清单、流水线文件（<code>.github/workflows/ci.yml</code>）、格式化与 lint 存量清理的独立提交、三次「故意弄坏」的证据记录（<code>.scratch/ci-notes.md</code>）。做过第 19–23 课练习的，tests/ 里现成的错误行为测试就是链上线后最先被守护的东西；没做过的也不缺素材，见第 1 步的分支。</p>
+
+  <ol class="steps">
+    <li><strong>先把三条命令在本地跑通，抄进 README。</strong>装工具：<code>python -m pip install ruff pytest</code>。然后逐条敲：<code>python -m ruff format --check .</code>（只检查格式）、<code>python -m ruff check .</code>（lint）、<code>python -m pytest -q</code>（测试）。三条各自看退出码：绿是 0，红就先弄明白红在哪。红了的常见原因有两类。一是测试：tests/ 还不存在（第 19–23 课的练习没做），pytest 会以「没收集到测试」退出非零——先补一个最小冒烟测试（比如 <code>tests/test_smoke.py</code> 里断言 <code>InMemoryStore</code> 加一条能搜到），或者让流水线暂时只跑前两样，做完前面练习再把测试步加回来。二是存量：老代码第一次过格式化和 lint 必然报错，处置在下一步。三条命令随手写进 README 的「开发命令」段（或一个 <code>Makefile</code>）——这份命令清单是本地和 CI 之间的合同，反馈回路的检查单会照着它核对。工具会升级，ruff 的规则集随版本变化；想让链不被升级打扰，可以在本地和 workflow 的安装命令里钉住版本，比如 <code>ruff==0.17.3</code>。</li>
+    <li><strong>清存量，格式化和 lint 各一笔。</strong>跑 <code>python -m ruff format .</code> 让工具把现有文件的格式统一掉，单独提交这一笔；再清 lint 存量——<code>python -m ruff check --fix .</code> 能自动修的自动修，剩下逐条豁免并写一句理由（误报或有意为之），再单独提交一笔。为什么单独提交：存量改动混进功能 diff，评审时没人分得清哪行是行为改动哪行是空格——第 23 课引过的 Google 小步规矩里「重构单独成 CL」说的就是这种拆法。ruff 默认格式基本不可配，这是好事：Missing Semester 讲 Black 时说「limited or no configurability, to reduce bikeshedding（配置项有限或没有，以减少自行车棚问题）」，格式的争论不值得占用你和 agent 的时间。</li>
+    <li><strong>写流水线文件。</strong>建 <code>.github/workflows/ci.yml</code>，内容照这个骨架写（照抄或按需改）：
+
+  <pre><code>name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ruff pytest
+      - run: python -m ruff format --check .
+      - run: python -m ruff check .
+      - run: python -m pytest -q</code></pre></li>
+    <li><strong>推上去，看它绿。</strong>沙盒还没有远端，这一步由你动手：在 GitHub 建一个私有仓库，然后 <code>git remote add origin &lt;仓库地址&gt;</code>。推之前先看分支名：<code>git branch --show-current</code>——沙盒在 master 上，就 <code>git push -u origin master</code>；你的仓库叫 main 就换成 main。push 完打开仓库的 Actions 页，等这次运行跑完，三步全绿才算配对了。把 status badge（状态徽章）贴进 README 是可选的，它只是让绿更显眼，不影响链本身。</li>
+    <li><strong>故意弄坏三次，看它红。</strong>三次实验都关在实验分支里做，别碰主干：<code>git checkout -b ci-experiment</code>——workflow 的 <code>on: push</code> 对所有分支都跑，实验分支推上去照样出结果。依次做三件事，每件单独提交推一次：调乱一处缩进（格式化该红）、写一行用不到的变量（lint 该红）、把某个测试的预期值改错（测试该红）。每次确认 Actions 页上红的正是对应的那一步，不是别的步骤替它红的；确认完在下一笔提交里修回，推绿。三次的记录写进 <code>.scratch/ci-notes.md</code>：弄坏了什么、哪一步红、怎么还原。这三行就是「链会红」的证据；对照第 19、21 课的变异检查，思路一样——该红的要会红，红不了的检查不值得信。做完弃掉实验分支（<code>git checkout master</code> 后 <code>git branch -D ci-experiment</code>），远端的同名分支删不删随你。</li>
+    <li><strong>收尾。</strong>看 <code>git log</code>：格式化存量一笔、lint 存量一笔、配置一笔，主干上没有坏提交——三次弄坏都关在实验分支里。再把链守的东西过一遍：它守住了第 23 课那张工单的错误行为测试吗（没做 23 课练习的，答「守住了冒烟测试」）？注意链盯的是行为不是文字：改坏 <code>Store</code> 的行为会被测试拦下，只改 docstring 里的契约文字它照样绿——这就是机械检查的边界，文字对不对留给人。</li>
+  </ol>
+
+  <p>做完的标准是这几条：三条命令写进 README、本地和 workflow 里一字不差；push 后 Actions 三步全绿；三次弄坏每次红在该红的那一步、记录落在 <code>.scratch/ci-notes.md</code>；主干（沙盒是 master）上没有停着的坏提交。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这条链立住了吗</h2>
+  <p>把仓库交给 agent，让它按下面这份检查单审一遍。它查的是链立住了没有，不是代码写得好不好。</p>
+
+  <pre><code>读 .github/workflows/ci.yml、.scratch/ci-notes.md、README、git log，
+并在本地跑一遍三条检查命令。
+只审查，不重写。开始前确认 git status 干净；没有就先 commit。
+
+逐条检查：
+1. README（或 Makefile）里的三条命令，workflow 里有没有一字不差的同一条？
+2. 触发时机写的是什么？push 和 pull request 都覆盖了吗，还是有理由只配一种？
+3. .scratch/ci-notes.md 里三次「故意弄坏」的记录在吗？每次红的都是对应的那一步吗？
+4. 现在三条命令在本地全绿吗？主干最新一次 CI 运行全绿吗（用 gh run list 看，
+   或让人类把 Actions 页的结论转述给你）？
+5. 有没有全局豁免、跳过检查的口子（lint 全局禁用、--no-verify 之类）？有的话写理由了吗？
+6. 链上跑的都是机械可判的检查吗？有没有混进需要判断的东西（比如让 agent 打分）？
+
+结论：这条链算立住了吗？它守得住 23 课那张工单的错误行为测试吗
+（没做 23 课练习的，答「守住了冒烟测试」）？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>配了没验过</strong>：没有弄坏记录的链只是装饰，补三次实验再谈信任。<strong>命令对不上</strong>：本地绿 CI 红（或反过来）多半是两边跑的不是同一条命令、或环境缺依赖（比如 workflow 里忘了装 pytest），修清单不修印象。<strong>越界</strong>：链里混进了要判断的东西，把它挪回 review 或验收，链只留机械检查。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>判据分两类：机械可判的自动跑，需要判断的留人手。CI 是第 23 课那条反馈回路的自动化——跑得早、跑得勤、不靠记性。</li>
+    <li>检查链是一份命令清单加一个不靠记性的执行者：本地和 CI 跑同一条命令，CI 用只检查模式；钩子管快反馈，CI 管权威。</li>
+    <li>链的好坏不看它绿过，看它会不会红：上线时故意弄坏三次，每次红在该红的那一步，绿才有资格当放行信号。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.4 §3.7 Integration（PDF p107 = printed 4-9，「Today, continuous integration (CI) has been widely adopted in practice… CI is usually automated by a pipeline that builds and tests each integration to detect errors and provide fast feedback.」）；ch.4 §4.17 Feedback Loop for Construction（PDF p112 = printed 4-14，「Early and continuous feedback…」与「techniques and practices in the DevOps pipeline, such as automated building and testing」）；ch.8 §6.1 Software Building（PDF p197 = printed 8-13，「software building is performed automatically when changes to CIs are committed」、pipeline 步骤含「validate coding standards via automated static analysis, execute unit tests and determine code coverage metrics」；注意原文 CIs 指 configuration item 配置项）；ch.6 §1.4–1.5（PDF p155 = printed 6-5，「repetitive tasks are automated…」「manual testing is inefficient, error-prone and non-scalable」）。</p>
+  <p><strong>行业做法：</strong>Missing Semester 2026《代码质量》（在线，中文版 <a href="https://missing-semester-cn.github.io/2026/code-quality/">missing-semester-cn.github.io</a>）——格式化（Black/gofmt 配置有限「to reduce bikeshedding」）、lint（静态分析、规则、误报逐条禁用）、pre-commit 钩子（「run formatters and linters, and sometimes tests, automatically before every commit」）、CI（GitHub Actions 三种触发「every time you push code (or on every pull request, or on a schedule)」、只检查模式「it will run tools in "check-only" mode rather than "fix" mode」、矩阵与状态徽章）、命令运行器（<code>just lint</code>）。Google SRE《Release Engineering》（本地 <code>courseware/google-sre/release-engineering/index.html</code>）——持续测试系统「runs unit tests against the code in the mainline each time a change is submitted」、「the continuous build test targets correspond to the same test targets that gate the project release」、「Push on Green」。链上跑什么没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>实践方式：</strong>本课无独立 CI 技能（地图技能栏「—」）；<code>implement</code> 技能 <code>SKILL.md</code>（typecheck / 单文件 / 全量的节奏句）、<code>retro</code> 技能 <code>SKILL.md</code>（guardrail、mechanical → deterministic check、judgement calls 归 <code>CODING_STANDARDS.md</code>）、<code>code-review</code> 技能（「Skip anything tooling enforces」）。工具文档：GitHub Actions、ruff、pytest、git hooks。本机路径 <code>C:\Users\admin\.agents\skills\</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 25 课「双轴审查与读 diff」。这一课把机械可判的检查交给链，留在人手上的是需要判断的那半边：review。链上线后 <code>code-review</code> 的「Skip anything tooling enforces」开始生效——工具管的评审不重复看，下一课教的就是评审剩下的部分怎么读、怎么裁。</p>
+  <p>练习里没拍板的事照老规矩落盘：lint 误报逐条禁用时写下的理由、跳过检查时的说明，都记在配置注释或 <code>.scratch/</code> 里。链上跑什么没定清，下一课的 review 连「哪类问题该由谁抓」都说不清。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0024-ci-card.html">CI 参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

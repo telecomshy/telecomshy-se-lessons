@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>红绿循环参考卡 · 先写失败测试买到了什么</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 20 课</p>
+  <h1>红绿循环参考卡</h1>
+  <p class="lede">测试先行的顺序：先写一个会失败的测试，再写刚好让它通过的实现。红证明测试抓得住行为，绿只写到刚好通过为止。每轮一个行为，绿的测试攒成回归网。「红绿重构」里重构的位子有三种口径，本课跟 <code>tdd</code> 技能：重构不在循环里，属于 review 阶段。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>红绿循环在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Construction（构造）</td><td>第 19 课在 Testing &amp; Quality 里设计样本，这一课把用例表按轮次变成代码。SWEBOK 把 test-first programming 收在 Construction 章（ch.4 §4.16）。</td></tr>
+      <tr><td class="skill">站在 port 上</td><td>测试仍只认 <code>Store</code> 的公开方法（<code>add</code> / <code>search</code> / <code>delete</code>），缝要先写下来、跟用户确认，没确认的缝上不许写测试。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>循环管时机，第 21 课管形状（只测行为、不测实现）；第 23 课 <code>/implement</code> 在工单里内部调用 <code>tdd</code>。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>一轮循环买到的四样东西</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>买到什么</th><th>怎么来的</th></tr></thead>
+    <tbody>
+      <tr><td class="what">证据</td><td>红过再绿，说明测试抓得住行为；事后补的测试常常从没红过，是照实现写的同义反复。</td></tr>
+      <tr><td class="what">契约先行</td><td>写不出预期值的地方就是契约没定的地方（delete 的三处空洞），绕不过去。</td></tr>
+      <tr><td class="what">缺陷当场抓住</td><td>改动和验证隔几分钟，红了知道是刚才哪一步；隔两周就要重新猜。</td></tr>
+      <tr><td class="what">刚好绿的纪律</td><td>只写让这条测试通过的实现，多余代码没有出生的机会。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>三种红，读完再动手</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>红的种类</th><th>表现</th><th>怎么办</th></tr></thead>
+    <tbody>
+      <tr><td class="what">能力还没有</td><td><code>AttributeError</code>，接口上没这个方法</td><td>正常起步；写实现</td></tr>
+      <tr><td class="what">行为不对</td><td>断言失败，pytest 给出期望值与实际值</td><td>最值钱的红，指着 bug；写实现</td></tr>
+      <tr><td class="what">测试写错了</td><td>收集错误、夹具坏、预期抄错</td><td>改测试，但要给契约理由</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>「红绿重构」的三种口径（本课跟第三行）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>口径</th><th>重构的位置</th><th>出处</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Beck 经典三步</td><td>红→绿→重构，重构是循环第三步</td><td>Beck《Test-Driven Development: By Example》（2002，经典转引）</td></tr>
+      <tr><td class="what">SWEBOK</td><td>绿之后「新代码和相关部分可以被重构和优化」</td><td>SWEBOK v4 ch.4 §4.16（printed 4-14）</td></tr>
+      <tr><td class="what"><code>tdd</code> 技能</td><td>「Refactoring is not part of the loop」，重构属于 review</td><td><code>tdd/SKILL.md</code></td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="card-rule">
+  <p><strong>循环的三条规矩（tdd 技能）：</strong>Red before green（先红后绿，不写猜测性代码）；One slice at a time（一轮一个缝、一个测试、一份最小实现）；重构不在循环里。三个反模式：绑实现的测试、同义反复的测试、横向切片（写完所有测试再写所有实现）。</p>
+</div>
+
+<h2>delete(id) 的契约空洞与示例决定</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>空洞</th><th>示例决定（不是标准答案）</th><th>备选</th></tr></thead>
+    <tbody>
+      <tr><td class="what">删不存在的 id 返回什么</td><td>返回 <code>False</code></td><td>抛 <code>KeyError</code> / 返回 <code>None</code></td></tr>
+      <tr><td class="what">返回值是什么</td><td>删到返回 <code>True</code></td><td>返回被删条目的副本</td></tr>
+      <tr><td class="what">id 复用吗</td><td>不复用，新条目接着排</td><td>回收复用（要重写 id 规则）</td></tr>
+      <tr><td class="what">删除持久化吗</td><td><code>JsonlStore</code> 重开后不该看到被删条目（adapter 责任）</td><td>写进契约由两个 adapter 共同承诺</td></tr>
+      <tr><td class="what">删光后重开，id 从哪排</td><td>计数痕迹也持久化（墓碑行 / 计数文件）</td><td>接受删光后从头排 / 允许 id 复用</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>决定写进 <code>Store</code> 的 docstring，两个 adapter 照着实现。没拍板的写进 design doc 的「风险与未决问题」，别让测试替你猜。</p>
+
+<h2>一份可抄的 test list 与红测试</h2>
+<pre><code>test list（一轮一条，做完划掉）：
+1. 删存在的条目后搜不到
+2. 删不存在的 id 返回 False，仓库不变
+3. 删除不回收 id：加三条、删 e0002、再加，期望 e0004
+4. JsonlStore 的删除重开后仍成立：删 e0001 留 e0002，
+   重开后 e0002 还在、新条目拿 e0003（专有测试，不走 fixture）
+
+
+def test_delete_existing_entry_removes_it(store):
+    entry = store.add("PyTest 入门", "正文")
+    assert store.delete(entry["id"]) is True
+    assert store.search("pytest") == []
+
+
+def test_delete_does_not_reuse_ids(store):
+    ids = [store.add(f"条目{i}", "")["id"] for i in range(1, 4)]
+    store.delete(ids[1])
+    assert store.add("新条目", "")["id"] == "e0004"</code></pre>
+<p>第 3 条最值钱：现在的 id 生成是 <code>f"e{len(self._entries) + 1:04d}"</code>，删一条就错位撞车，手敲验证很难撞见。第 4 条只守住「重开后删除仍成立」；把仓库删光再重开会抹掉计数痕迹，「不复用」在那里会撞车——墓碑行、接受从头排、允许复用，三条出路选一条写进 docstring。每轮的顺序固定：写测试 → 跑红（留输出）→ 写刚好绿的实现（不实现当前测试没验证的行为）→ 跑绿（连旧测试）→ 记录。</p>
+
+<h2>AI + Matt：agent 跑循环，人管证据</h2>
+<ul>
+  <li><strong><code>tdd</code> 的调用类型</strong>：frontmatter 无 <code>disable-model-invocation</code>，模型可拉起（<code>/implement</code> 内部就调它），用户也可手动调用；触发词包括 red-green-refactor。</li>
+  <li><strong>先定缝</strong>：「Test only at pre-agreed seams」，缝写下来、跟用户确认；接口形状存疑转 <code>codebase-design</code> 借词汇。测试名读 <code>GLOSSARY.md</code> 对齐领域语言（沙盒没有就用契约词）。</li>
+  <li><strong>人拍板四件</strong>：delete 的三处契约空洞、每条断言的预期值（从契约或手算来，不让 agent 调被测代码算）、每轮节奏（写完测试停下看红再放行）、重构的验收（测试一行不改、全绿）。</li>
+  <li><strong>agent 干三件</strong>：清单一条写成红测试、写刚好绿的实现、跑 <code>python -m pytest -q</code> 报红绿。</li>
+  <li><strong>预期值硬规矩</strong>：独立真相来源＝已知字面量、手算例子、规格（<code>tdd/SKILL.md</code>「Anti-patterns」的 Tautological 条；<code>tests.md</code> 是正反例子）；照实现算预期就是同义反复，第 19 课 golden master 警告的同类。</li>
+  <li><strong>怎么判断生效</strong>：每轮有「实现前红」的证据（pytest 输出，或一个循环两个 commit：先测试后实现）；旧测试没动过且全绿；<code>git log --oneline</code> 数得出轮数；重构 diff 只有结构。</li>
+</ul>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">写完所有测试再写实现</td><td>批量测试验证想象的形状，实现一变全碎</td><td>一轮一个行为；测试写完先停，看红再实现</td></tr>
+      <tr><td class="what">红了改测试 / 绿了加戏</td><td>为变绿改断言，或顺手多写没要求的功能</td><td>改测试必须给契约理由；实现只写到刚好绿</td></tr>
+      <tr><td class="what">重构混进循环</td><td>结构调整和新行为挤一轮，绿了说不清是谁的</td><td>重构放循环外；验收＝测试不动、全绿</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<pre><code>读 kb/storage.py 的 Store docstring、tests/test_storage.py 和 git log。
+只审查，不重写；第 5 条要求的临时改动每次改完必须还原。
+开始前确认 git status 干净；没有就先 commit。未提交时不要运行 git checkout。
+
+逐条检查：
+1. delete 的三处契约空洞（删不到返回什么、返回值、id 复用）在 docstring 里定死了吗？
+   两个 adapter 的实现跟契约一致吗？
+2. 每轮循环有没有「实现之前测试红过」的记录（pytest 输出或 commit 顺序）？
+   有没有哪一轮一上来就绿（实现多做了）？哪一轮的红是「测试写错了」的假红？
+3. 有没有哪一轮是改了测试才变绿的？逐条对比测试的 git 历史。
+4. 每轮是不是只加了一个行为？清单之外多实现了什么吗？
+5. 把 JsonlStore.delete 改成只删内存不改文件，跑 python -m pytest -q，
+   确认有测试变红；用 git checkout -- kb/storage.py 还原，git diff 确认干净。
+6. 重构步的 diff 里有行为变化吗？测试文件动过吗？
+7. 测试名和断言对没读过实现的人说得清 delete 保证了什么吗？
+
+结论：哪一轮的证据是假的？回归网现在抓得住哪类 bug？</code></pre>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>TDD（Test-Driven Development，测试驱动开发）、test-first programming 测试先行编程、red-green-refactor 红绿重构、red 红 / green 绿、test list 测试清单、regression testing 回归测试、refactoring 重构、horizontal slicing 横向切片、vertical slice 纵向切片（第 10 课）、tracer bullet 追踪弹（第 10 课）、seam 接缝（第 15 课）、oracle 判定器（第 19 课）、golden master 黄金基准（第 19 课）、contract test 契约测试（第 15 课）、shift-left 测试左移、claims 主张。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4 第 4 章 §4.16 Test-First Programming（PDF p112 = printed 4-14）；第 5 章 §2.2.5 Regression Testing（PDF p124 = printed 5-8）、§6.1.2（PDF p139–140 = printed 5-23~5-24）。MIT 6.031《Testing》：“Test-first programming”（Spec → Test → Implement、safety from bugs）、“Iterative test-first programming”。</p>
+  <p><strong>经典转引：</strong>Beck, <em>Test-Driven Development: By Example</em>（2002）——红绿重构三步、test list；本地无全文，标注转引。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《09-testing》p21 TDD——「Tests first!」「Never write code without a failing test」与五条 claims。TDD 无统一标准，是否全覆盖是取舍。</p>
+  <p><strong>实践方式：</strong><code>tdd</code> 技能（<code>SKILL.md</code>、<code>tests.md</code>；<code>mocking.md</code> 留给第 22 课）；<code>implement</code> 技能的 tdd 调用句；沙盒 <code>kb/storage.py</code>。本机路径 <code>C:\Users\admin\.agents\skills\</code>。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0020-tdd-red-green.html">第 20 课：TDD 红绿重构：先写失败测试买到了什么</a> · <a href="course-map.html">课程地图</a> · <a href="0019-testing-card.html">第 19 课：测试设计参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>
