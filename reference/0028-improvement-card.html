@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>架构改良参考卡 · 架构改良与遗留代码</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 28 课</p>
+  <h1>架构改良参考卡</h1>
+  <p class="lede">代码没错但难改，还债的顺序是提案 → 安全网 → 小步。开工两道门：deletion test 验提案的新形状挣不挣得到位置，characterization test 验安全网在不在。两道都有证据才开工；改良的实现不在这一课。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>架构改良在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Maintenance &amp; Evolution（维护与演进）</td><td>第 25–27 课对付有错的代码，这课对付没错但难改的代码。SWEBOK ch.7 §1.6：改良属于 perfective maintenance（完善性维护，「recoding to improve… maintainability」），跟修 bug 的 corrective 是两笔账。§4.2：refactoring 是 reengineering 手法，「without changing its behavior」。第 29 课接运维与事故。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 27 课的 <code>.scratch/diagnosis/fix-layer.md</code> 与「不存在正确的缝」那笔账；自己列的摩擦清单（<code>kb/</code> 里的 id 生成、匹配规则各抄两份是现成候选）；<code>git log --name-only --oneline</code> 的热点文件。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>改良提案 + 一条 characterization test；「哪里难改」的记录是第 29 课复盘排改进项的候选来源。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：开工前的两道门</h2>
+<div class="card-rule">
+  <p><strong>难改是默认结果：</strong>Lehman（SWEBOK ch.7 §1.5）：「Increasing Complexity — As software evolves, its complexity increases unless work is done to maintain or reduce that complexity.」代价先落在读上（§2.1.1：维护工夫大半花在理解软件上）。<strong>形状词汇（第 14 课）：</strong>规则没有自己的 module、调用者要逐个实现去读 = shallow module（浅模块）；规则抄在多处又让它改一处漏一处。改良方向是 deepening（加深）——小接口藏住规则。<strong>第一道门，deletion test（删除测试）：</strong>想象删掉 after 形态的新 module——规则散回 N 个调用点（挣到位置，过）还是消失（pass-through，白做）。<strong>第二道门，characterization test（特征测试）：</strong>照现状抄断言钉住行为当安全网（Feathers 经典转引，第 21 课）；它是安全网不是承诺，第 21 课界线：锁现状当安全网是手段，把现状当承诺是病根。<strong>refactoring（重构）定义：</strong>「restructuring code in small steps without modifying its external behavior」（SE-EDU）；「not rewriting」「not bug fixing」两条线。</p>
+</div>
+
+<h2>行业做法：先钉现状、小步走、改良当项目排期</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">先钉现状再动手（主流）</td><td>动之前补特征测试 + 回归网，全绿再开工；每小步重构后跑回归测试（SE-EDU 硬要求）。SWEBOK §4.2：重构在改动前后给代码库减债</td><td>产物：一组特征测试加全绿记录；代价：纯工夫，且现状被钉死——要改行为时先红的就是它们，逐条分辨</td></tr>
+      <tr><td class="what">小步走，每步一跑（主流）</td><td>每步一个动作、跑一遍测试，红了立刻知道哪步改坏了；「Refactoring is not rewriting」「not bug fixing」，动了外部行为就出圈</td><td>产物：一串可回滚的小提交；代价：慢，且方向要提案先定</td></tr>
+      <tr><td class="what">改良当项目做（主流，做多少是取舍）</td><td>排序、协商、定执行计划（Google SRE《The Evolving SRE Engagement Model》「Improvements and Refactoring」）；提案答影响面三问（SWEBOK §2.1.3 impact analysis：波及谁 / 多少工夫 / 什么风险）</td><td>产物：带优先级的提案与计划；代价：排期本身要花时间。判据「It is too much refactoring when the benefits no longer justify the cost.」（SE-EDU），无统一标准</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：improve-codebase-architecture 的三步</h2>
+<div class="skill">
+  <p><strong>调用：</strong>用户调用 <code>/improve-codebase-architecture</code>（第 3 课总览）。出候选不做决定；报告阶段不给接口设计（「Do NOT propose interfaces yet」）。<strong>Explore：</strong>「Scope before you scan: YAGNI」（用不上的先不做）——用户指方向或 <code>git log --name-only --oneline</code> 找热点；先读 <code>GLOSSARY.md</code> 与 ADR；子代理逛代码找 friction；疑似浅模块过 deletion test。<strong>Report：</strong>自包含 HTML 落 <code>%TEMP%\architecture-review-&lt;时间戳&gt;.html</code>（不进仓库）；每候选一张卡：Files / Problem / Solution / Benefits / Before/After 图 / 强度徽章（Strong / Worth exploring / Speculative），末尾 Top recommendation。<strong>Grilling loop：</strong>选中候选拉起 <code>grilling</code>（约束、依赖、模块形状、缝后放什么、哪些测试活下来）；<code>domain-modeling</code> 同步 <code>GLOSSARY.md</code>；有分量的否决理由记 ADR。<strong>词汇纪律：</strong>只用 module / interface / seam / adapter / leverage / locality，禁 component / service / API / boundary（第 17 课）。<strong>人拍板四件：</strong>选哪个候选、约束与代价接不接受、否决理由记不记 ADR、提案落不落。<strong>生效判据：</strong>提案过 deletion test + 特征测试钉住现状。技能答 leverage / locality，行业答影响面与风险，两套都要。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p>一上来想重写——「Refactoring is not rewriting」，重写丢掉钉住的行为、契约里的决定和隐性知识；整库替换是另一件事（SWEBOK「replace aging legacy software」），本地无正源，不做。提案只是多包一层——deletion test 一做就露馅：删掉它复杂度没变，就是 pass-through；after 形态必须写清「复杂度藏到哪、接口小到什么」。把特征测试当规格——会把现状里的错（如 id 宽度空洞）一起锁死；要长期保证的规则进 docstring 配规格测试，已知怪现状在提案里单列。</p>
+</div>
+
+<h2>提案骨架（六节）与 deletion test 推演</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>节</th><th>写什么</th></tr></thead>
+    <tbody>
+      <tr><td class="what">问题</td><td>哪处难改、难在哪（读得贵还是改得散）、现在改它要动几处</td></tr>
+      <tr><td class="what">目标与非目标</td><td>这次改良收窄到什么；明确不碰的（重写、替换、顺手修 bug）</td></tr>
+      <tr><td class="what">after 形态</td><td>新 module 的 interface 草图（方法、参数、承诺）、实现装下哪些规则、谁坐在缝后面</td></tr>
+      <tr><td class="what">取舍</td><td>为什么不选另一种结构；leverage / locality 各赚在哪</td></tr>
+      <tr><td class="what">影响面</td><td>SWEBOK §2.1.3 三问：动这里波及谁、要多少工夫、风险在哪</td></tr>
+      <tr><td class="what">验证</td><td>deletion test 推演 + 特征测试跑绿记录</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="card-rule">
+  <p><strong>deletion test 推演的写法：</strong>「想象删掉〈新 module〉：〈规则 X〉会在〈调用点 A、B〉各长回一份，复杂度散回 N 处，它挣到了位置。」或者：「删掉它什么都没少，调用者只少一层转发——pass-through，重画。」推理要落在具体规则和具体调用点上，写不出具体名字就是还没想清。</p>
+</div>
+
+<h2>练习两样产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">改良提案（过 deletion test）</td><td><code>.scratch/architecture/improvement-proposal.md</code>，六节骨架照上表</td></tr>
+      <tr><td class="what">characterization test</td><td><code>tests/test_characterization.py</code>，照现状抄断言，驱动真实路径（fixture → <code>JsonlStore</code> / CLI），跑绿留记录</td></tr>
+      <tr><td class="what">摩擦清单（过程记录）</td><td><code>.scratch/architecture/friction-list.md</code>；fix-layer 线索的回音记在提案或清单里</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<div class="card-rule">
+  <p>deletion test 的推演写在「验证」节、结论是「挣到位置」；特征测试绿过、且改坏一行现状它红在断言上（做完恢复）；影响面三问有答案；报告与提案守词汇纪律；fix-layer 线索有回音；<code>git status</code> 里除特征测试、<code>GLOSSARY.md</code> / <code>docs/adr/</code> 记录和 <code>.scratch/</code> 没有别的代码改动。三类处置：deletion test 没过→回第 5 步重画 after 形态；特征测试断了规格→分清现状与契约空洞，要改的行为记进提案；证据缺项→缺什么补什么。</p>
+</div>
+
+<div class="source">
+  <p><strong>来源：</strong>SWEBOK v4 ch.7 §1.5 / §1.6 / §2.1.1 / §2.1.3 / §4.2 / §4.3（<code>courseware/swebok/swebok-v4.pdf</code>）；SE-EDU《Refactoring》（<code>courseware/se-education/book/refactoring/print.html</code>）；Google SRE《The Evolving SRE Engagement Model》“Improvements and Refactoring”（<code>courseware/google-sre/evolving-sre-engagement-model/index.html</code>）；Feathers《Working Effectively with Legacy Code》（2004）characterization test 经典转引。<code>improve-codebase-architecture</code>、<code>codebase-design</code>（<code>C:\Users\admin\.agents\skills\</code>）只作实践方式。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0028-architecture-improvement.html">架构改良与遗留代码</a></p>
+</footer>
+
+</main>
+</body>
+</html>

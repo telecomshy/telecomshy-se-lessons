@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>事故复盘参考卡 · 运维与事故：从 SRE 到 postmortem</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 29 课</p>
+  <h1>事故复盘参考卡</h1>
+  <p class="lede">事故当下先分工止血，同时把证据留下来；事后用一份无责复盘把经过固定成时间线、根因和后续动作。复盘的交付不是文档，是四条带负责人和判据的动作。这课没有专门技能，agent 只做记录和提问。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>事故复盘在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Configuration &amp; Operations（配置与运维）</td><td>第 26–28 课（诊断修复、回归、改良提案）都在「还来得及改代码」的范围内；第 25 课在验收的位置上做裁决。这课处理系统已经在跑之后的事：SWEBOK ch.6 §1.1 把运维定义为保证产品「在真实运行条件下」运转；§4.1 把事故管理定义为记录、排优先级、评估业务影响、解决、升级、关闭；同一节要求事故之后必须做分析或复盘。第 30 课转进模块 6「专业实践与 AI」。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 27 课 <code>.scratch/diagnosis/fix-layer.md</code> 与提交里写下的根因——那是另一个 bug 的记录，只借它的提问方式（规则写在哪、谁该守它），不能直接当这次性能事故的根因；第 28 课摩擦清单与改良提案（「后续动作」的候选）；第 24 课 CI 检查清单（「检测」类动作的落点）。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一份复盘加一张动作表。动作里「要不要换一种做法」的那条，是第 30 课 prototype 要回答的设计问题。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：两件事、一个前提、三个硬部件</h2>
+<div class="card-rule">
+  <p><strong>两件事：</strong>incident management（事故管理）管现在，首要目标是止血和恢复，同时保住证据；postmortem（事故复盘）管下次，目标是防复发。完整的复盘不能和止血挤在同一段时间里——SRE ch.14 的第一条最佳实践是「Stop the bleeding, restore service, and preserve the evidence for root-causing.」，止血和保证据要同时安排。<strong>一个前提：</strong>blameless（无责）——SRE ch.15 的定义是「focus on identifying the contributing causes… without indicting any individual or team」，并假定每个人「did the right thing with the information they had」；无责的对象是人，不是系统，它照样要指出服务哪里该改。界线：可以写谁做了什么、当时以为什么，不能写「某人疏忽」「某人不该」。<strong>三个硬部件：</strong>时间线是证据链，根因是解释，后续动作是交付；缺一个，复盘就退化成回忆、作文或检讨书。</p>
+</div>
+
+<h2>行业做法：分工、结构、评审</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>阶段</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">事故当下：先分工（主流）</td><td>照 Incident Command System（事故指挥系统）拆四个角色：incident commander（事故指挥官）持全局、ops lead（操作负责人）唯一有权改系统、communications lead（沟通负责人）向相关方更新、planning lead（计划负责人）管稍远的事。宣布事故的三条判据：需要第二个团队、用户可见、集中分析一小时没解决（SRE ch.14）。小团队可合并角色，这是经验判断。</td><td>产物：live incident document（活文档，Appendix C 结构：摘要、状态、指挥链、退出条件、TODO 与已开 bug、倒序时间线）。代价：角色和仪式要练，练少了会退化。</td></tr>
+      <tr><td class="what">事后：按结构写（主流）</td><td>照 Appendix D 九个内容栏填；根因追三层（触发、机制、为什么没早发现）；时间线写成「剧本」，每条带当时看到什么、以为什么、做了什么决定（SRE 只给了 screenplay 这个比喻，写法是本课建议）。</td><td>产物：一份可被没参与的人读懂的复盘。代价：证据收集比写文档花时间，SRE 量过单次事故含复盘平均 6 小时。</td></tr>
+      <tr><td class="what">之后：评审、传播、跟进（主流，细节无标准）</td><td>按五条评审标准检查（原文是「Review criteria might include」）：关键数据、影响评估、根因深度、动作计划与优先级、是否同步给相关方；归档进事故库并传播；动作进工单、定期回看。</td><td>产物：评审记录与带状态的工单。代价：条件反射式动作项容易过贵，需要收窄——「宁可少而结实」。</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="small">模板字段、事故阈值、评审会形式都没有统一标准；SRE 反复强调的三件事是：无责、时间线、有负责人的动作。</p>
+
+<h2>AI + Matt：没有专门技能</h2>
+<div class="skill">
+  <p><strong>调用：</strong>本课无独立技能（地图技能栏「—」）。<strong>三个邻近技能各管各的：</strong><code>diagnosing-bugs</code>（26–27 课，模型可自己拉起）管性能退化与根因诊断、回归测试，但不管影响面和跨角色沟通；<code>retro</code>（24 课，用户调用）复盘的是 agent 的工作环境，不是生产事故，名字像但对象不同；<code>triage</code>（13 课，用户调用）接在复盘后面，把动作项送进状态机、写成 brief。<strong>agent 能做的三件事：</strong>①把日志、<code>git log</code>、终端输出按时间排成时间线草稿，每条标来源；②按 Appendix D 起骨架、查缺项（空栏、缺负责人、缺出处的数字）；③扮演评审者按五条标准提问，只问不判。<strong>人拍板四件：</strong>根因停在哪一层、影响面用哪个口径、哪些动作排期、哪句话会变成指责。<strong>风险：</strong>agent 会把推测写成事实，或用被动语态抹掉决策者；检查法是每个动作找执行者、每个时间点找来源。<strong>生效判据：</strong>时间线每点可追溯、根因到机制层、动作五字段齐全。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p>写成检讨书——「某某操作疏忽」让人只记住人名，记不住系统哪里薄弱；改成「当时的界面只显示当前值，没有显示改动会影响哪些条目」，才长得出改进项。写成流水账——「15:20 重启服务」是动作不是记录；要写「当时以为内存泄漏，事后看判断错了，重启只是让它重新读了一遍索引」。写成口号——「加强监控」「提高意识」放在任何复盘里都成立，所以不指向任何改动；改成「10000 条时 search 超过 1 秒就红」这种能验证的句子。</p>
+</div>
+
+<h2>复盘骨架（Appendix D 九个内容栏）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>栏</th><th>写什么</th><th>证据从哪来</th></tr></thead>
+    <tbody>
+      <tr><td class="what">Summary</td><td>一句话：何时、什么坏了、持续多久</td><td>活文档摘要</td></tr>
+      <tr><td class="what">Impact</td><td>用户看到什么、多少条数据或请求受影响、有没有数据损失；每个数字标「实测 / 推算 / 没量」</td><td>实测数字与日志；量不到就写「没量」</td></tr>
+      <tr><td class="what">Root Causes</td><td>促成原因的组合，追三层</td><td>代码、日志、配置；fix-layer 只提供提问方式，不是这次的根因</td></tr>
+      <tr><td class="what">Trigger</td><td>把潜在问题变成事故的那一下</td><td>时间线第一个异常点</td></tr>
+      <tr><td class="what">Resolution</td><td>怎么止血、怎么恢复、用了多久</td><td>活文档操作记录</td></tr>
+      <tr><td class="what">Detection</td><td>谁或什么先发现、隔了多久</td><td>告警、用户报告、值班记录</td></tr>
+      <tr><td class="what">Action Items</td><td>动作、类型（mitigate/prevent/process/other）、负责人、完成判据、工单与状态</td><td>复盘会决定</td></tr>
+      <tr><td class="what">Lessons Learned</td><td>做对了什么、做错了什么、哪里只是运气好</td><td>参与者讨论；运气好那栏要变成动作</td></tr>
+      <tr><td class="what">Timeline</td><td>剧本：每条带时间、看到什么、以为什么、做了什么</td><td>活文档时间线 + 日志 + 提交</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">活文档（事故当下）</td><td><code>.scratch/incident-2901/live.md</code>，照 Appendix C：摘要、状态、指挥、退出条件、TODO 与已开 bug、倒序时间线</td></tr>
+      <tr><td class="what">无责复盘</td><td><code>docs/postmortems/2026-11-05-kb-import-degradation.md</code>，九个内容栏齐全，开头注明「演练重放」</td></tr>
+      <tr><td class="what">后续动作与工单</td><td>动作四条，覆盖缓解、预防、流程、检测四类，各有五字段；至少一条落 <code>.scratch/incident-2901/issues/01-&lt;slug&gt;.md</code>，<code>Status:</code> 取 <code>triage-labels.md</code> 的五个值之一</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<div class="card-rule">
+  <p>时间线随手挑三条都能指回活文档、命令输出或 git 记录；影响面每个数字都标了「实测 / 推算 / 没量」，没有把推算写成实测，也没有编造的用户数或营收；根因写到机制层，指得出具体函数，触发条件单列；四条动作各有动作、类型、负责人、完成判据、工单与状态，没有「加强监控」这类空话，进工单那条路径和 <code>Status:</code> 值都对得上；Lessons Learned 三段齐全，「运气好」那栏有对应动作；正文没有把事故归到个人身上，也没有用被动语态抹掉决策者。三类处置：证据断→补记录或降级为「推测」；根因浅→往下追一层，追到能对应一条动作；动作空→重写成能打勾的句子，做不了的写清「这次不做，理由是什么」。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0029-operations-incidents.html">第 29 课「运维与事故：从 SRE 到 postmortem」</a></p>
+</footer>
+
+</main>
+</body>
+</html>

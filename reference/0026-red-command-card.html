@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>会红的命令参考卡 · 紧反馈回路</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 26 课</p>
+  <h1>会红的命令参考卡</h1>
+  <p class="lede">诊断的第一件事不是找原因，是造一条会红的命令：跑它就红、修好就绿，红的断言正是用户报告的症状。四条判据——能红、确定、快、agent 可跑。「有时才坏」分两种：数据/状态依赖的把触发条件编进命令，时序/随机依赖的先抬复现率。回路当产品收紧：更快、信号更尖、更确定。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>会红的命令在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">Maintenance &amp; Evolution（维护与演进）</td><td>第 25 课把裁决做完，「有时才坏」的问题留给诊断；这课做诊断第一步——造命令。手段借 Construction（构造）的 debugging：SWEBOK ch.4 §3.6 质量手段清单第四项，ch.16 §4.6 单立一节，ch.5 §1.3 明说测试与调试是两件事。开第 27 课的修复与防复发。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 25 课记进未决问题的 bug 报告（现象 + 环境 + 数据 + 频率，缺的标问号）。MIT 6.031：「Start by finding a small, repeatable test case that produces the failure.」</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一条会红的命令加触发条件记录（<code>.scratch/diagnosis/red-command.md</code>）；第 27 课在它上面做最小化、假设、插桩、修复，修完把它留成回归测试。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：报告不是命令</h2>
+<div class="card-rule">
+  <p><strong>会红的命令（red-capable command）：</strong>一条命令，红在这条 bug 上、修好变绿，断言落在用户报告的症状上——不是「跑起来没报错」。它是反馈回路（feedback loop）的最小形态，找原因和验证修复都要一遍遍跑它（MIT：「will pay off, because you'll have to run it over and over」），修完留作 regression test（回归测试）（「keep the test case in your regression test suite」）。<strong>偶发两类：</strong>数据/状态依赖（把触发条件编进命令）与时序/随机依赖 flaky（偶发不稳定的，抬复现率）——判断法：同一条命令连跑十遍，回回红找触发条件，红绿穿插按 flaky。CMU：「non-determinism and environment coupling lead to flaky tests」「Nondeterminism (timestamps, IDs, ordering) has to be scrubbed or the test becomes flaky」。造不出命令就停下来说，要环境、脱敏产物或插桩许可；「Do not proceed to hypothesise without a loop」。</p>
+</div>
+
+<h2>行业做法：先复现、再二分、flaky 抬复现率</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">先复现再动手（主流）</td><td>报告拆「现象 / 环境 / 数据 / 频率」四栏，缺的标问号；最小数据先试复现，失败就记「复现失败」当负证据；缩小输入二分（MIT：「Binary search! Always a good technique.」）；10 分钟没头绪转科学方法并记笔记（「move your debugging process out of your head」）</td><td>触发条件清单＋失败用例；代价是复现要时间，复现不了的走「停下来说」</td></tr>
+      <tr><td class="what">对照好坏两次运行，二分定位（主流，有现成工具）</td><td>delta debugging（差分调试）：输入二分砍一半；版本二分用 <code>git bisect start</code> / <code>bad</code> / <code>good &lt;sha&gt;</code> / <code>git bisect run &lt;命令&gt;</code>——吃的正是会红的命令（退出码非零判坏），200 笔提交约 8 次定位。立据：MIT「Using your version control system, you retrieve the most recent version that still passed the test…」</td><td>引入缺陷的那一笔提交；代价是中间提交要能跑、没有会红的命令就用不了</td></tr>
+      <tr><td class="what">偶发问题：抬复现率或钉死随机源（取舍）</td><td>抬复现率：循环触发、并行、加压、收窄时序窗口（技能：「A 50%-flake bug is debuggable; 1% is not」）；钉死随机源：固定时间、固定种子、隔离文件系统、冻结网络。取舍：钉死随机源可能把真实触发条件钉没（测试绿、生产坏），加压环境不像生产</td><td>高复现率的回路；代价是抬复现率的脚手架是临时代码，别混进产品。flaky 处置无统一标准</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：diagnosing-bugs 的 Phase 1</h2>
+<ul>
+  <li><strong>调用类型：模型调用。</strong>frontmatter 无 <code>disable-model-invocation</code>；你说「diagnose」/「debug this」或报告 broken / throwing / failing / slow 就会被拉起，也可手动点名。自我定位「A discipline for hard bugs」，简单 bug 用它偏重——这是适用条件。</li>
+  <li><strong>六阶段，本课走 Phase 1（Build a feedback loop）加 Phase 2 的复现半步（跑起来、确认红的就是用户描述的失败形态）：</strong>「This is the skill. Everything else is mechanical.」理由：「If you have a tight pass/fail signal for the bug… you will find the cause; bisection, hypothesis-testing, and instrumentation all just consume it.」要求「Spend disproportionate effort here」。造回路十种办法按序挑（failing test、curl 打开发服务器、CLI 带 fixture 对快照、headless browser、重放抓包、一次性 harness、property/fuzz 循环、bisection harness、新旧对照、实在要人点就用 HITL 脚本），沙盒里首选走真实存储路径的形态：CLI 对快照或小脚本，failing test 也要打在真实路径上——fake 缝够不到 bug。从 minimise（最小化）起归第 27 课。</li>
+  <li><strong>收紧三条：</strong>更快（缓存 setup、跳过无关初始化、缩范围）、信号更尖（断具体症状，不断「没崩」）、更确定（固定时间、种子、文件系统、网络）。「A 30-second flaky loop is barely better than no loop; a 2-second deterministic one is tight, a debugging superpower.」</li>
+  <li><strong>人拍板四件：</strong>触发条件假设认哪个；回路断的是不是用户症状（「The loop produces the failure mode the user described, not a different failure that happens to be nearby.」）；四判据逐条自查；造不出回路时向用户要什么（环境 / 脱敏产物 / 插桩许可）。另有 Redact 规矩：贴输出前把密钥换成 <code>&lt;REDACTED&gt;</code>。</li>
+  <li><strong>生效判据：</strong>命令至少跑过一次、红的输出贴出来、四条判据（Red-capable / Deterministic / Fast / Agent-runnable）各有证据。反面禁令：「If you catch yourself reading code to build a theory before this command exists, stop: jumping straight to a hypothesis is the exact failure this skill prevents.」</li>
+</ul>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
+    <tbody>
+      <tr><td class="what">没有命令先猜原因</td><td>直奔嫌疑代码改一把试一把，「试一把」没有判据</td><td>命令没红之前不做假设；读代码可以，动手改不行</td></tr>
+      <tr><td class="what">红了就顺手修</td><td>命令刚红就改，修完分不清是修好了还是碰巧绿</td><td>这课到命令为止；修复和回归测试是第 27 课的活</td></tr>
+      <tr><td class="what">慢而 flaky 的回路也凑合</td><td>五分钟一遍、十遍红三遍，拿噪声当证据</td><td>先收紧再往下走：秒级、连跑三遍结论一致</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习四样产物</h2>
+<ul>
+  <li><strong>注入（盲诊断）：</strong>派子代理按下面的指令原文埋 bug，你不看 diff、不问答案、不打开 <code>.scratch/injected-bug.md</code>，分支 <code>bug-report</code> 留给第 27 课。</li>
+  <li><strong>触发条件清单：</strong>报告拆四栏（现象 / 环境 / 数据 / 频率）＋假设＋类型判断（数据依赖还是 flaky）＋负证据（小数据复现失败）。</li>
+  <li><strong>会红的命令：</strong>断「search 结果顺序」，查询命中多条、跨过触发边界；形态自选（pytest 一条测试或小脚本调 <code>main(["search", ...])</code> 抓输出），都要走真实搜索路径（fixture → <code>JsonlStore</code> / CLI），别断在 <code>InMemoryStore</code> fake 上——fake 缝够不到 bug。造数据用 fixture 直写脚本（条目照 <code>Store</code> 契约四键、id 形如 <code>e0001</code> 递增），别用一万次 <code>kb add</code>：每加一条重读一遍文件，掐表外推即可。</li>
+  <li><strong>记录：</strong>命令、红的输出、四判据证据、收紧前后耗时，写进 <code>.scratch/diagnosis/red-command.md</code>；盲诊断对照答案的发现记进同目录笔记。</li>
+</ul>
+
+<p>给注入 agent 的指令原文（另开会话或派子代理执行，免得输出把答案带出来）：</p>
+<pre><code>在 D:\code\my_projects\se-course-sandbox 做一次代码注入，用于诊断练习。要求：
+
+1. 从当前 master 开分支 bug-report。
+2. 注入一个「数据量型偶发 bug」：破坏 kb search 的返回顺序契约（契约原文在
+   kb/storage.py 的 Store docstring——search 结果「顺序与加入顺序一致」），
+   但只在条目数一万条（含）起显现；几百条时行为完全正常。破坏必须落在
+   python -m kb search 实际走的路径上（JsonlStore.search 或它的调用链），
+   不得只改 InMemoryStore。
+3. 改动最多 5 行，看起来像一次合理的顺手改动，不明真相的 reviewer 不会觉得
+   突兀。不要改 id 生成逻辑（id 形如 e0001 递增保持不变）。
+4. 注入后自己验证：几百条不显现、一万条（含）起显现；验证用的命令写进说明文件。
+5. commit 只包含代码改动。把 bug 的准确说明（根因、触发条件、验证命令）写进
+   .scratch/injected-bug.md，留在工作区，不要提交。
+6. 不要展示 diff 或说明内容，完成后只回一句「已注入」。</code></pre>
+
+<h2>练习怎么验</h2>
+<pre><code>读 .scratch/diagnosis/red-command.md，并在沙盒分支 bug-report 上实跑其中的命令。
+只核对，不修改任何代码，不修 bug。开始前确认 git status 干净——.scratch/ 里的
+注入说明不入库是设计如此，除它之外没有未提交的改动。
+
+逐条检查：
+1. 实跑命令，它现在红吗？红的形态和记录里贴的一致吗？
+2. 断言落在用户报告的症状上吗（search 结果的顺序）？命令驱动的是真实搜索路径吗
+   （fixture → JsonlStore / CLI），还是断在 fake 上、只断了「没报错」？
+3. 触发条件清单完整吗？「小数据复现失败」这条负证据在吗？查询命中多条了吗？
+4. 四条判据各有证据吗：能红、确定（连跑三遍一致）、快（秒级）、agent 可跑？
+5. 收紧前后的时间记录在吗？回路比收紧前快了吗？
+6. 有没有顺手修 bug 的痕迹（除 .scratch/ 外，工作区有没有不该有的改动）？
+
+结论：这条命令配当第 27 课的起点吗？哪条判据还缺证据？</code></pre>
+<p>命令不红＝先看路径：断在 fake 上的测试永远绿；路径没错就是触发条件没编全（数据量或查询形状），回清单补。断言断错地方＝重写断言，这类错误留到修复阶段就是白干。判据缺证据＝补跑补记。</p>
+
+<div class="note">
+  <p><strong>术语第一次出现都有中文：</strong>debugging 调试、reproduction 复现、feedback loop 反馈回路、red-capable 会红的（能红在这条 bug 上）、regression test 回归测试、flaky 偶发不稳定的、delta debugging 差分调试、binary search 二分、fixture 测试数据、seam 接缝、throwaway harness 一次性试验脚手架、property / fuzz loop 随机输入循环、probe 探针（第 27 课）、HITL（human-in-the-loop，人在回路中）、Redact 脱敏。</p>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031 Reading 13: Debugging（本地 <code>courseware/mit-6.031/classes/13-debugging/index.html</code>）——“Reproduce the bug”（小而可重复的用例、「run it over and over」、「keep the test case in your regression test suite」、输入二分）、“Scientific method”（10 分钟规则、记笔记）、“Delta debugging”（好/坏运行对照、版本二分）、“Prioritize Hypotheses”。SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.5 §1.3（PDF p122 = printed 5-6，testing 与 debugging「related to but different」与交叉引用句）；ch.16 §4.6 Debugging（PDF p324 = printed 16-13，三类错误）；ch.4 §3.6（printed 4-8~4-9，debugging 是构造质量手段之一）。SE-EDU《IDEs》（本地 <code>courseware/se-education/book/ides/print.html</code>）——“Debugging” 节：定义与三种途径评级（print 语句 / eye-balling 标 Bad，debugger 标 Good）。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《11-oracles》（本地 <code>courseware/cmu-17-313/pdfs/11-oracles.pdf</code>）p10、p19 两条 flaky 引文。<code>git bisect</code> 是 git 自带工具，按工具用法加 MIT delta debugging 立据（经验判断：版本二分最常用的落地形态）。偶发问题处置没有统一标准，以上是主流做法和取舍。</p>
+  <p><strong>实践方式：</strong><code>diagnosing-bugs</code> 技能 <code>SKILL.md</code>（Phase 1 与完成判据四条、Tighten、Non-deterministic bugs、造不出回路就停、Redact、Phase 2 minimise 归第 27 课）。本机路径 <code>C:\Users\admin\.agents\skills\</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<footer class="colophon">
+  <p><a href="../lessons/0026-tight-feedback-loop.html">第 26 课：紧反馈回路：先要一条会红的命令</a> · <a href="course-map.html">课程地图</a> · <a href="0025-review-card.html">第 25 课：双轴审查参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

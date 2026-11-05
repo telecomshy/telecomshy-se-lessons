@@ -463,3 +463,59 @@
 - 其余落实：smell 基线口径两处、示例报告备用路径改「走第 3、4 步」、实验报告「不必落盘」+「要求全没做」预期噪声、spec 源「跟分支或功能匹配」、can be hard 的「可以」口径 +「判断题不配必改」、卡片示例底稿照沙盒现状（`kb add` 只打印 id）、表达修 9 处（含「为抛光不放行」改「为小修饰卡住放行」）。`SOURCE-MAP.md` 增 SWEBOK ch.12 行、SE-EDU QA 行补 Formal inspections、SE-EDU Refactoring 行补 25 课用法、缺口补 Fowler《Refactoring》转引条目。
 - 沙盒仍未落测试文件、无 CI、无 git remote；第 25 课练习产物（两轴报告、裁决、`review-notes.md`、实验分支注入）由学习者做，不要代做。第 26 课「紧反馈回路：先要一条会红的命令」大纲已备在 `NEXT-SESSION.md`。
 
+## 第四十六次调整（2026-11-04）
+
+- 第 26 课「紧反馈回路：先要一条会红的命令」写完并按审计流程收尾：`lessons/0026-tight-feedback-loop.html`、`reference/0026-red-command-card.html`（卡上带「给注入 agent 的指令原文」，练习的盲诊断靠它）。M5 第二课。写课前用户拍板三项：练习 bug 题材＝**id 跨 10000 的数据量型偶发 bug**（search 顺序契约在大库上破，「在我机器上坏」型）；**agent 注入、盲诊断**（学习者不见 diff、不问答案、不打开 `.scratch/injected-bug.md`）；练习**止步会红的命令**（minimise 与修复归第 27 课，与地图产出一致）。
+- 理论立据：MIT 6.031 Reading 13: Debugging 当主线（reproduction 优先「Start by finding a small, repeatable test case」、will pay off 付账论点、回归测试去向、输入二分、10 分钟规则、记笔记、delta debugging 版本二分段）；SWEBOK ch.5 §1.3（testing 与 debugging「related to but different」+ 交叉引用句）、ch.16 §4.6（三类错误）、ch.4 §3.6（debugging 第四位，回指 25 课清单）；SE-EDU《IDEs》“Debugging” 节（三途径评级，eye-balling 判 Bad 的理由给误区一立据）。行业做法：CMU 11-oracles p10/p19 两条 flaky 引文（病因与洗法）；`git bisect` 按工具用法 + MIT delta debugging 立据（标经验判断）；明说「怎么复现没有统一标准，flaky 处置无标准只有取舍」。实践：`diagnosing-bugs` SKILL.md（Phase 1「This is the skill」、十种造回路办法、Tighten 三条、非确定性抬复现率、造不出就停、完成判据四条、Redact）。
+- **审计流程走完（2026-11-04）**：学习者子代理审计（MIT 8 条、SWEBOK 三处、CMU 两条、SE-EDU 引文逐字核实全部属实，页码全对；`diagnosing-bugs` 行为与 SKILL.md 逐句相符；沙盒复制到临时目录实测全程走通：按卡注入 `sorted(...)` 类 bug 自验、fixture 直写 0.1 秒 vs 1000 次 `kb add` 407 秒），报「必须改 4、建议改 11、可不改 6」。用户拍板「必须改 + 全部建议改」，已全部落实：
+  - 必须改：① **fake 死胡同**（实测 `InMemoryStore` fake 上测顺序永远绿，bug 在 CLI 真实走的 `JsonlStore.search`；且检查单「命令不红」的处置会把走错缝的人指向错误方向）→ 练习第 5 步、表格、注入指令三处钉死「必须驱动真实搜索路径（fixture → `JsonlStore` / CLI），别断在 fake 上」，检查单第 2 条与处置分类同步；② 「开始前确认 git status 干净」按设计不可能满足（`.scratch/injected-bug.md` 不提交）→ 改「除 `.scratch/` 外没有未提交改动」（课卡同改）；③ 一万次 `kb add` 实测约一小时 → 第 4 步改「跑一小段掐表、按单条耗时外推，别真跑完」并给实测量级；④ 「几千条的对照数据」数量级错误（边界在一万条，照做会误杀正确假设）→ 改「上万条（量级照报告里的一万出头）」。
+  - 建议改 11 条全落实：Phase 归属改「本课走 Phase 1 + Phase 2 复现半步，minimise 起归 27」（正文、卡片、来源栏三处）；lede 的 bug 报告来源改用户渠道（「同事报来」，不属于那次 review 的意见清单，按 25 课「邻近问题记未决」入账）；参考卡禁令引文补全（stop: 后半句）；「连跑十遍判类型」移到跑红之后（原顺序无命令可跑）；「首选」统一（技能 failing test 第一，本练习症状在 CLI 输出上走真实路径最顺，理由写明）；悬空来源处置（SE-EDU 用进误区一、MIT「Prioritize Hypotheses」从来源栏删掉留给 27）；「Reading 13 的第一段」改「“Reproduce the bug” 一节的头一句」；表达修（「完全同调」→「主张一路」、reproduce-first 去掉、松紧量化句、「付过账」改「已经说过」、「不是 A，而是 B」5 处削到 2 处、「开……的第一步」→「做……」、「答案是停下来说」补宾语、golden master 译名统一回 19–21 课的「黄金基准」）；小摩擦三件（fixture 照 Store 契约四键 + id 形如 `e0001`、pytest 落点 `.scratch/diagnosis/`、agent-runnable 的 fixture 生成收进一条命令）；卡注入指令「超过 10000」统一为「一万条（含）起显现」+ 补「破坏必须落在 `python -m kb search` 实际走的路径」；前置措辞改「实验性改动关在分支里的纪律」。
+  - 未做仅「可不改」档（行业做法小标题、`git bisect` 退出码 125 粗略化、卡括号十种列七种等）。
+- 值得记的实测数据（审计提供，可直接进课）：`JsonlStore` 每次 CLI 调用重读整个文件，`kb add` 1000 次实测 407 秒、单条耗时随库增大（0.34s→0.41s@5000 条），一万条外推小时量级；fixture 直写 10001 条 0.10 秒。自然的注入手法（id 位宽 `e9999`→`e10000`）在**恰好 10000 条**就显现，所以口径统一「一万条（含）起」。
+- 课程地图：第 26 课补链接；术语家谱加「feedback loop / red-capable / reproduction / flaky / delta debugging」一行；进度段更新为第 1–26 课已写完、下一步写第 27 课。`SOURCE-MAP.md` 同步：Maintenance & Evolution 补 MIT 6.031 Reading 13、SWEBOK ch.5 §1.3 / ch.16 §4.6、SE-EDU《IDEs》三行；CMU 11-oracles 行补第 26 课用法；缺口补「调试方法论正源之外的书（Zeller、Agans）本地无全文、`git bisect` 按工具转述」。
+- 沙盒现状不变（第 15 课状态、master、无 remote、无测试文件、无 CI）；第 26 课练习产物（注入分支 `bug-report`、`.scratch/diagnosis/red-command.md`、诊断笔记）由学习者做，不要代做；`bug-report` 分支**不删不合**，第 27 课在它上面做最小化、修复、回归测试。`GLOSSARY.md`、`docs/adr/`、`.out-of-scope/` 继续懒创建。
+- 第 27 课「回归测试与根因：修的是哪一层」大纲已备在 `NEXT-SESSION.md`，只差写正文。
+
+## 第四十七次调整（2026-11-04）
+
+- 第 27 课「回归测试与根因：修的是哪一层」写完并按审计流程收尾：`lessons/0027-regression-root-cause.html`、`reference/0027-fix-regression-card.html`。M5 第三课。写课前用户拍板：练习对象＝**候选 A 全流程**（在 `bug-report` 分支上对第 26 课注入 bug 走最小化 → 假设 → 插桩 → 修层判断 → 回归测试先行 → 修复 → 撤修复实验 → 清理提交合回 master）。
+- 核心问题「修的是哪一层」立三层：症状层（摆正输出）/ 根因层（改对代码）/ 契约层（规则没人守就钉进测试），判层三问（保护哪个观察点 / 换个调用者还坏吗 / 规则写在哪）；根因二分用 MIT「Fix the bug」的 coding error / design error（设计错误要回头看设计和其他调用者）。防复发三件事：回归测试先行、撤修复实验证明测试锁得住、commit 写根因。**「答案已知」前提写破**：26 课已对过答案，假设与插桩改打「验答案、讲机制」（机制三问：坏值在哪一步进顺序、为什么跨过边界才坏、InMemoryStore 为什么幸免），不假装盲找。
+- 理论立据：MIT 6.031 Reading 13 后半（scientific method 四步与记笔记四栏、「The point where the program actually failed… isn't necessarily where the bug is.」、Slicing、Prioritize Hypotheses、「Avoid the temptation to slap a patch」、coding/design error 二分、「Look for related bugs」、「Make a regression test」、回归 testing 题、「really fixed, and not just temporarily hidden」）；SWEBOK ch.7 §1.6 维护类别（printed 7-4，ISO/IEC/IEEE 14764 标准化，corrective / preventive / emergency）、ch.7 §2.1.4（printed 7-7 技术债句）与 §2.3.1（printed 7-9 root causes 句）、ch.5 §2.2.5（printed 5-8，定义转引 **ISO/IEC/IEEE 24765** 词表，selection / minimization / prioritization）。行业做法：Google《Writing good CL Descriptions》（「A CL description is a public record of change」）；明说「修根因不修症状」「先修还是先写测试」无统一标准。实践：`diagnosing-bugs` Phase 2 minimise 到 Phase 6（load-bearing 判据、3–5 条可证伪假设、[DEBUG-] 标签、「correct seam」与「If no correct seam exists, that itself is the finding.」、修好重跑原始场景、commit 写猜中的假设）。
+- **审计流程走完（2026-11-04）**：学习者子代理审计（引文逐字核实绝大多数通过；`diagnosing-bugs` 逐句相符；沙盒只读核对），报「必须改 5、建议改 10、可不改 4」。用户拍板「必须改 + 全部建议改」，已全部落实：
+  - 必须改：① **契约层前提与沙盒矛盾**（`Store` docstring 明写「顺序与加入顺序一致」，「规则本来就没写清」不实）→ 契约层改为「规则没人守——有文字没测试钉」，本课沙盒正是这种；练习第 4 步改「连规则都没写进契约才补契约，本课缺的是钉进测试」；② lede「三件事各有各的判据」里失效机制没判据没验收 → 教学目标、完成标准、检查单三处补机制三问；③ 撤修复不红归因错（症状断言撤修复必然红，那是哨兵不是病根）→ 改「多半断在 fake、断言落在修复影响不到的观察点、fixture/查询没跨触发边界」（课卡同改）；④ 回归测试定义出处张冠李戴（14764 是维护类别，定义出自 **24765 词表**）→ 正文与来源栏改准；⑤ 技术债句节号错（在 §2.1.4 printed 7-7，不在 §2.3）→ 来源栏改「§2.1.4 与 §2.3.1」（课卡同改）。
+  - 建议改 10 条全落实：MIT「Regression testing」题本地答案缺失，「两个都留」标注为本课取舍；技能例句对回原文（「我们刚部署了对 #3 的改动」）；git status 口径改「除 `.scratch/` 外没有未提交改动」（26 课口径，课卡同改）；「查询从多词缩到一个词」改掉（26 课复现本就是一个词）；砍字段与四键契约的界线（砍字段仅诊断用，转测试回四键）；「唯一硬证据」改「最硬的兜底证据」；preventive 归类收窄（同类清扫是 preventive，回归测试是验证手段）；第 5 步补「红要红在断言上」、补做路径补旧假设替代表述；表达修 9 处（「最便宜」「要点都短」「规则哪一步坏的」「修复工程」「分成的类别里」「很有分量」「两份权威材料」「编码错误和 design error」中英对称、「真正的盲诊断后半程」语序）；「不是 A，是 B」3 处削到 1 处、「学费一半」只留 recap。另顺手做可不改档便宜项：lesson-meta 三样产物与地图两样差异说破、位置段「在根因层修掉」改「你判定的那一层」、检查单补「过目留痕」、技术债译文补 additive、recap 契约层括注、next 段契约空洞措辞。
+- 课程地图：第 27 课补链接；术语家谱加「root cause / minimise / probe / slicing / corrective & preventive maintenance」一行；进度段更新为第 1–27 课已写完、下一步写第 28 课。`SOURCE-MAP.md` 同步（见下条）。
+- `SOURCE-MAP.md`：Maintenance & Evolution 补第 27 课用法明细（MIT Reading 13 scientific method / Hypothesize / Slicing / Prioritize Hypotheses / Fix the bug 段）；SWEBOK 行补 ch.7 §1.6、§2.1.4、§2.3.1 与 ch.5 §2.2.5 的24765 出处；缺口补「SWEBOK 无 root cause / fault localization 专节（ch.5 §3.4 只在 ODC 语境提一句 root cause analysis，ch.7 §2.3.1 技术债提 root causes）」。
+- 沙盒现状不变；第 27 课练习（修复 + 回归测试 + `.scratch/diagnosis/` 四份记录）由学习者做，不要代做。`bug-report` 分支修复后按课件默认合回 `master`。
+- 第 28 课「架构改良与遗留代码」大纲已备在 `NEXT-SESSION.md`，只差写正文。
+
+
+## 第四十八次调整（2026-11-04）
+- 第 28 课「架构改良与遗留代码」写完并按审计流程收尾：`lessons/0028-architecture-improvement.html`、`reference/0028-improvement-card.html`（卡上有提案六节骨架与 deletion test 推演写法模板）。M5 第四课。写课前用户拍板两项：练习对象＝**A 为主、B 当入口线索**（对沙盒 kb 出改良提案，27 课 fix-layer.md 与「不存在正确的缝」当第一个候选方向）；练习深度＝**提案 + characterization test**（不实现改良，严格按地图产出）。
+- 核心问题「代码没错但难改怎么安全改好」立两步：提案 → 安全网 → 小步。难改是默认结果（Lehman「Increasing Complexity」SWEBOK ch.7 §1.5、理解占大半工夫 §2.1.1、Fowler 利息句）；改良归 perfective maintenance（§1.6「recoding to improve… maintainability」）与 27 课 corrective 分账；开工两道门＝deletion test 验提案新形状（挣到位置 / pass-through）+ characterization test 钉现状（21 课界线：锁现状是手段、当承诺是病根）。行业做法三条（先钉现状 SE-EDU 回归测试硬要求、小步走每步一跑、改良当项目排期——Google SRE《Evolving SRE Engagement Model》+ SWEBOK §2.1.3 影响分析）；替换策略借 §4.2「replace aging legacy software」划边界不展开（本地无正源，SOURCE-MAP 缺口已记）。实践：`improve-codebase-architecture`（用户调用）三步（Explore 定范围扫描 / %TEMP% HTML 候选报告 / Grilling loop），词汇纪律禁 component/service/API/boundary，人拍板四件；技能答 leverage/locality、行业答影响面风险两套都要。
+- **审计流程走完（2026-11-04）**：学习者子代理审计（引文逐字核对全过、技能逐一对原文、沙盒副本实测练习走通），报「必须改 4、建议改 10、可不改 5」。用户拍板「必须改 + 全部建议改」，已全部落实。值得记的教训：
+  - **引文义曲解**：SWEBOK「before and after code changes」是「重构垫在功能改动前后减债」，我拿来立「先立网再动刀」——引文不能顺着自己的论证方向读；「先钉现状」另找 SE-EDU 回归测试句立据才立住。
+  - **引文归属**：技术债「利息」句是 Fowler bliki《TechnicalDebt》的（Ward Cunningham 只是比喻的提出者），且在 SE-EDU 的 "When" 节不在 "What"；转引链条每一层都要写清。
+  - **验收判据与技能行为打架**：要求「diff 里只有特征测试和 .scratch/」，但技能第 3 步会记 GLOSSARY.md / ADR（仓库内文件）；判据改 git status + 白名单。写「没实现别的改动」类判据前先核技能会不会落仓库内产物。
+  - **概念串位**：「规则抄两份」讲成了浅模块（浅模块＝接口和实现一样复杂，不是重复逻辑）；核心词汇的用法示范必须严格照 14 课的定义，两个病分开说。
+  - 其余：`git log --oneline` 看不到文件（改 --name-only）；id 断「四位」恰好把 19 课宽度空洞钉进测试（改成不写死位宽）；「两道验收」口径改「两道门」（特征测试验安全网不是验提案）；禁词补全 service/API；未决问题补落点（提案末尾）；表达修五处。
+- 课程地图：第 28 课补链接；术语家谱加「refactoring / reengineering / perfective maintenance / impact analysis / technical debt」一行；进度段补第 28 课摘要、下一步第 29 课。`SOURCE-MAP.md` 同步：SWEBOK ch.7 行补 §1.5/§1.6 perfective/§2.1.1/§2.1.3/§4.2/§4.3 核实记录；SE-EDU Refactoring 行补 28 课用法；新增 Google SRE《Evolving SRE Engagement Model》行；缺口补「替换策略本地无正源」条。
+- 沙盒现状不变（第 15 课状态、master、无 remote、无测试文件、无 CI；.pytest_cache 是审计遗留）。第 28 课练习产物（friction-list.md、improvement-proposal.md、tests/test_characterization.py）由学习者做，不要代做。`GLOSSARY.md`、`docs/adr/` 仍懒创建（第 28 课练习的 grill 步骤会带出）。
+- 第 29 课「运维与事故：从 SRE 到 postmortem」大纲已备在 `NEXT-SESSION.md`（M5 收尾、技能栏「—」无独立技能、Google SRE Book 本地四章为理论主料、练习对象写课前拍板），只差写正文。
+
+## 第四十九次调整（2026-11-05）
+
+- 装了 `shuorenhua`（说人话）技能，用于试验「审稿 / 去 AI 味」这一步能不能独立成一道工序。安装位置是全局 `C:\Users\admin\.config\opencode\skills\shuorenhua\`（`SKILL.md` + `references/` + `LICENSE`）：仓库自带的 `npx skills add` 安装器面向 Claude Code / Codex / Cursor，而 OpenCode 从全局 skills 目录发现技能。试验约定：改写派新子代理，不复用审计子代理、也不由主代理代劳（主代理只做小的点修）；内容必须先定稿再改写；改写不静默覆盖——先输出到 `.rewrite.html` 再 diff，或先提交再原地改、用 `git diff` 复核。
+- 第 29 课「运维与事故：从 SRE 到 postmortem」写完并按审计流程收尾：`lessons/0029-operations-incidents.html`、`reference/0029-postmortem-card.html`。M5 收尾，技能栏「—」。写课前用户拍板：练习对象＝**A 沙盒构造一次小事故**（不采用真实经历改写，也不做双轨）。
+- 核心线：incident management（当下止血、保住证据）与 postmortem（事后解释、防复发）分开；blameless（无责）的对象是人不是系统；三个硬部件是时间线、根因、后续动作。行业做法按事故当下（ICS 四角色、三条宣布判据、live incident document）、事后（Appendix D 九个内容栏、动作四列 + 本课加的完成判据）、之后（评审、传播、工单跟进）三段讲。理论用 SWEBOK ch.6 §1.1 / §3.4 / §4.1 / §4.3 / §5.1（页码逐条核过），行业用 SRE ch.6 / 11 / 14 / 15 与 Appendix C / D。技能对照 `diagnosing-bugs`、`retro`、`triage`，并写清调用方式差异（`retro` 与 `triage` 是 `disable-model-invocation: true`，`diagnosing-bugs` 没有）。
+- **实测数字（审计复测，可直接复用）**：10001 条 fixture 3.06 MB（审计复测 3,119,209 字节）；`kb add` 十条均值 0.375 秒，冷启动首次可达 1.28 秒、后几次稳定在 0.335–0.426 秒；`search` 0.56 秒（审计 0.384 秒）；2000 条按 0.38 秒外推约 12.7 分钟；90 秒约写入 237 条。`JsonlStore.__init__` 每次 CLI 调用重读整个文件、`add` 用 `len(_entries)+1` 生成 id，是这次性能退化的机制来源，也解释了缺号检查为什么能跑。
+- **审计流程走完（2026-11-05）**：学习者子代理审计（SWEBOK ch.6 页码与引文逐字核、SRE ch.6/11/14/15 与 Appendix C/D 逐字核、三个技能 `SKILL.md` 逐字核、沙盒复制实测 fixture 与计时），报「必须改 11、建议改 12、可不改 10」。用户拍板「必须改 + 全部建议改」，已全部落实。最值得记的四类：
+  - **跨课回指不能想当然**：①407 秒是第 26 课审计时的本机测量，不在 26 课正文里，不能写成「第 26 课量过」；②第 27 课 `fix-layer.md` 是搜索顺序 bug 的记录，不是这次性能事故的根因，只能借它的提问方式；③第 28 课的提案是 id 与匹配规则，不是「增量索引」。三条都改成「从本课根因长出来」，并回指原文。
+  - **练习要真的能照做**：`%TEMP%` 是 cmd 语法，PowerShell 不展开；`cd` 进临时目录后相对路径会把记录写到临时目录；原第 4 步只量了 10 次 `add`，没有真跑导入与中断，影响面「已写入条数」无来源。已改成可整段粘贴的 `$repo` / `$drill` 设置、真导 2000 条并 Ctrl-C、两段 `Count`、逐行 `json.loads` 查坏行与缺号。
+  - **字段定义要先统一再落练习**：Appendix D 四列、本课「四要素」、「完成判据」、「检测」类型原本四套说法。统一成五字段（动作、类型、负责人、完成判据、工单与状态），类型沿用 mitigate / prevent / process / other，检测归 prevent 或 process；工单路径与 `Status:` 取值写死。
+  - **概念别说过头**：incident management 不是「目标只有一个」（live doc 同时是证据）；无责不是「语气判断」而是对原因的解释方式（可以写谁做了什么、当时以为什么，不能给人定罪）；`diagnosing-bugs` 能接性能退化（Phase 4 perf branch），接不住的是影响面、时间线与复盘文档。
+- 建议改全落实：术语首见统一 `English（中文）`；incident commander 译「事故指挥官」、incident command 译「事故指挥机制」；「不是 A，而是 B」从 8 处以上削到 2 处；AI 节补具体走查（活文档 + `git log` + 计时 + 行数 → 三列表 → 逐行核）；`triage` 的「排期」改「分派」；source 收窄 ch.11；课程地图补第 29 课链接与进度。
+- 课程地图：第 29 课补链接；进度段更新为第 1–29 课已写完、模块 5 收尾。`NEXT-SESSION.md` 换成第 30 课「原型」的大纲，并补第 29 课练习留档约定。
+- 沙盒现状不变（master、无 remote、无测试文件、无 CI；`.pytest_cache` / `.ruff_cache` 是审计遗留）。第 29 课练习产物（活文档、复盘、工单）由学习者做，不要代做。
+
+> AI生成

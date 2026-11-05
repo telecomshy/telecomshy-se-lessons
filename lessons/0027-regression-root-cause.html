@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 27 课 · 回归测试与根因：修的是哪一层</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 5 · 验收与维护 · 第 27 课</p>
+  <h1>回归测试与根因：修的是哪一层</h1>
+  <p class="lede">第 26 课到「一条会红的命令」为止：报告里那个「有时才坏」的顺序问题，现在是一条跑下去就红的命令，触发条件、四判据证据都记在 <code>.scratch/diagnosis/red-command.md</code> 里。这一课拿它当仪器，走完诊断的后半程——把复现缩到最小、提假设、插桩定位，然后修复。修复听着像终点，其实是最容易出错的一步：让症状消失的手法很多，把 CLI 输出重新排一次序也能绿，可 bug 不一定修掉了。这一课的核心问题就是标题那句：修的是哪一层。修在症状层还是根因层，决定了 regression test（回归测试）写在哪、防不防得住复发。</p>
+  <p class="lede">诊断做到这里，「bug 在哪」已经有答案了——第 26 课结尾你对过 <code>.scratch/injected-bug.md</code>，注入说明写着改坏了哪行。真正还没解决的是修复本身的三件事：这个 bug 的失效机制到底是什么（为什么恰好一万条才坏）、修复该落在哪一层、拿什么防止它回来。三件事各有各的判据，合起来才算把一个 bug 真正修完。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 40–50 分钟</span>
+  <span><b>前置</b> 第 26 课（会红的命令与诊断笔记）；第 19、20 课（测试设计与红绿纪律）</span>
+  <span><b>产出</b> 一个修复提交，加一条防复发的回归测试，加一份修层判断记录</span>
+  <span><b>主读物</b> MIT 6.031 Reading 13: Debugging（后半）</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：第 26 课造出会红的命令，这课在它上面做最小化、假设、插桩、修复、回归测试、清理；第 28 课接走更宽的维护话题。</li>
+    <li>把复现缩到最小，用「每个留下的元素都缺一不可」判断最小化做没做够。</li>
+    <li>按科学方法提假设：写出可证伪的预测，按可信度排序，用最小扰动的 probe（探针）验证。</li>
+    <li>说清这个 bug 的失效机制：坏值在哪一步进入顺序、为什么跨过边界才坏、InMemoryStore 为什么幸免。</li>
+    <li>回答「修的是哪一层」：区分症状点、根因点与契约点，认出编码错误和 design error（设计错误）两类根因，说出修复为什么落在这一层。</li>
+    <li>把会红的命令变成回归测试：先看它红，再修复，再做撤修复实验，证明测试锁得住这个 bug。</li>
+    <li>认出三个误区：知道答案就直接改回去、回归测试只断这一种症状、绿了就收工不验证防复发。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：维护的第二段，从「找到它」走到「修掉它」</h2>
+  <p>第 2 课把软件工程拆成八个活动，模块 5 跨 Quality（质量）、Maintenance &amp; Evolution（维护与演进）、Operations（运维）三块。第 25 课在验收的位置上做裁决，第 26 课转进维护，把一个 bug 报告变成一条会红的命令；这一课把维护走完：找到它之后是修掉它、防止它回来。第 28 课「架构改良与遗留代码」接走更宽的维护话题，那时要对付的是整片难改的代码，不再是单个 bug。</p>
+  <p>SWEBOK 把维护分成五类、另列应急一类，跟这课直接相关的有两类：corrective maintenance（纠正性维护）是「交付后为纠正已发现问题而做的被动修改」，preventive maintenance（预防性维护）是「交付后为纠正尚未发生的潜在缺陷所做的修改」（SWEBOK v4, ch.7, §1.6, printed 7-4；类别经 ISO/IEC/IEEE 14764 标准化）。修 bug 是前者，发现并顺手修掉同类的潜在缺陷是后者；回归测试本身是验证手段，把前两者的成果锁在测试里。一个只做前者的仓库会一直还债：同一个坑换个入口再掉一次。这课把两类一起做完。</p>
+  <p>这课给第 28 课留下的东西有两样：一个是修好的沙盒——<code>kb search</code> 的顺序问题在你判定的那一层修掉（多半是根因层），带着一条钉住契约的回归测试；另一个是修层判断的记录——下次面对「改哪里」的选择题，有现成的判据可抄。给第 29 课留的是另一样：commit 里写清根因，postmortem（事故复盘）的时间线和根因栏才有东西可填。</p>
+</section>
+
+<section>
+  <h2>问题与概念：症状消失，不等于 bug 修掉</h2>
+  <p>先摊开你手里的东西。分支 <code>bug-report</code> 上有一个被改坏的 <code>kb search</code>；<code>.scratch/diagnosis/red-command.md</code> 里躺着会红的命令、触发条件清单和收紧前后的耗时；诊断笔记里记着第 26 课盲诊断对答案时的对照——哪条假设走偏了、触发条件漏了什么。这些全是这课的输入。</p>
+  <p>动手前先把复现缩到最小。第 26 课的命令带着一万零一条 fixture（测试数据），是因为要跨过触发边界；真正需要的到底是什么，要一刀一刀试出来。做法是砍一刀、跑一遍命令：数据量砍到一万条还红吗？条目砍到最少字段还红吗？查询缩到恰好命中的形状还红吗？砍字段只是诊断手段，最小场景转成回归测试时，fixture 要回到 <code>Store</code> 契约的四键形状，不然测试钉的是契约外的输入。砍完的标准，<code>diagnosing-bugs</code> 技能写得很硬：「Done when every remaining element is load-bearing（做到剩下的每个元素都缺一不可为止）」——拿掉任何一个元素，命令就绿，才说明缩够了。为什么值得费这个劲？两个理由都写在技能里：最小复现缩小 Phase 3 的假设空间，「fewer moving parts left to suspect（能怀疑的活动部件变少了）」；它还直接变成 Phase 5 里干净的回归测试。对这课的 bug 来说，最小化大概率落在触发边界上：数据量缩到恰好显现的那条线，查询缩到恰好命中的形状。</p>
+  <p>接着是找原因的纪律。MIT 6.031 Reading 13: Debugging 把它叫 scientific method（科学方法），四步：Study the data（研究数据）、Hypothesize（提出假设）、Experiment（做实验）、Repeat（重复）。每一步的要点各一句：假设要「consistent with all the data（与所有数据相符）」，实验最好是「a probe that collects information but disturbs the system as little as possible（一个收集信息、又尽可能少打扰系统的探针）」，重复一轮就把新数据加进来重提假设。笔记别留在脑子里，reading 给了四栏：Hypothesis（假设）、Experiment（实验）、Predictions（预测）、Observations（观察）。假设还要 falsifiable（可证伪）：写不出「如果是它，改什么会怎样」的预测，这条假设就是感觉，不是假设。假设不能只提一条——单条假设会锚死在第一个听起来合理的想法上；<code>diagnosing-bugs</code> 要求提 3–5 条、排好序、交用户过目再试，用户一句话就能重排（技能举的例子：「我们刚部署了对 #3 的改动」）。</p>
+  <p>现在到这课的核心。命令红的地方是用户看到症状的地方，不一定是 bug 藏着的地方，MIT 这句话是整课的支点：「The point where the program actually failed, by throwing an exception or producing a wrong answer, isn't necessarily where the bug is. The buggy code may have propagated some bad values through good parts of the program before it eventually failed.（程序实际失败的地方——抛了异常或算出错误答案的地方——不一定是 bug 所在。坏代码可能带着坏值穿过一堆好代码，才在远处失败。）」拿这课的 bug 说：症状出在 CLI 的输出顺序上，可 <code>InMemoryStore</code> 好好的、几百条也好好的，顺序到底是哪一步被弄坏的，要用最小复现和探针回答，不能拿症状点当答案。</p>
+  <p>「修的是哪一层」问的就是这件事。修复落点至少有三层可选。落在症状层：把输出摆正——比如在打印前重新排一次序，两行就绿。落在根因层：把坏掉的那几行改对，让 <code>search</code> 自己返回正确的东西。落在契约层：规则没人守——顺序「与加入顺序一致」在 <code>Store</code> docstring 里只有一句话，没有测试钉住它，谁顺手改掉都不会红；修复还包括把规则钉进测试、必要时把 docstring 写得更死，让下一次顺手改直接红。本课的沙盒正是这种情形。如果连规则都没写进契约，才轮到补契约本身。哪层对，用三个问题判断：这个修复保护的是哪个观察点？换一个调用者——未来的 HTTP adapter、直接调 <code>JsonlStore.search</code> 的脚本——还坏吗？规则现在写在哪，谁该守它？症状层的修复只保护 CLI 这一个观察点，换个调用者照坏，这就是「症状消失但 bug 还在」的具体形态。</p>
+  <p>根因本身也分两种，MIT 的「Fix the bug」一节给了二分：「Ask yourself whether the bug was a coding error, like a misspelled variable or interchanged method parameters, or a design error, like an underspecified or insufficient interface.（问自己这是编码错误——拼错变量、传错参数那种——还是设计错误，比如规格不足或不够用的接口。）」编码错误改对就行；设计错误不一样，「Design errors may suggest that you step back and revisit your design, or at the very least consider all the other clients of the failing interface to see if they suffer from the bug too.（设计错误可能要你退一步重看设计，至少也该看看这个接口的其他调用者是不是也带着同一个病。）」同一次 reading 还提醒防的不只是这一个 bug：「Look for related bugs, and newly-created ones.（找同类 bug，和新造出来的 bug。）」</p>
+  <p>把修复做完还要给未来留证据。MIT 的总结句说得直白：「Systematic debugging helps build confidence that a bug is really fixed, and not just temporarily hidden.（系统化调试让你有信心说 bug 真的修好了，而不只是暂时藏起来了。）」拿什么证明？第 26 课那条命令。它先是诊断的仪器，修完这课把它变成 regression test 留进套件——「after you've successfully fixed the bug, you'll want to keep the test case in your regression test suite, so that the bug never crops up again（修好之后要把用例留在回归测试套件里，让这个 bug 不再冒头）」，这句在第 26 课出现过，这课兑现它。防复发其实有三件事：回归测试钉住规则、同类问题清扫一圈、commit 写清根因。三件缺一件，这个 bug 就不算修完。</p>
+</section>
+
+<section>
+  <h2>行业做法：回归测试先行、修根因不修症状、提交写清为什么</h2>
+  <p>「先修还是先写测试」「修根因不修症状」这些话在行业里流传很广，但要分清它们的身份：没有哪份规范规定修复的先后顺序或修复层次，这里只有主流做法和取舍；真正有标准可依的是回归测试的定义（SWEBOK 转引 ISO/IEC/IEEE 24765 词表）和维护类别（ISO/IEC/IEEE 14764 标准化）。下面三条各写清怎么做、产物和代价。</p>
+
+  <h3>回归测试先行，放对它所在的层级</h3>
+  <p>做法是把会红的命令先锁成测试，看它红，再动手修复。理论和技能两份材料的先后口径不一样，要摆明：MIT 的「Make a regression test」写在修复之后——「After you have applied your fix, add the bug's test case to your regression test suite, and run all the tests to assure yourself that (a) the bug is fixed, and (b) no new bugs have been introduced.（修复之后，把这条用例加进回归套件，跑全量测试确认 bug 修好了、也没引入新 bug。）」而 <code>diagnosing-bugs</code> 技能要求写在修复之前，理由是先看测试红过，才知道它抓得住这个 bug。这门课跟技能的口径，跟第 20 课「先写失败测试」的纪律也是一条线；两条口径的产物相同，差别在证据强度。SWEBOK 的回归测试定义在第 20 课引过：选择性重测，确认改动没有引起意外副作用（ch.5, §2.2.5, printed 5-8）；这课用它同一节的另一层信息——回归测试可以做在每个测试级别上，套件大了要做 selection（选择）、minimization（测试用例最小化）和 prioritization（优先级排序），在「每次全跑的保证」和「跑得起的资源」之间取舍。写在哪一级跟着修层判断走：钉契约的测试写在 <code>Store</code> 层，症状级的断言写在 CLI 层也行，但只断症状层的测试只能防这一种症状复发。还有一个现成的判例，MIT 的 reading 里有一道题：把输入缩到最小、修好之后，「Which test cases should you now add to your test suite?（现在该往套件里加哪些用例？）」——最小用例和原始报告的用例都在候选里。最小用例钉机制，原始用例钉用户症状，两个都留，防复发才完整（这道题的本地副本没有答案，「两个都留」是本课的取舍）。</p>
+
+  <h3>修根因不修症状，止血要另记一笔</h3>
+  <p>「修根因不修症状」是主流信条，但没有统一标准说什么时候允许先止血，这里全是取舍。立据靠 MIT 的三处提醒：修的时候「Avoid the temptation to slap a patch on it and move on.（别打个补丁就走。）」；根因是设计错误时要回头重看设计、排查其他调用者；修完「Look for related bugs（找同类 bug）」。止血本身有正当身份：SWEBOK 的维护类别里有 emergency maintenance（应急维护），纠正性维护之外单列，说明「先让线上活下来」是被承认的动作。代价是 SWEBOK 另一处点破的：技术债「often accumulates when the need to quickly address corrective, emergency, and additive maintenance tasks… leads to compromises（常因匆忙处理纠正性、应急性和新增功能类任务而妥协，逐渐累积）」，而且它「should not be handled in isolation but through an examination of its root causes（不该孤立处理，要顺着根因查）」（ch.7, printed 7-7、7-9）。所以取舍的落法是：症状层止血可以，但要在工单或笔记里写明「这是止血」，根因修复另开一笔，别让止血悄悄变成唯一的一笔。产物是一笔根因修复加一条清扫记录；代价是根因修复常常比止血大——设计错误动的是接口和调用者，不是一行。</p>
+
+  <h3>提交说明写清为什么</h3>
+  <p>修复进版本库时，commit message（提交说明）要把根因写进去。Google 的工程实践指南把 CL（change list，变更列表）说明定义成「A CL description is a public record of change（CL 说明是改动的公开记录）」，要求回答两问：改了什么、为什么改；为什么这问值得写，指南说得很实在：「Reading source code may reveal what the software is doing but it may not reveal why it exists.（读源码能看出软件在做什么，看不出它为什么存在。）」具体到这课：写清猜中的假设和根因机制，下一个人搜提交历史就能找到这次修复，不用重新诊断一遍。做法是提交前花两分钟把「现象、根因、修在哪层、回归测试在哪」写全；产物是一条自解释的提交记录；代价几乎只有时间。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：diagnosing-bugs 的 Phase 2 后半到 Phase 6</h2>
+  <p>落地的技能还是 <code>diagnosing-bugs</code>，第 26 课走的是 Phase 1 和 Phase 2 的复现半步，这课接完剩下的：Phase 2 的 minimise、Phase 3 假设、Phase 4 插桩、Phase 5 修复加回归测试、Phase 6 清理。调用类型不变：模型调用，你说「diagnose」或「debug this」会被拉起，也可以手动点名。技能对这个流程的自我要求是不跳阶段：「Skip phases only when explicitly justified.（只有明确说得出理由才能跳过阶段。）」</p>
+  <p>把五个阶段的动作、产物和完成判据排成一张表，练习就照它走：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>阶段</th><th>做什么</th><th>产物</th><th>完成判据</th></tr></thead>
+      <tbody>
+        <tr><td class="what">Phase 2 minimise（最小化）</td><td>砍输入、调用者、配置、步骤，一次砍一刀，砍完重跑命令，只留缺一不可的</td><td>最小复现</td><td>「every remaining element is load-bearing」</td></tr>
+        <tr><td class="what">Phase 3 Hypothesise（假设）</td><td>提 3–5 条假设排序，每条写可证伪的预测，交用户过目</td><td>带预测的假设清单</td><td>每条都写得出「如果是它，改什么会怎样」</td></tr>
+        <tr><td class="what">Phase 4 Instrument（插桩）</td><td>探针对着预测用，一次只动一个变量；debugger 优先，临时日志次之，禁止「全打日志再 grep」</td><td>观测记录</td><td>每个探针映射到一条具体预测</td></tr>
+        <tr><td class="what">Phase 5 Fix + regression test（修复与回归测试）</td><td>回归测试先写先红，再修复看绿，再跑原始场景</td><td>修复加回归测试</td><td>测试红过、修复绿了、原始场景症状消失</td></tr>
+        <tr><td class="what">Phase 6 Cleanup（清理）</td><td>清探针、删一次性脚手架、提交写明猜中的假设</td><td>干净的提交</td><td>清单五条全勾</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>有三处细节值得单独说。第一，插桩的工具顺序：「Debugger / REPL inspection if the env supports it. One breakpoint beats ten logs.（环境支持就用调试器或 REPL，一个断点胜过十条日志。）」临时日志必须打标签：「Tag every debug log with a unique prefix, e.g. <code>[DEBUG-a4f2]</code>. Cleanup at the end becomes a single grep. Untagged logs survive; tagged logs die.（每条调试日志带唯一前缀，收尾一条搜索就能清干净。没打标签的日志会活下来，打了标签的才会死。）」第二，回归测试的落点有讲究：「Write the regression test before the fix, but only if there is a correct seam for it.（回归测试写在修复之前，但前提是存在正确的缝。）」correct seam（正确的缝）指测试能按 bug 在调用点真实发生的形态驱动它——缝太浅（bug 要多个调用者才触发，却只有单调用者的测试）会给出假信心。技能还留了一句给架构记账的话：「If no correct seam exists, that itself is the finding.（如果不存在正确的缝，这本身就是发现。）」测试钉不住 bug，说明架构把这个 bug 的形态挡在了测试够不到的地方，这要记下来当第 28 课的输入。第三，Phase 5 的第 5 步容易漏：修好之后要「Re-run the Phase 1 feedback loop against the original (un-minimised) scenario（拿原始的、未最小化的场景重跑 Phase 1 的回路）」——最小场景证明机制修好了，原始场景证明用户症状消失了，两个证据都要。</p>
+  <p>流水线照旧是技能跑的，判断在你。人拍板的事有四件。假设排序交你过目，技能明说这是省时间的检查点：「Show the ranked list to the user before testing.（测试前把排序清单给用户看。）」但你不在场时它照自己的排序走，不空等。修在哪一层没有自动化：症状层、根因层还是契约层靠那三个问题判，编码错误还是设计错误靠 MIT 的二分判。seam 对不对也是你的判断——测试断在 fake（假件）上还是真实路径上、够不够得着 bug 真实发生的形态，第 26 课那条实测教训（断在 <code>InMemoryStore</code> 上永远绿）在这里同样生效。最后，修复的边界你划：这次是止血还是根因修复，止血的话补课记在哪。生效判据就是 Phase 6 那张清单加一个实验：把修复撤掉，回归测试必须红回来——这个「撤修复实验」是「测试真的锁住了这个 bug」最硬的兜底证据，后面练习会具体做。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>知道答案就直接改回去。</strong>对过 <code>.scratch/injected-bug.md</code> 之后，最常见的路径是照着说明把那几行改回原样，收工。问题有三处：最小化没做，回归测试只能照着症状写；机制没验证，「为什么恰好一万条才坏」答不上来，commit 里写不出根因，下次同类问题照样漏；修层没判断，契约层的病根还在。对答案只对出了「哪行坏了」，这课要的三件事还没影。</p>
+  <p><strong>回归测试只断这一种症状。</strong>测试红了、修复绿了，看起来闭环了。可如果断言只钉「这个查询的输出顺序对」，换一种查询、换一个调用者复发时它照绿。第 21 课立过标准：断言该落在规格承诺的规则上；这课的规则是「search 结果顺序与加入顺序一致」，回归测试要钉的是这条规则，症状断言可以再留一条当用户视角的哨兵。还有一种押错层：测试断在 <code>InMemoryStore</code> 这类 fake 上，而 bug 藏在真实存储路径里——断 fake 的测试永远绿，锁不住任何东西。</p>
+  <p><strong>绿了就收工，不验证防复发。</strong>修复绿了就提交，跳过撤修复实验、跳过清扫、提交说明只写「fix search order」。三件防复发的事——回归测试、同类清扫、写明根因——只做了第一件的一半：测试绿不代表它抓得住这个 bug，没红过一次的回归测试等于没写。插桩留过夜更麻烦：下一个人分不清哪行是修复、哪行是当时调试留下的。</p>
+</section>
+
+<section>
+  <h2>练习与带走：把这个 bug 修完，并让它不再回来</h2>
+  <p>练习接着第 26 课的现场做：分支 <code>bug-report</code>、会红的命令、诊断笔记都在，bug 还没修。目标是把地图上那行产出做出来——一个修复提交，加一个防复发的测试；修层判断记录是本课额外要留的一份。诊断全程在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做，新产物记在 <code>.scratch/diagnosis/</code>。没做第 26 课练习的，先照参考卡 0026 把注入和会红的命令补出来，再进下面的步骤；补做的场景没有盲诊断笔记，第 2 步里「走偏过的旧假设」换成注入说明之外你自己最信的猜测。</p>
+  <p>有一点要说破：你已经对过答案，「bug 在哪」不是这课的悬念。所以假设与插桩这两步在这课换个用法——不是找答案，是验答案和讲机制。注入说明给的根因只是一句话，为什么恰好一万条才坏、换种查询还坏不坏、<code>InMemoryStore</code> 为什么幸免、修复该落在哪层，这些都还没有答案。练习里你把「注入说明的根因」当第一条待验证假设，把第 26 课笔记里走偏过的那条旧假设捡回来重新走一遍科学方法。真正的盲诊断里，后半程会更费劲，纪律是同一套。</p>
+  <ol>
+    <li><strong>最小化复现。</strong>拿第 26 课的 fixture 脚本和会红的命令开刀，一刀一跑：数据量往触发边界缩（边界口径是「一万条（含）起显现」，逐档试出精确的那条线）、条目砍到最少字段、查询缩到最小命中。每砍一刀重跑命令，把「砍了什么、红绿如何」记下来。做到剩下的每个元素都缺一不可：拿掉任何一个，命令变绿。最小场景的完整描述（数据量、条目形状、查询、走的路径）记进 <code>.scratch/diagnosis/minimised-repro.md</code>。</li>
+    <li><strong>提假设，排序，交用户过目。</strong>写 3–5 条假设，第一条是注入说明给的根因（当待验证假设写，别当结论抄），再补上机制类的假设（为什么一万条才坏）和你第 26 课走偏过的那条。每条写可证伪的预测，格式照技能的：「If &lt;X&gt; is the cause, then &lt;changing Y&gt; will make the bug disappear / &lt;changing Z&gt; will make it worse.」按可信度排序，清单落 <code>.scratch/diagnosis/hypotheses.md</code>，把排序和预测展示给用户过目（人不在就照你的排序走，把这件事记进笔记）。顺手用 slicing（切片）收窄怀疑面：顺着「结果顺序」这个值的计算路径读代码，圈出可能动过它的部分，也圈出绝不可能的部分。</li>
+    <li><strong>插桩，把机制跑出来。</strong>探针对着预测用，一次只动一个变量。优先 debugger（调试器，<code>python -m pdb</code> 或 IDE 断点）或 REPL 直接调；用临时 print 就照技能的规矩打唯一标签，比如 <code>[DEBUG-a4f2]</code>。要回答的问题列清楚：坏值在哪一步进入顺序、为什么数据量跨过边界才坏、<code>InMemoryStore</code> 为什么不受影响。观测记四栏（假设 / 实验 / 预测 / 观察）进 <code>.scratch/diagnosis/instrumentation.md</code>。</li>
+    <li><strong>判层：修的是哪一层。</strong>对着机制回答三个问题：修复保护的是哪个观察点？换一个调用者还坏吗？规则写在哪、谁该守它？再做 MIT 的二分判断：这是 coding error（编码错误）还是 design error（设计错误）。如果连规则都没写进契约，修复就包括补契约；本课的沙盒规则已在 <code>Store</code> docstring 里，缺的是把规则钉进测试，必要时把 docstring 写得更死（比如 id 宽度）。撞上契约空洞按老规矩办：拍板写进 <code>Store</code> docstring，或记进「风险与未决问题」。判断和理由写进 <code>.scratch/diagnosis/fix-layer.md</code>，这是本课最该留下的一份记录。</li>
+    <li><strong>回归测试先行。</strong>把最小场景变成 <code>tests/</code> 里的一条失败测试（<code>tests/</code> 不存在就建；已有的回归网照旧不许改）。断言钉规则——「search 结果顺序与加入顺序一致」——不是只钉报告里那一个查询；再留一条症状级断言当哨兵。测试必须驱动真实搜索路径：fixture 落 <code>kb.jsonl</code> 走 <code>JsonlStore</code>，或直接调 CLI，别断在 <code>InMemoryStore</code> 上。写完先跑它，看它红——红要红在断言上（顺序断错了那种），不是测试自己写崩了；如果红是靠改 fixture 或改代码造出来的，<code>git diff</code> 对照一份干净副本，证明改动落了地再信它。</li>
+    <li><strong>修复，然后做撤修复实验。</strong>改根因层（或你判定的层）的实现，看回归测试绿。然后把修复那几行暂时改回坏的样子（<code>git diff</code> 留对照），回归测试必须红回来——红不回来说明测试没锁住这个 bug，回第 5 步重写断言。恢复修复，确认又绿了。再跑两样：全量测试套件（旧回归网一条不许挂）；第 26 课那条未最小化的原始命令，确认用户症状消失。</li>
+    <li><strong>清理、提交、合回。</strong>把 <code>[DEBUG-</code> 探针搜干净（PowerShell：<code>Get-ChildItem -Recurse *.py | Select-String "DEBUG-"</code>），一次性脚手架删掉或挪进 <code>.scratch/</code>，别混进 <code>kb/</code> 和 <code>tests/</code>。commit message 写清现象、根因、修在哪层、回归测试在哪——特别是猜中的假设和机制，照 Google 的「改了什么、为什么改」两问写。提交落在 <code>bug-report</code> 分支，然后合回 <code>master</code>，在 <code>master</code> 上跑一次全量测试。如果有「这是止血、根因另修」的成分，在笔记里单记一笔。</li>
+  </ol>
+  <p>做完的标准是这几条：回归测试红过、绿过、撤修复又红过，三次记录都在案；修层判断有理由，回答得出「换一个调用者还坏吗」；最小复现缺一不可；插桩记录四栏齐全、探针清干净，机制三问各有一句答案（坏值在哪一步进顺序、为什么跨过边界才坏、InMemoryStore 为什么幸免），写进插桩或修层记录；commit 里能读出根因。地图上这课的产出——修复加一个防复发的测试——到此兑现。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这个修复防得住复发吗</h2>
+  <p>把仓库交给 agent，让它按下面这份检查单核一遍。它要实跑测试、实做撤修复实验，只读记录不算数。</p>
+
+  <pre><code>读 .scratch/diagnosis/ 下的记录，在沙盒分支 bug-report 上核对修复。
+只核对，可以做撤修复实验（跑完必须恢复原状，git status 收尾回到起点）。
+开始前确认除 .scratch/ 外没有未提交改动——.scratch/ 不入库是设计如此。
+
+逐条检查：
+1. 实跑回归测试：修复在时它绿吗？
+2. 撤修复实验：把修复那几行暂时改回坏的样子，回归测试红吗？红的形态是断言失败
+   而不是崩溃吗？做完恢复修复，测试回到绿了吗？
+3. 断言钉的是契约规则（顺序与加入顺序一致），还是只钉报告里那一个查询？测试驱动
+   的是真实搜索路径吗（fixture → JsonlStore / CLI），还是断在 fake 上？
+4. 全量测试套件绿吗？第 26 课那条原始（未最小化）命令的症状消失了吗？
+5. 最小化记录里每个留下的元素都缺一不可吗？假设清单有 3–5 条带可证伪预测吗，
+   交用户过目的留痕在吗？插桩记录四栏齐吗？机制三问有答案吗（坏值在哪一步进顺序、
+   为什么跨过边界才坏、InMemoryStore 为什么幸免）？[DEBUG- 探针搜干净了吗？
+6. 修层判断在 .scratch/diagnosis/fix-layer.md 里吗？它回答了「换一个调用者还坏吗」
+   吗？commit message 里写得出根因和猜中的假设吗？
+
+结论：这个修复防得住复发吗？哪一环还缺证据？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>撤修复不红</strong>：测试没锁住这个 bug，是这课最贵的错误——多半断在 fake（假件）上、断言落在修复影响不到的观察点，或者 fixture、查询没跨触发边界；回第 5 步排查重写。<strong>修层站不住</strong>：换个调用者还坏，或者设计错误只改了实现没补契约，补修层判断里欠的那一层。<strong>证据缺项</strong>：四栏、三次红绿记录、清理搜索，缺什么补跑补记。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>症状点不一定是缺陷点：修复落在症状层、根因层还是契约层（把规则钉进测试），用「保护哪个观察点、换个调用者还坏吗、规则写在哪」三个问题判断，编码错误改对就行，设计错误要回去补契约。</li>
+    <li>回归测试先行、撤修复实验兜底：测试红过、修复绿过、撤掉修复又红过，三步全有，才敢说 bug 真的修好了，不是暂时藏起来了。</li>
+    <li>防复发是三件事：回归测试钉住规则、同类问题清扫一圈、commit 写清根因——缺一件，学费就只交了一半。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>MIT 6.031 Reading 13: Debugging（本地 <code>courseware/mit-6.031/classes/13-debugging/index.html</code>）——“Find the bug using the scientific method”（四步 Study the data / Hypothesize / Experiment / Repeat 与记笔记四栏）；“2. Hypothesize”（「The point where the program actually failed, by throwing an exception or producing a wrong answer, isn't necessarily where the bug is. The buggy code may have propagated some bad values through good parts of the program before it eventually failed.」）与 “Slicing”（「finding the parts of a program that contributed to computing a particular value」、「careful slicing – which you can do just by reading the code – can help you systematically identify places where the bug could be, and also where it could not be」）；“Prioritize Hypotheses”（老代码比新代码可信，「You should trust these lower levels until you've found good reason not to.」）；“Fix the bug”（「Avoid the temptation to slap a patch on it and move on.」、coding error 与 design error 二分、design error 要看其他调用者、「Look for related bugs, and newly-created ones.」、「Undo debugging probes.」、「Make a regression test.」）；“Reproduce the bug”（修好后「keep the test case in your regression test suite, so that the bug never crops up again」，第 26 课引过，本课兑现）；“Regression testing” 题（问修好后该往套件里加哪些用例；候选含最小用例与原始用例，本地副本答案缺失，「两个都留」是本课取舍）；总结句「Systematic debugging helps build confidence that a bug is really fixed, and not just temporarily hidden.」。SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.7 §1.6 Categories of Software Maintenance（PDF p170 = printed 7-4，五类维护经 ISO/IEC/IEEE 14764 标准化；corrective maintenance「Reactive modification (or repairs) of a software product performed after delivery to correct discovered problems」、preventive maintenance「Modification of a software product after delivery to correct latent faults in the software product before they occur in the live system」，另有 emergency maintenance）；ch.7 §2.1.4 Maintainability（printed 7-7，技术债「often accumulates when the need to quickly address corrective, emergency, and additive maintenance tasks… leads to compromises」）与 §2.3.1（printed 7-9，「technical debt should not be handled in isolation but through an examination of its root causes」）；ch.5 §2.2.5 Regression Testing（PDF p124 = printed 5-8，定义转引 ISO/IEC/IEEE 24765 词表；第 20 课引过定义与取舍，本课用「可在每个测试级别做」与 selection / minimization / prioritization）。</p>
+  <p><strong>行业做法：</strong>Google Engineering Practices《Writing good CL descriptions》（本地 <code>courseware/google-eng-practices/review/developer/cl-descriptions.html</code>）——「A CL description is a public record of change」、改了什么与为什么改两问、「Reading source code may reveal what the software is doing but it may not reveal why it exists.」。「修根因不修症状」与「回归测试先修还是先写」都没有统一标准，以上是主流做法和取舍；止血的正当身份由 SWEBOK 的 emergency maintenance 立据，止血要另记一笔的代价由 SWEBOK ch.7 技术债段立据。</p>
+  <p><strong>实践方式：</strong><code>diagnosing-bugs</code> 技能 <code>SKILL.md</code>（本机路径 <code>C:\Users\admin\.agents\skills\</code>）——Phase 2 “Reproduce + minimise”（「Done when every remaining element is load-bearing」、最小复现缩假设空间并变回归测试）、Phase 3 “Hypothesise”（3–5 条可证伪假设、「Show the ranked list to the user before testing」、AFK 不空等）、Phase 4 “Instrument”（探针对预测、「Change one variable at a time」、debugger 优先「One breakpoint beats ten logs」、<code>[DEBUG-…]</code> 打标签「tagged logs die」）、Phase 5 “Fix + regression test”（回归测试写在修复前、「but only if there is a correct seam for it」、「If no correct seam exists, that itself is the finding.」、修好后重跑原始场景）、Phase 6 “Cleanup”（清单：原场景不再复现、回归测试过、探针清掉、脚手架删掉、commit 写明猜中的假设）。沙盒 <code>kb/storage.py</code>、<code>kb/cli.py</code>。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 28 课「架构改良与遗留代码」。这一课把单个 bug 修到根、防到复发；下一课面对的问题更宽：代码没错，但难改——每次动它都要重读一大片。你的修层判断记录和「不存在正确的缝就是发现」这条线索，正是下一课的入口。</p>
+  <p>没拍板的照老规矩落盘：契约空洞（id 宽度、顺序规则要不要写得更死之类）拍不了板就记进 <code>.scratch/diagnosis/</code> 的「风险与未决问题」；止血成分单记一笔。第 28 课开工前先读它们。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0027-fix-regression-card.html">修复与回归测试参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>
