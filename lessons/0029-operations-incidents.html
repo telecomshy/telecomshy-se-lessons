@@ -13,7 +13,7 @@
   <p class="eyebrow">模块 5 · 验收与维护 · 第 29 课</p>
   <h1>运维与事故：从 SRE 到 postmortem</h1>
   <p class="lede">第 28 课把「哪里难改」写成了一份提案，提案还躺在 <code>.scratch/architecture/</code> 里等排期。在它开工之前，系统得先撑住下一次使用：同事往知识库里导入两千条读书笔记，等了一分半还没完，以为卡死了，按了 Ctrl-C，然后来问你「这个工具是不是坏了」。你打开文件看，每条记录都写对了，没有报错，只是慢——慢到人以为它坏了。</p>
-  <p class="lede">这是运维要接的那一半：东西已经在跑，判断的重点不再只是代码对不对，而是它在真实数据量下跑成什么样、出事时怎么止血、事后怎么记住。这一课讲三件事：事故当下怎么分工止血，事后怎么用一份 postmortem（事故复盘）把经过变成可查的记录，以及怎么让这份记录长出真的会做的动作。学完带走一份无责复盘，含时间线与后续动作。</p>
+  <p class="lede">这是运维要接的那一半：东西已经在跑，判断的重点从代码对不对，转到它在真实数据量下跑成什么样、出事时怎么止血、事后怎么记住。这一课讲三件事：事故当下怎么分工止血，事后怎么用一份 postmortem（事故复盘）把经过变成可查的记录，以及怎么让这份记录长出真的会做的动作。学完带走一份无责复盘，含时间线与后续动作。</p>
 </header>
 
 <div class="lesson-meta">
@@ -40,18 +40,18 @@
   <h2>位置：维护走到头，接下来是「它已经在跑」</h2>
   <p>第 2 课把软件工程拆成八个活动：需求、设计、构造、测试、维护、过程、Configuration &amp; Operations（配置与运维）、专业实践。模块 5 覆盖其中三个——质量、维护与演进、配置与运维。第 25 课在验收的位置上做裁决，第 26 到 28 课在维护的位置上修 bug、防复发、提改良。这三课有一个共同点：都还来得及改代码。</p>
   <p>这一课换个位置。SWEBOK 给「软件工程运维」下的定义是：「the knowledge, skills, processes and tools used by software engineers or their organization to ensure that a software product, including IT infrastructure, system software, and application software, operates well during development, maintenance and in real conditions of operations.（软件工程师或其组织用来保证软件产品——包括 IT 基础设施、系统软件和应用软件——在开发、维护和真实运行条件下运转良好的知识、技能、流程和工具。）」（SWEBOK v4, ch.6, §1.1, printed 6-3）。定义里最关键的是最后半句「真实运行条件」：测试环境里跑得通不算数，用户在用的时候出事，才是运维要接的场面。</p>
-  <p>入口线索有两条，都来自前两课留下的账。一条是第 27 课的 <code>.scratch/diagnosis/fix-layer.md</code> 和那次提交里写下的根因。要注意，那是另一个 bug（搜索顺序错）的记录，不是这次性能事故的答案；它能提供的是「规则写在哪、谁该守它」的提问方式。这次的根因要自己读 <code>kb/storage.py</code>、<code>kb/cli.py</code>，量一下大库下的 <code>add</code> 耗时。另一条是第 28 课的摩擦清单与改良提案，安排「后续动作」时，它们是现成的候选。这课把前面攒下的诊断和改良收进一个更大的容器：一次事故发生之后，组织到底该记住什么。</p>
-  <p>给第 30 课留下的东西也在这里。复盘排出来的动作里，可能有一两条不是「修一下」能解决的，而是「要不要换一种做法」——比如知识库要不要从整文件读写换成增量索引。这类问题正是 prototype（原型）要回答的：用可丢弃的代码先试一次，再决定值不值得做。复盘给出问题，原型给出答案；不是每份复盘都会长出设计问题，但长出来的那一条，适合交给原型。</p>
+  <p>入口线索有两条，都来自前两课留下的账。一条是第 27 课的 <code>.scratch/diagnosis/fix-layer.md</code> 和那次提交里写下的根因。那是另一个 bug（搜索顺序错）的记录，不是这次性能事故的答案；它能提供的是「规则写在哪、谁该守它」的提问方式。这次的根因要自己读 <code>kb/storage.py</code>、<code>kb/cli.py</code>，量一下大库下的 <code>add</code> 耗时。另一条是第 28 课的摩擦清单与改良提案，安排「后续动作」时，它们是现成的候选。这课把前面攒下的诊断和改良收进一个更大的容器：一次事故发生之后，组织到底该记住什么。</p>
+  <p>给第 30 课留下的东西也在这里。复盘排出来的动作里，可能有一两条光靠「修一下」解决不了，属于「要不要换一种做法」的问题——比如知识库要不要从整文件读写换成增量索引。这类问题正是 prototype（原型）要回答的：用可丢弃的代码先试一次，再决定值不值得做。复盘给出问题，原型给出答案；不是每份复盘都会长出设计问题，但长出来的那一条，适合交给原型。</p>
 </section>
 
 <section>
   <h2>问题与概念：什么算事故，复盘要留下什么</h2>
   <p>先把同事那次经历复现一遍。按第 26 课量过的办法，用 fixture 直接写 10001 条进 <code>kb.jsonl</code>，文件大约 3 MB；然后跑十条 <code>python -m kb add</code>，在一台普通开发机上每条 0.35 到 0.5 秒，平均 0.38 秒，你的机器会在这个量级上下浮动。这个数字单看不算什么，乘上两千就是十二分半。同事等的那九十秒里，其实只写进去两百多条。系统没有报错，也没有哪条数据写坏，可对他来说，这个工具已经不能用了。这种事在行业里算不算事故？</p>
-  <p>算。Google SRE（Site Reliability Engineering，站点可靠性工程）的做法是先定触发条件（trigger），事后才不用为「这算不算事故」吵一轮。他们列的常见条件有五条，第一条原文是「User-visible downtime or degradation beyond a certain threshold（用户可见的停机或退化超过某个阈值）」，后面四条依次是任何形式的数据丢失、需要值班工程师介入、恢复时间超过某个阈值、监控失效；最后还留了一条兜底：「any stakeholder may request a postmortem for an event.（任何相关方都可以要求为某个事件写复盘。）」（SRE Book, ch.15）。注意第一条用的词是 degradation（退化），不是 outage（停机）：慢到人以为坏了，和直接报错，在用户那里是一回事。阈值要在事故发生之前定好，否则每次都要临时争论。</p>
+  <p>算。Google SRE（Site Reliability Engineering，站点可靠性工程）的做法是先定触发条件（trigger），事后才不用为「这算不算事故」吵一轮。他们列的常见条件有五条，第一条原文是「User-visible downtime or degradation beyond a certain threshold（用户可见的停机或退化超过某个阈值）」，后面四条依次是任何形式的数据丢失、需要值班工程师介入、恢复时间超过某个阈值、监控失效；最后还留了一条兜底：「any stakeholder may request a postmortem for an event.（任何相关方都可以要求为某个事件写复盘。）」（SRE Book, ch.15）。第一条用的词是 degradation（退化），不是 outage（停机）：慢到人以为坏了，和直接报错，在用户那里是一回事。阈值要在事故发生之前定好，否则每次都要临时争论。</p>
   <p>事故一旦成立，就有两条并行的线。第一条是 incident management（事故管理），SWEBOK 的定义是：「the process of recording, prioritizing and assessing the business impact, resolution, escalation and closure of software incidents.（记录、排优先级、评估业务影响、解决、升级和关闭软件事故的流程。）」（ch.6, §4.1, printed 6-11）。它的首要目标是让服务尽快恢复，同时把证据留住。第二条线是 postmortem（事故复盘），SRE 的定义是：「a written record of an incident, its impact, the actions taken to mitigate or resolve it, the root cause(s), and the follow-up actions to prevent the incident from recurring.（一份事故的书面记录，包含影响、为缓解或解决它采取的动作、根因，以及防止它再次发生的后续动作。）」（ch.15）。它的目标是让下一次不再发生，或者发生时更快被认出来。</p>
   <p>这两件事经常被混在一起做，结果两头都做不好。事故当下时间很紧，人容易只盯着技术问题，顾不上记录；复盘需要的是完整证据和冷静判断，当下根本没有。SRE 把顺序写进了最佳实践的第一条：「Prioritize. Stop the bleeding, restore service, and preserve the evidence for root-causing.（先定优先级：止血、恢复服务，同时把用于查根因的证据留下来。）」（ch.14）。止血和保证据要同时安排；等止完血再回头补证据，很多现场已经没了。补不回来的证据，就是复盘里那段只能写「大概」的时间线。</p>
-  <p>复盘的底色是 blameless（无责）。SRE 的定义值得逐字读：「For a postmortem to be truly blameless, it must focus on identifying the contributing causes of the incident without indicting any individual or team for bad or inappropriate behavior. A blamelessly written postmortem assumes that everyone involved in an incident had good intentions and did the right thing with the information they had.（真正无责的复盘，必须专注于找出事故的促成原因，而不指控任何个人或团队行为不当。无责的复盘假定每个参与者都怀着良好意图，并依据当时掌握的信息做了正确的事。）」理由紧接着就给出来了：「If a culture of finger pointing and shaming individuals or teams for doing the "wrong" thing prevails, people will not bring issues to light for fear of punishment.（如果指认和羞辱的文化盛行，人们会因为害怕惩罚而不敢把问题摆到台面上。）」而复盘最需要的恰恰是那些平时没人愿意说的事。</p>
-  <p>无责不等于不批评。SRE 在同一章里写得很清楚：无责的复盘「should call out where and how services can be improved（应当指出服务在哪些地方、以什么方式可以改进）」。它给出的对照很具体。指认式的写法是：「We need to rewrite the entire complicated backend system! It's been breaking weekly for the last three quarters…（我们得把整个复杂的后端重写！过去三个季度每周都坏……）」无责的写法把同一件事说成：「An action item to rewrite the entire backend system might actually prevent these annoying pages from continuing to happen, and the maintenance manual for this version is quite long and really difficult to be fully trained up on. I'm sure our future on-callers will thank us!（把重写整个后端列成一项后续动作，也许真能阻止这些烦人的告警继续出现；这个版本的维护手册也确实很长，新人很难完全上手。我相信以后值班的人会感谢我们。）」两段话都要求重写，区别在于一段在找人出气，一段在说系统哪里该改。无责的对象是人，不是系统。</p>
+  <p>复盘的底色是 blameless（无责）。SRE 的定义值得逐字读：「For a postmortem to be truly blameless, it must focus on identifying the contributing causes of the incident without indicting any individual or team for bad or inappropriate behavior. A blamelessly written postmortem assumes that everyone involved in an incident had good intentions and did the right thing with the information they had.（真正无责的复盘，必须专注于找出事故的促成原因，而不指控任何个人或团队行为不当。无责的复盘假定每个参与者都怀着良好意图，并依据当时掌握的信息做了正确的事。）」SRE 给的理由是：「If a culture of finger pointing and shaming individuals or teams for doing the "wrong" thing prevails, people will not bring issues to light for fear of punishment.（如果指认和羞辱的文化盛行，人们会因为害怕惩罚而不敢把问题摆到台面上。）」而复盘最需要的恰恰是那些平时没人愿意说的事。</p>
+  <p>无责不等于不批评。SRE 在同一章里写得很清楚：无责的复盘「should call out where and how services can be improved（应当指出服务在哪些地方、以什么方式可以改进）」。它给的对照很具体。指认式的写法是：「We need to rewrite the entire complicated backend system! It's been breaking weekly for the last three quarters…（我们得把整个复杂的后端重写！过去三个季度每周都坏……）」无责的写法把同一件事说成：「An action item to rewrite the entire backend system might actually prevent these annoying pages from continuing to happen, and the maintenance manual for this version is quite long and really difficult to be fully trained up on. I'm sure our future on-callers will thank us!（把重写整个后端列成一项后续动作，也许真能阻止这些烦人的告警继续出现；这个版本的维护手册也确实很长，新人很难完全上手。我相信以后值班的人会感谢我们。）」两段话都要求重写，区别在于一段在找人出气，一段在说系统哪里该改：无责护着的是人，该改的是系统。</p>
   <p>界线可以写成一句话：可以写谁做了什么、当时掌握了什么信息、为什么这个决定在当时合理；不能写「某人疏忽」「某人不该」。把人物删掉、全用被动语态，也不是无责——那只是让责任无处可查。SRE 那句「You can't "fix" people, but you can fix systems and processes（你修不了人，但可以修系统和流程）」常被误读成「不许提人」；它要求的是把结论落在可修的系统上，而经过仍然要写清楚是谁、在什么信息下做的决定。</p>
   <p>复盘要落地，需要三个硬部件。时间线（timeline）是证据链：没有它，根因只能靠回忆，而回忆会被结果带偏。根因（root cause）是解释：没有它，后续动作只能治症状，下次换个形状再来。action item（后续动作）是交付：没有它，复盘就是一篇作文，写完就归档。SRE 在 Appendix D 的脚注里提了一句根因的常用手法：「It's often helpful to use a technique such as the 5 Whys [Ohn88] to understand the contributing factors.（用连问五个为什么之类的技巧来理解促成因素，往往有帮助。）」但没把它规定成标准动作；手法可以换，三层结构不能少——触发是什么、机制是什么、为什么没早点发现。</p>
 </section>
@@ -91,10 +91,10 @@
   </div>
   <p>类型沿用 Appendix D 的四种：mitigate（缓解）、prevent（预防）、process（流程）、other（其他）。想加检测类动作，按性质归进 prevent 或 process，不另立第五种。样例里的动作也长这样：「Plug file descriptor leak in search ranking subsystem / prevent / agoogler / Bug 5554825 DONE」（加完完成判据那列，它才算完整）。五列齐全，这条动作才有人接、有人查、有地方关。缺了负责人，它会在下一次复盘里原样出现；缺了完成判据，没人知道做到什么程度算做完。</p>
   <p>Lessons Learned 那三段也值得照这个结构写。除了「做对了什么」和「做错了什么」，Appendix D 特意留了一栏「Where we got lucky（哪里只是运气好）」，样例里写的是「Server logs had stack traces pointing to file descriptor exhaustion as cause for crash（服务器日志里恰好有调用栈，指向文件描述符耗尽）」。这一栏的价值在于：运气好的地方，下次不一定还这么好，它应该变成一条动作。只写前两段，等于把侥幸当成了能力。</p>
-  <p>要说明的是，模板是主流做法；SWEBOK 没有规定字段，也没有统一标准。SWEBOK 只规定事故之后「proper analysis and/or post mortems must be conducted to find the source of the incident and appropriate solutions must be implemented to prevent similar incidents to happen again in the future.（必须做恰当的分析或复盘，找出事故来源，并实施适当的解决方案，防止类似事故在未来再次发生。）」（ch.6, §4.1, printed 6-11）。不同公司用的模板差别很大。SRE 这套做法反复强调的三件事是：要无责、要有时间线、后续动作要有人负责。其余都可以按团队规模裁剪。</p>
+  <p>模板是主流做法；SWEBOK 没有规定字段，也没有统一标准。SWEBOK 只规定事故之后「proper analysis and/or post mortems must be conducted to find the source of the incident and appropriate solutions must be implemented to prevent similar incidents to happen again in the future.（必须做恰当的分析或复盘，找出事故来源，并实施适当的解决方案，防止类似事故在未来再次发生。）」（ch.6, §4.1, printed 6-11）。不同公司用的模板差别很大。SRE 这套做法反复强调的三件事是：要无责、要有时间线、后续动作要有人负责。其余都可以按团队规模裁剪。</p>
 
   <h3>复盘之后：评审、传播、跟进</h3>
-  <p>写完不等于完成。SRE 列的评审标准可能包括这五个问题（原文是「Review criteria might include」，不是一份固定清单）：「Was key incident data collected for posterity? Are the impact assessments complete? Was the root cause sufficiently deep? Is the action plan appropriate and are resulting bug fixes at appropriate priority? Did we share the outcome with relevant stakeholders?（关键数据留下来了吗？影响评估完整吗？根因够深吗？动作计划和 bug 优先级合适吗？结果同步给相关方了吗？）」（ch.15）。评审主要用来补证据缺口：影响面缺一个数字、根因停在了「有人改错了代码」这种层面、动作全是「加强意识」，这几类最常被退回来。</p>
+  <p>写完不等于完成：SRE 列的评审标准可能包括这五个问题（原文是「Review criteria might include」，不是一份固定清单）：「Was key incident data collected for posterity? Are the impact assessments complete? Was the root cause sufficiently deep? Is the action plan appropriate and are resulting bug fixes at appropriate priority? Did we share the outcome with relevant stakeholders?（关键数据留下来了吗？影响评估完整吗？根因够深吗？动作计划和 bug 优先级合适吗？结果同步给相关方了吗？）」（ch.15）。评审主要用来补证据缺口：影响面缺一个数字、根因停在「有人改错了代码」这种层面、动作全是「加强意识」，这三类最常被退回来。</p>
   <p>SRE 还写了一句不留余地的话：「An unreviewed postmortem might as well never have existed.（没经过评审的复盘，等于不存在。）」他们的做法是把评审排进固定节奏，评审会上把没关的讨论关掉、把想法记下来、把状态定死，然后归档进事故库。传播也有一套：每月挑一份写得好的复盘分享、建阅读小组、让新人用旧复盘做角色演练。目的只有一个——让没参与那次事故的人也学到东西，否则同一类事故会换个团队再发生一次。</p>
   <p>跟进要落在工单上：动作项进团队的任务系统、带优先级、定期回看。SRE 在 Appendix D 的脚注里提醒过另一面：「"Knee-jerk" AIs often turn out to be too extreme or costly to implement, and judgment may be needed to re-scope them in a larger context.（条件反射式的动作项往往过激或太贵，需要放到更大的上下文里重新收窄。）」一份复盘排出二十条动作，和一条都没有，效果差不多——区别只是前者让人更累。比较稳的做法是：先保证每条都有负责人和判据，再按风险排序，宁可少而结实。</p>
 </section>
@@ -123,13 +123,13 @@
 <section>
   <h2>三个常见误区</h2>
   <p><strong>把复盘写成检讨书。</strong>最常见的一句是「某某在操作时疏忽，没有检查配置」。这句话也许事实成立，但它让读的人只记住一个人名，记不住系统哪里薄弱。无责的改法是把同一件事写成可修的东西：「当时的界面只显示当前值，没有显示改动会影响哪些条目；操作者按看到的信息判断，结果是错的。」后一句里没有罪人，但有一处明确的改进点。SRE 说「You can't "fix" people, but you can fix systems and processes…（你修不了人，但可以修系统和流程……）」，说的就是这个转换。界线还是同一句：可以写谁做了什么、当时以为什么；不能写「某人疏忽」「某人不该」。检讨书还有一个副作用：下一次出事，当事人第一反应是先把痕迹处理干净，信息就断了。</p>
-  <p><strong>把时间线写成流水账。</strong>「15:20 重启服务」是一条动作，不是一条记录。复盘要的是当时看到了什么、以为什么、为什么这么决定：「15:20 重启服务——当时以为内存泄漏，事后看这个判断是错的，重启只是让它重新读了一遍索引，所以看起来好了一分钟。」后一种写法让读者能复现判断，也能看出哪一步的信息不足。SRE 把 Appendix D 的时间线叫作「a "screenplay" of the incident（事故的剧本）」。剧本该写成什么样，SRE 没有细说；本课的做法是让每条带上当时看到什么、以为什么、做了什么决定，比单纯的动作清单更能复现判断。</p>
+  <p><strong>把时间线写成流水账。</strong>「15:20 重启服务」只记了动作，没有记判断。复盘要的是当时看到了什么、以为什么、为什么这么决定：「15:20 重启服务——当时以为内存泄漏，事后看这个判断是错的，重启只是让它重新读了一遍索引，所以看起来好了一分钟。」后一种写法让读者能复现判断，也能看出哪一步的信息不足。SRE 把 Appendix D 的时间线叫作「a "screenplay" of the incident（事故的剧本）」。剧本该写成什么样，SRE 没有细说；本课的做法是让每条带上当时看到什么、以为什么、做了什么决定。</p>
   <p><strong>把后续动作写成口号。</strong>「加强监控」「提高安全意识」「完善流程」这三句放在任何一份复盘里都成立，所以它们不指向任何具体改动。可执行的写法要落到能验证的动作上：「在 CI 里加一条基准，10000 条数据时 <code>search</code> 超过 1 秒就红」「给批量导入加进度输出，中断后能从最后一条续跑」「导入前先用 20 条估总耗时，预计超过 5 分钟就在操作说明里标出来」。同时留个心眼：动作不是越多越好，条件反射式的动作项经常过贵，最后没人做，反而把复盘的可信度耗掉了。</p>
 </section>
 
 <section>
   <h2>练习与带走：把一次退化写成一份无责复盘</h2>
-  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做，但事故现场放在一个临时目录里，别拿你平时用的 <code>kb.jsonl</code> 开刀。这次是 drill（演练）：你同时扮演上报问题的同事、值班的人、和事后写复盘的人。演练记录的是你这次真实操作的时间；复盘开头注明「演练重放」，读者就不会误会成生产事故。做过 26–28 课练习的人，把 <code>fix-layer.md</code> 和摩擦清单放在手边当提问清单；没做过的，用下面给的场景直接开始，不影响完成。</p>
+  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做，但事故现场放在一个临时目录里，别拿你平时用的 <code>kb.jsonl</code> 开刀。这次是 drill（演练）：你同时扮演上报问题的同事、值班的人和事后写复盘的人。演练记录的是你这次真实操作的时间；复盘开头注明「演练重放」，读者就不会误会成生产事故。做过 26–28 课练习的人，把 <code>fix-layer.md</code> 和摩擦清单放在手边当提问清单；没做过的，用下面给的场景直接开始，不影响完成。</p>
   <ol>
     <li><strong>搭演练现场，先开记录。</strong>下面这段在 PowerShell 里整段粘贴。临时目录只放演练用的 <code>kb.jsonl</code>，记录都写回沙盒仓库：
       <pre><code>$repo  = "D:\code\my_projects\se-course-sandbox"
@@ -199,7 +199,7 @@ Set-Location $drill</code></pre>
   <ol>
     <li>事故管理和复盘是两件事：一个止血、保证据，一个解释、防复发。事故当下可以边止血边记录，完整的复盘要等现场稳定之后再开。</li>
     <li>无责把矛头从人转向系统：可以写谁做了什么、当时以为什么，不能给人定罪；时间线要写判断和证据，不能只写动作。</li>
-    <li>复盘的交付不是文档，是四条带负责人和判据的动作；没有动作的复盘，下次会原样再来一遍。</li>
+    <li>复盘要交的是四条带负责人和判据的动作；文档写完不算交付，没有动作的复盘，下次会原样再来一遍。</li>
   </ol>
 </div>
 
