@@ -22,7 +22,7 @@
     <tbody>
       <tr><td class="skill">Configuration &amp; Operations（配置与运维）</td><td>第 26–28 课（诊断修复、回归、改良提案）都在「还来得及改代码」的范围内；第 25 课在验收的位置上做裁决。这课处理系统已经在跑之后的事：SWEBOK ch.6 §1.1 把运维定义为保证产品「在真实运行条件下」运转；§4.1 把事故管理定义为记录、排优先级、评估业务影响、解决、升级、关闭；同一节要求事故之后必须做分析或复盘。第 30 课转进模块 6「专业实践与 AI」。</td></tr>
       <tr><td class="skill">输入从哪来</td><td>第 27 课 <code>.scratch/diagnosis/fix-layer.md</code> 与提交里写下的根因——那是另一个 bug 的记录，只借它的提问方式（规则写在哪、谁该守它），不能直接当这次性能事故的根因；第 28 课摩擦清单与改良提案（「后续动作」的候选）；第 24 课 CI 检查清单（「检测」类动作的落点）。</td></tr>
-      <tr><td class="skill">给下一课的起点</td><td>一份复盘加一张动作表。动作里「要不要换一种做法」的那条，是第 30 课 prototype 要回答的设计问题。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一份复盘加一张动作表。动作里「要不要换一种做法」的那条，可能需要第 30 课的原型或一次基准测试：状态模型问题用可按的页面，性能问题用基准脚本。</td></tr>
     </tbody>
   </table>
 </div>
@@ -80,7 +80,7 @@
     <tbody>
       <tr><td class="what">活文档（事故当下）</td><td><code>.scratch/incident-2901/live.md</code>，照 Appendix C：摘要、状态、指挥、退出条件、TODO 与已开 bug、倒序时间线</td></tr>
       <tr><td class="what">无责复盘</td><td><code>docs/postmortems/2026-11-05-kb-import-degradation.md</code>，九个内容栏齐全，开头注明「演练重放」</td></tr>
-      <tr><td class="what">后续动作与工单</td><td>动作四条，覆盖缓解、预防、流程、检测四类，各有五字段；至少一条落 <code>.scratch/incident-2901/issues/01-&lt;slug&gt;.md</code>，<code>Status:</code> 取 <code>triage-labels.md</code> 的五个值之一</td></tr>
+      <tr><td class="what">后续动作与工单</td><td>动作四条，覆盖缓解、预防、流程、检测四种关注点（类型按 mitigate / prevent / process / other 记），各有五字段；至少一条落 <code>.scratch/incident-2901/issues/01-&lt;slug&gt;.md</code>，<code>Status:</code> 取 <code>triage-labels.md</code> 的五个值之一</td></tr>
     </tbody>
   </table>
 </div>

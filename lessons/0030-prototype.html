@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 30 课 · 原型：可丢弃代码回答一个设计问题</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 6 · 专业实践与 AI · 第 30 课</p>
+  <h1>原型：可丢弃代码回答一个设计问题</h1>
+  <p class="lede">第 29 课的复盘排出了四条后续动作。缓解那一类里，常有一条写成「加进度输出，中断后能从最后一条续跑」。把它写进工单之前，团队在白板前争了二十分钟：续跑从哪一条算？进度按文件行数还是按这次导入的条数？导入到一半，别人又往文件里追加了一条，怎么办？三个人给了三种答案，每种听起来都有道理。</p>
+  <p class="lede">这一课讲一种更便宜的办法：先写一段用完就扔的代码，让所有人能按按钮、看状态变化，把白板上的争论变成一个可以观察的问题。学完带走一个被回答的问题，代码留在分支上。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 阅读 45–55 分钟，练习另计</span>
+  <span><b>前置</b> 第 29 课（复盘与动作表）；第 20 课（测试先行的边界）</span>
+  <span><b>产出</b> 一个被回答的问题，代码留在分支上</span>
+  <span><b>主读物</b> SWEBOK v4 ch.11 §4.3；ch.1 §5.3；SE-EDU《Gathering Requirements》Prototyping 节</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：原型不是生命周期里的一个阶段，它是在需求、设计、构造之间临时插入的一次实验，用来回答一个具体问题。</li>
+    <li>用一句话定义 prototype（原型）：throwaway code that answers a question（回答一个问题的、用完就扔的代码），并说清它和演化式原型、产品第一版的区别。</li>
+    <li>在写代码之前把问题写成一句话，并判断这个问题值不值得用代码回答。</li>
+    <li>按 SWEBOK 的三种风格选：throwaway（丢弃式）、evolutionary（演化式）、executable specification（可执行规格），说清各自的代价。</li>
+    <li>按问题选 <code>prototype</code> 技能的两条路线：逻辑 / 状态模型，还是 UI（用户界面）变体；知道选错路线整次白做。</li>
+    <li>把逻辑放进可搬走的纯模块，页面只当壳；知道在 Python 项目里能搬走的是模型，不是 JavaScript 文件。</li>
+    <li>收尾：把答案写成一句决定，原型提交到独立分支，主分支留记录和决定、不留原型代码，并在工单上留指针。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：主线走不通时，先做一次实验</h2>
+  <p>第 2 课把软件工程拆成八个活动：需求、设计与架构、构造、测试与质量、维护与演进、过程与管理、Configuration &amp; Operations（配置与运维）、Professional Practice（专业实践）。前五个模块沿着这条线走了大半：在验收的位置上裁决，在维护的位置上修 bug、防复发、提改良，在运维的位置上处理事故。每一课都在某个活动里交付一件东西。</p>
+  <p>模块 6 在课程地图上对应 Professional Practice（专业实践）：真实工作不总在主线，有时下一步不清楚，有时手上没有事实，有时上下文已经装不下。原型是专业实践里的一种手段，但它回答的问题落在需求、设计、构造三个活动里，所以它的位置是跨活动的，不是八个活动之外的第九个。这一课处理「下一步不清楚」：先做一次小实验，答完就撤。</p>
+  <p>输入来自第 29 课的动作表。那张表要求四条动作覆盖缓解、预防、流程、检测四种关注点；类型仍按 mitigate（缓解）/ prevent（预防）/ process（流程）/ other（其他）记，检测类归进 prevent 或 process。四类关注点的性质并不一样：预防那一类里的「换成增量索引」是一个性能问题，答案要用基准数据说话，原型的载体是一段基准脚本；缓解那一类里的「加进度输出，中断后续跑」是一个状态模型问题，分歧在进度怎么记、恢复从哪开始，原型的载体是一个能按按钮的页面。这一课取后者，因为它能把争论直接摆在屏幕上；前者留给第 31 课的研究，或者一次单独的基准测试。</p>
+  <p>给第 31 课留的边界也在这里。自己动手能观察到的，用原型或基准；需要外部资料的，用研究。某个库的极限、某条标准的原文、别人踩过的坑，都要去读、去查、把出处留下。第 32 课接着讲：什么时候该停，什么时候该换上下文。</p>
+</section>
+
+<section>
+  <h2>问题与概念：用一段可丢弃的代码换一个答案</h2>
+  <p>先把白板前那场争论摆开。导入两千条读书笔记，每条调用一次 <code>python -m kb add</code>，按第 29 课量过的速度推算，全部跑完要十二分半。有人按了 Ctrl-C，已经写进去两百多条。现在要加一个「续跑」功能，问题有三个：进度显示成什么？恢复时从哪一条开始？别人同时往 <code>kb.jsonl</code> 里写了一条，算不算数？</p>
+  <p>三个人给了三种做法。第一种说进度就是文件行数，恢复时用当前行数减开始时的行数，简单直接。第二种说不行，文件不是你一个人在写，行数会跳。第三种说那就记最后一条的 id，从下一个 id 接着排。每种做法在纸上都讲得通，可它们对「别人追加了一条」的反应完全不同，而这件事靠争论是争不出来的。</p>
+  <p>于是你花一个下午，写了一个单文件 HTML：上面一排按钮，中间一块状态面板，下面五个标签页，每个标签页是一个场景。按钮有开始、写一条、中断、恢复、完成、取消；状态面板用业务语言显示「已导入几条」「共几条」「下一条从哪开始」「文件里现有几条」，字段名放在括号里。第三个场景在中断后模拟「外部追加一条」；点到它，用文件行数算进度的版本会多算一条，恢复后跳过一条记录；换成会话自己的计数器，数字就不动。屏幕上直接看见差别，争论结束了。</p>
+  <p>还有一个容易被忽略的细节：Ctrl-C 之后，内存里的计数器已经没了。真实 CLI 每条命令都是一个新进程，能活下来的只有写到磁盘上的东西。所以原型必须把「检查点」（checkpoint）单独画出来：中断时哪些字段被存下，恢复时又从哪些字段重建。这一步不做，原型给出的「会话计数器」在真实进程模型里就不成立。技能的规矩是默认不做持久化，但它有一个例外：当被验证的问题就是持久化时，用一个标着 <code>PROTOTYPE</code>、可以随时清空的临时文件（或一个明确模拟文件的独立对象）模拟检查点，不接真实的 <code>kb.jsonl</code>。这道题正好落在例外里。</p>
+  <p>这就是 prototype（原型）。SWEBOK 的定义是：「Software prototyping is an activity that generally creates incomplete or minimally functional versions of a software application, usually for trying out specific new features; soliciting feedback on software requirements or user interfaces; further exploring software requirements, software design, or implementation options; or gaining some other useful insight into the software.（软件原型开发通常创建不完整或仅具备最低限度功能的软件版本，用来试用特定新功能、征求对需求或界面的反馈、进一步探索需求、设计或实现选项，或者获得关于软件的其他有用认识。）」（ch.11, §4.3, printed 11-9）。定义里没有「第一版」的意思，它说的是「不完整」「最低限度」「用来探索」。</p>
+  <p>同一节还有一句更硬的判据：「The software engineer selects a prototyping method to first understand the least understood software aspects or components. This approach contrasts with other software engineering methods that usually begin development with the best-understood portions first.（软件工程师选择原型方法，是为了先理解最不理解的软件方面或组件。这与通常从最熟悉的部分开始开发的其他软件工程方法形成对照。）」这句话决定了原型的选题：不是把已经想清楚的部分搭一遍，而是把最不确定、最容易吵起来的那一块推到眼前。导入续跑的争论正好落在这一块上。</p>
+  <p>SWEBOK 把原型分成三种风格。第一种是 throwaway（丢弃式）：用完就扔，不进入产品，也可以只是一张纸。第二种是 evolutionary（演化式，原文说 as an evolution of a working design）：从一个能跑的简化版开始，逐步长成产品。第三种是 executable specification（可执行规格）：原型本身就是规格，用来对齐行为，后面再按它实现。三种都叫原型，但账完全不同。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>风格</th><th>是什么</th><th>什么时候用</th><th>代价</th></tr></thead>
+      <tbody>
+        <tr><td class="what">throwaway（丢弃式）</td><td>答完问题就扔，代码不进入产品</td><td>问题相对独立，答案比代码值钱</td><td>答案要自己搬进真代码；搬的时候可能发现语言或结构不兼容</td></tr>
+        <tr><td class="what">evolutionary（演化式，原文 as an evolution of a working design）</td><td>从能跑的简化版逐步长成产品</td><td>需求和架构都还在变，产品可以这样长</td><td>原型期的捷径会变成产品的债；「先这样，以后再改」多半不会改</td></tr>
+        <tr><td class="what">executable specification（可执行规格）</td><td>原型就是规格，用来对齐行为</td><td>行为难用文字说清，需要共同参照</td><td>规格和实现两份定义，容易漂移</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>SWEBOK 说风格取决于项目需要什么结果、需要多好的结果、以及多急（ch.11 §4.3, printed 11-9）。落到操作上，可以先用一条默认规则：默认丢弃式；只有确定这段代码要进产品、团队也接受边做边改，才选演化式；只有当行为本身就是验收标准、需要一份可执行规格时，才选可执行规格。这一课用第一种。原因很实际：导入续跑只是整个 CLI 的一个功能，原型里的按钮、标签页、状态面板都不该进入产品；真正要带走的是那个状态模型。</p>
+  <p>原型也有代价，SWEBOK 在需求一章里写得很直白：「However, a danger of prototyping is that cosmetic issues or quality problems with the prototype can distract the reviewers' attention from the core underlying functionality. Prototypes can also be costly to develop.（然而，原型的一个危险是：原型在外观或质量上的问题，可能把评审者的注意力从核心功能上引开。原型开发也可能很贵。）」（ch.1, §5.3, printed 1-16）。这两句话对应两个常见失败：演示效果压过问题，以及原型越做越大。工程基础一章补了约束条件：「prototype construction must have a clear purpose and be planned, monitored and controlled — it is a technique to study a specific problem within a limited context.（原型的构建必须有明确目的，并经过计划、监控和控制——它是在有限上下文中研究特定问题的一种技术。）」（ch.18, §6.3, printed 18-9）。</p>
+  <p>把这几段合起来，原型的概念可以收成三句话：它是一段用来回答问题的代码；它只回答一个问题；它的价值在答案，不在代码。第三句最容易被违反。代码一旦跑起来，人就会想留着它、加功能、接数据库，最后得到一个没有测试、没有错误处理、却已经在承担生产职责的东西。</p>
+</section>
+
+<section>
+  <h2>行业做法：先定问题，再选载体，最后把答案留下</h2>
+  <p>原型没有统一标准。SWEBOK 给的是风格、目标和评估方式的分类，SE-EDU 给的是用途清单，具体到「做多久」「做成什么样」，各家自己定。下面三条是主流做法和取舍；最后一条是 <code>prototype</code> 技能的做法，单独标出，不混进行业做法。</p>
+  <p><strong>第一条，先写问题，再选载体。</strong>问题决定载体：问「这个状态模型对不对」，载体是一个能按按钮的页面；问「这个算法够不够快」，载体是一段基准脚本；问「这个界面该怎么排」，载体是几张可以切换的变体。SE-EDU 在需求收集一章里把原型的用途列得很清楚：「A prototype is a mock up, a scaled down version, or a partial system constructed to get users' feedback.（原型是为了获取用户反馈而构建的模型、缩小版或部分系统。）」后面跟着三种用途：验证技术概念（proof-of-concept，概念验证）、在全面投入之前预览或比较多个方案、在受控条件下做早期现场测试；它还能用来发现需求（SE-EDU《Gathering Requirements》Prototyping 节）。用途不同，载体就不同；载体选错，问题就答不出来。</p>
+  <p><strong>第二条，用尴尬的场景驱动，不用顺利路径演示。</strong>SWEBOK 只说原型可以对照已实现的软件或目标需求来评估，也可以作为后续开发的模型；它没规定该挑哪些案例。本课的做法是先挑那些在纸上想不清的：中途中断、重复恢复、外部写入、最后一条写坏。顺利路径谁都想得到，它不能帮你发现模型的洞。做原型时最有价值的瞬间，是有人说「等等，这不该发生」——那说明模型在这里有洞，演示本身没失败。</p>
+  <p><strong>第三条，时间盒。</strong>一次到几天，视问题大小而定。这条没有标准，是经验判断。产物是到点时的答案，或者一句「还没答完，问题要砍」。比如给导入续跑定半天，到点只允许回答「进度按会话计数还是文件行数」；答不出，就把问题砍成「外部追加算不算本次进度」。超过这个范围，通常说明问题太大，或者你已经在造产品。SWEBOK 说原型可能很贵，指的就是这种失控：本来只想回答一个问题，最后做了一个缩小版系统。</p>
+  <p><strong>第四条，收尾两件事：答案进决策记录，代码进独立分支。</strong>答案要写成一句能指导实现的话，比如「进度用本次导入自己的计数器，不从文件长度推；恢复前先校验最后一行是否完整」。代码提交到一个独立分支，主分支不留它，工单上留一个指针。这样后来的人能看到原型、能重跑，但不会误以为它是产品代码。这一条是 <code>prototype</code> 技能的做法，不是行业标准；它解决的是「原型做完就散落在某人的临时目录里，没人知道结论」这个常见问题。</p>
+  <p>另外两种失败也不少见：问题太大，一个原型想同时回答状态、性能、界面三件事，最后一件都没答清；没有收尾，代码在本地、结论在脑子里，过两周连自己都想不起当时为什么这么定。前者靠时间盒和一句话问题来防，后者靠第四条来防。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：用 <code>prototype</code> 把问题做成可按的页面</h2>
+  <p>这一课在地图上的技能是 <code>prototype</code>。它的描述很直接：「Build a throwaway prototype to answer a design question. Use when the user wants to sanity-check whether a state model or logic feels right, or explore what a UI should look like.（构建一个用完就扔的原型来回答设计问题。用在用户想确认某个状态模型或逻辑是否对劲，或者想探索用户界面该长什么样的时候。）」Frontmatter 里没有 <code>disable-model-invocation</code>，所以模型可以自己拉起，你也可以直接说「用 prototype 试一下这个状态模型」。</p>
+  <p>技能的第一件事是选路线。技能里叫 branch，本课叫路线，避免和 git 分支混淆。它只有两条：问题关于业务逻辑、状态转移或数据形状，走 LOGIC 路线（逻辑 / 状态模型，对应 <code>LOGIC.md</code>），产物是一个自包含的 HTML，里面有可以随便点的按钮和分标签页的引导走查；问题关于界面该长什么样，走 UI 路线（User Interface，用户界面，对应 <code>UI.md</code>），产物是在同一路由上用 <code>?variant=</code> 切换的三套结构不同的变体，底部有一条浮动切换条，优先改造现有页面，没有现成页面才新建。技能原文特别强调：「The two branches produce very different artifacts, so getting this wrong wastes the whole prototype.（两条路线产出的东西很不一样，选错会浪费整个原型。）」导入续跑是状态转移问题，走 LOGIC。</p>
+  <p>选定路线后，技能给的规矩不多，但每条都对应一个失败模式。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>规矩</th><th>它防的是什么</th></tr></thead>
+      <tbody>
+        <tr><td class="what">从第一天就标成可丢弃，并且放得离它要服务的模块近</td><td>防止原型悄悄变成产品；也防止后来的人找不到它是在给谁做实验</td></tr>
+        <tr><td class="what">一条命令或双击就能跑</td><td>防止「装个环境再说」把非开发者挡在门外；按按钮的人越容易上手，反馈越快</td></tr>
+        <tr><td class="what">默认不做持久化；问题本身就是持久化时例外：用一个标着 <code>PROTOTYPE</code>、可随时清空的临时存储模拟</td><td>防止原型依赖真实数据；但像本课这样要验证「重启后靠什么恢复」，检查点必须能被看见、能被清空、能被重建</td></tr>
+        <tr><td class="what">不做功能打磨：没有测试，没有多余的错误处理，没有抽象；视觉上保持干净克制</td><td>防止把时间花在不会进入产品的部分；同时保证页面有人愿意点，不是越糙越好</td></tr>
+        <tr><td class="what">每次动作后显示完整状态</td><td>让「状态怎么变」可见；这是按按钮能替代争论的原因</td></tr>
+        <tr><td class="what">做完就捕获：答案进工单或提交，原型进独立分支，主分支留记录和决定</td><td>防止结论散失；也防止原型代码混进产品</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表里「不做功能打磨」那条，也解释了前置里的第 20 课。红绿循环是给要留下来的代码用的；原型不留下，所以不写测试。第 20 课说的是「先试、后补」；原型是彻底不留下，所以连补都不做。要留下的产品代码另起红绿循环，测试写在新代码上。把 TDD（测试驱动开发）套到原型上，会把一次小实验拖成一项工程，而且测试本身也在维护一段你并不打算保留的逻辑。</p>
+  <p>LOGIC 路线还有一个容易被忽略的要求：真正的逻辑要放在一个可以在页面之外独立存在的纯模块里，页面只是壳。技能原文的说法是，这个模块要「could be lifted out and dropped into the real codebase later（以后能被拿出来、放进真实代码库）」。它推荐的形式有纯 reducer（归约函数）、显式状态机、一组纯函数，或者一个方法不多、职责清楚的类；选哪种由问题决定。纯的意思是：只读 <code>state</code> 和 <code>action</code>，返回新的 <code>state</code>，不碰 DOM（文档对象模型），不写文件，页面只调用它并重画。形状大致是这样：</p>
+  <pre><code>function transition(state, action) {
+  switch (action.type) {
+    case "START":
+      return { ...state, status: "importing" };
+    case "WRITE_ONE": {
+      const written = state.written + 1;
+      return { ...state, written, nextIndex: state.startLine + written + 1 };
+    }
+    case "INTERRUPT":
+      return { ...state, status: "interrupted" };
+    case "RESUME":
+      return { ...state, status: "importing" };
+    default:
+      return state;
+  }
+}</code></pre>
+  <p>这里有一处技能和本课沙盒对不上。技能的产物是浏览器里的 JavaScript；在 JavaScript / TypeScript 项目里，这个模块通常能搬；换到 Python 项目，能搬的只是模型。技能原文只说 could be lifted out，没有承诺原样复制。所以要分清三件事。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>搬什么</th><th>不搬什么</th><th>怎么搬</th></tr></thead>
+      <tbody>
+        <tr><td class="what">状态字段、动作集合、状态 × 动作表、每个场景的预期结果、不变量（连续恢复幂等、外部追加不改本次进度）</td><td class="what">HTML、按钮、标签页、场景文案、样式</td><td class="what">在 <code>kb/</code> 新建一个纯模块（如 <code>kb/import_resume.py</code>），定义 <code>State</code> 和 <code>transition(state, action)</code>；把五个场景写成 pytest 用例；CLI 的 import 命令负责读写检查点</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>移植时有一件事原型没有回答，必须重新决定：真实 CLI 每条命令都是一个新进程，内存里的计数器会丢，检查点必须落盘。落成什么格式、放在哪、每条命令怎么读它、外部追加怎么发现，都是实现前要补的。所以「模型定了，重写只是翻译」不准确：重写主要是翻译，但进程模型和持久化要重新做一次决定。</p>
+  <p>那 agent 具体做什么、人又做什么？Agent 负责把问题变成可点的页面：选路线、搭壳、写纯模块、生成场景、根据你的一句「这不该发生」改模型。人负责四件它替不了的事：判断这个问题值不值得用代码回答；判断哪些场景算尴尬；点完之后判断「这个模型对不对」；决定把哪一部分折进真代码、什么时候停。判断值不值得有个粗标准：值得——答案会改变实现、纸上推不清、错了代价高；不值得——查文档就有答案、决定可以便宜地改、问题本身还没定（先访谈或 grill）。</p>
+  <p>Agent 不知道你的业务规则，它会把一个漂亮但错误的模型实现得很完整；它也容易顺手加打磨、加持久化，正好违反技能自己的规矩。技能说的 fold into the real code，在这一课落实为把决定写进工单和验收判据；功能实现时再按它写产品代码。这一步不实现产品代码。</p>
+  <p>怎么判断这次原型生效了？看两个信号。第一，你能用一句话写出决定，这句话能直接指导实现，不是「感觉好多了」。第二，过程中至少有一个瞬间推翻了你原来的想法——某个状态根本到不了、某个动作在两个状态下都合法、某个边界会重复写入。如果点完只确认了原来的想法，要么问题太简单，要么场景挑得太安全。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>把原型当产品第一版。</strong>最典型的说法是「反正能跑，先上线再补测试」。原型里的捷径——没有错误处理、状态存在内存里、按钮直接改全局变量——在演示时是优点，在生产里是债。SWEBOK 说原型通常要经过大量返工或重构才能成为最终产品，说的就是这笔账。更稳的做法是把它当实验记录：代码留在分支上，决定进工单，产品代码另起一遍。这样既不丢实验结果，也不把实验的脚手架带进产品。</p>
+  <p><strong>先写页面，再想问题。</strong>页面比问题容易开始，于是很多人先搭一个漂亮的壳，再回头找问题。结果是壳越做越细，问题越拖越模糊。技能要求把问题写在演示页顶部的可见介绍里，注释不算。打开页面第一眼看到的应当是「这个原型在回答什么」。问题写不出来，说明还没到写代码的时候。</p>
+  <p><strong>用演示效果代替答案。</strong>SWEBOK 特意提醒，原型在外观或质量上的问题会把评审者的注意力从核心功能上引开。一个顺滑的动画、一套好看的配色，很容易让人给出「感觉不错」的评价，而真正的问题是「中断后恢复会不会重复写」。防这个的办法很土：把问题写在页面顶部，把尴尬场景做成必须点的标签页，最后交的是答案。</p>
+</section>
+
+<section>
+  <h2>练习与带走：把「中断续跑」做成一个可按的状态模型</h2>
+  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做，原型文件放在仓库根目录的 <code>prototypes/</code> 下，不放进 <code>kb/</code>。这次要回答的主问题是：中断后恢复的进度，应该由文件行数推算，还是由本次导入自己记的检查点决定？要看的三个方面是：状态里记什么、状态面板露出什么、哪些动作在哪些状态下合法。做过第 29 课练习的人，从自己的动作表里取出那条缓解动作；没做过的人，用下面给的场景直接开始。</p>
+  <ol>
+    <li><strong>把问题写成一句话。</strong>建 <code>.scratch/prototype-3001/</code>，在里面写 <code>question.md</code>：一句主问题，再用一小段说明这个原型在模拟什么状态模型、该看哪几个场景。四个尴尬场景先列出来：中断恢复、外部追加、连续恢复两次、取消后恢复。写不出这句主问题，就先别写代码。</li>
+    <li><strong>先列状态、字段和动作。</strong>状态至少五种：未开始、导入中、已中断、已完成、已取消。动作至少六个：开始、写入一条、中断、恢复、完成、取消。状态里至少记这些字段：<code>status</code>、<code>total</code>（这次要导入多少条）、<code>start_line</code>（开始时文件里有多少行）、<code>written</code>（本次会话成功写入多少条）、<code>last_written_id</code>（最后一条写成功的 id，如 <code>e0005</code>）、<code>last_written_seq</code>（id 里的数字，如 <code>e0005</code> → 5）、<code>file_length</code>（当前文件里有多少行）。另设一个 <code>checkpoint</code> 对象模拟磁盘，至少放能重建 <code>next_index</code> 的字段：<code>start_line + written</code>（会话计数派），或 <code>last_written_seq</code>（最后 id 派），或中断前的 <code>file_length</code>（文件行数派）。<code>next_index</code> 不要直接存，定义成「下一条要写的第几条」（1-based），按你选的进度来源算：文件行数派是 <code>file_length + 1</code>（会把外部追加算进来）；会话计数派是 <code>start_line + written + 1</code>；最后 id 派是 <code>last_written_seq + 1</code>。不要拿 <code>last_written_id</code> 字符串直接加 1：在 JavaScript 里会变成 <code>"e00051"</code>，在 Python 里会报错。画两张表：一张状态 × 动作，标出哪些合法；一张字段表，标出每个字段从哪来、什么时候变。两张表合起来才是纯模块的骨架。</li>
+    <li><strong>让 agent 用 <code>prototype</code> 的 LOGIC 路线生成页面。</strong>把问题、两张表、四个尴尬场景一起交给它，产物落到 <code>prototypes/import-resume.html</code>。要求它：单文件、双击能开；页面顶部写一小段（模拟什么、回答什么、看哪几个场景）；纯模块放在一个 <code>&lt;script&gt;</code> 里且不碰 DOM；一组自由按钮（free-play，可以随便点），每个动作一个，任何状态都能点；五个场景各一个标签页，每个标签页先写这个场景在演什么、要观察什么，下面是一串按顺序点的真实按钮，点一步执行一步；每个场景开始时重置到同一个初始状态；状态面板用业务语言，字段名放在括号里，每次动作后把刚变化的字段标出来；把 <code>checkpoint</code> 单独画一块，中断时看清哪些进了检查点、哪些随内存消失。不要接真实 <code>kb.jsonl</code>，检查点由页面壳用一个标着 <code>PROTOTYPE</code> 的临时文件（或模拟文件的独立对象）读写，纯模块不碰文件、只处理 <code>state</code> 里的 <code>checkpoint</code> 字段；不要测试、不要框架、不要动画。</li>
+    <li><strong>自己点五个场景。</strong>正常跑完；中途中断再恢复；中断后模拟外部往 <code>kb.jsonl</code> 追加一条再恢复；连续点两次恢复（第二次应该被拒绝或没有效果）；取消后尝试恢复（这一条到底允不允许，由你决定）。每点一次，记下状态面板和检查点里哪个数字变了、哪个没变。遇到「这不该发生」的瞬间，立刻记进 <code>notes.md</code>，写成「我原来以为……，点出来是……」，包括你当时为什么那么以为。</li>
+    <li><strong>只改纯模块，不动页面。</strong>把每个发现变成一个状态转移的修改：补一个状态、禁掉一个动作、把进度来源从文件行数换成会话计数器、把某个字段加进检查点。改完重开页面，把五个场景再点一遍。HTML 结构、按钮和样式先别动；页面壳的问题记下来，别顺手加功能。</li>
+    <li><strong>收敛成一句决定。</strong>一句决定 = 一个主句 + 用分号隔开的条件，读起来是一句话，但每个条件都能单独验收。比如：「进度用本次导入自己记的 <code>written</code> 计数，不从文件长度推；恢复从最后一条写成功的记录之后开始（<code>start_line + written + 1</code>）；外部追加不计入本次进度；连续恢复两次结果相同；取消后不恢复。」把这句话放在 <code>verdict.md</code>（决定记录）第一行；下面每条条件各写一行依据，标上它来自哪个场景。然后回填第 29 课复盘 Action Items 里那条动作的「完成判据」；没有复盘文件的，抄进工单顶部。</li>
+    <li><strong>收尾：记录留主分支，原型进独立分支。</strong>先确认 <code>prototypes/import-resume.html</code> 还没有提交。在沙盒里按这个顺序做：
+      <pre><code>git switch -c prototype/import-resume
+git add prototypes/import-resume.html
+git commit -m "prototype: import resume"
+git switch master
+git add .scratch/prototype-3001
+git add docs/postmortems/2026-11-05-kb-import-degradation.md
+git add .scratch/incident-2901/issues/NN-import-resume.md
+git commit -m "docs: import resume prototype verdict"</code></pre>
+      把 <code>NN</code> 换成你的工单编号；没有的文件不要敲那条 <code>git add</code>，敲了报错就跳过继续。沙盒主干是 <code>master</code>，不是 <code>main</code>。工单落在第 29 课的 <code>.scratch/incident-2901/issues/</code> 下，用下一个编号，比如 <code>02-import-resume.md</code>；第 29 课那条缓解动作没有工单，就现在补一张；没做第 29 课，就在 <code>.scratch/prototype-3001/issues/01-import-resume.md</code> 建一张。工单顶部写指针：分支名、文件路径、那句决定。最后确认 <code>git status</code> 干净，<code>prototypes/</code> 只在 <code>prototype/import-resume</code> 分支上。切回 <code>master</code> 后，<code>prototypes/</code> 会从工作区消失，这是正常的——它在分支上，用 <code>git show</code> 或切过去看。</li>
+  </ol>
+  <p>做完的标准是这几条：问题能用一句话说清；页面双击能开，不装任何东西；五个场景都点过，<code>notes.md</code> 里至少有一条写着「我原来以为……，点出来是……」；<code>verdict.md</code> 第一行是一句决定，后面每条条件都能指回一个场景；纯模块不碰 DOM，页面只负责传动作和画状态；自由按钮、五个场景的引导步骤和重置都能用；检查点单独可见，中断后内存状态确实被清空；原型只在 <code>prototype/import-resume</code> 分支上，主分支有记录和决定、没有原型代码；工单上的指针能找到分支、文件和决定。地图上这课的产出到此兑现。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这个原型回答的是不是那个问题</h2>
+  <p>把问题、记录和原型一起交给 agent，让它只核对、不改写。记录在主分支上；原型在 <code>prototype/import-resume</code> 分支上。先读主分支的记录，需要看页面时用 <code>git show prototype/import-resume:prototypes/import-resume.html</code> 读，或者切过去打开，看完切回 <code>master</code> 再核对记录。它要真的点一遍或读纯模块，光看截图不算数。</p>
+
+  <pre><code>在沙盒仓库里核对第 30 课的原型。只核对，可以打开 HTML 或读代码验证，不要改原型。
+开始前确认 .scratch/prototype-3001/ 下的 question.md、notes.md、verdict.md 都在；
+原型在 prototype/import-resume 分支上。
+
+逐条检查：
+1. question.md 有没有一句主问题？它问的是不是「中断后状态怎么记、恢复从哪开始」
+   这一类模型问题，而不是「做一个导入功能」？
+2. 五个场景都能在页面上点到吗？点「外部追加」时，状态面板有没有真的区分
+   「会话计数器」和「文件行数」两种进度来源？
+3. 有没有哪个状态根本到不了，或者哪个动作在两个状态下都合法却没标出来？
+   把非法转移列出来。
+4. 纯模块有没有碰 DOM、document 或按钮处理器？页面是不是只负责传动作和画状态？
+5. verdict.md 第一行是不是一句决定（主句 + 分号条件）？后面每条条件能不能
+   指回 notes.md 里的某个场景？有没有「感觉不错」这类无法验收的结论？
+6. 检查点单独可见吗？中断后内存状态有没有被清空，恢复是不是只从检查点重建？
+7. 原型是不是只在 prototype/import-resume 分支上？主分支有没有残留原型文件？
+8. 工单上的指针是否写明了分支、文件路径和那句决定？
+
+结论：这个原型回答的是不是它开头提出的问题？这句决定里哪一条最站不住？</code></pre>
+
+  <p>读反馈时分三类处理。<strong>问题不清</strong>：<code>question.md</code> 写成了功能清单，就回去重写，直到它能用一句话判断「答没答完」。<strong>模型漏了</strong>：某个状态到不了、某个动作没禁、检查点里少了字段，就补状态、补转移或补字段，重跑场景，别用一句「实现时注意」糊过去。<strong>决定没落地</strong>：<code>verdict.md</code> 只有感觉没有判据，就把它改写成能指导实现和验收的句子；分支或指针不对，按第 7 步重做；工单不存在，就补一张。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>原型是一段用来回答问题的代码，只回答一个问题；它的价值在答案，不在代码。</li>
+    <li>问题写在代码前面，载体由问题决定；状态模型用可按的页面，性能问题用基准脚本，界面问题用变体。</li>
+    <li>收尾时把答案写成一句决定，记录留在主分支，原型留在独立分支；主分支留记录和决定，工单上留指针。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.11 Software Engineering Models and Methods §4.3 Prototyping Methods（printed 11-9，原型的定义、三种风格 throwaway / evolution of a working design / executable specification、四类目标、评估方式、「先理解最不理解的方面」，以及风格取决于结果类型、质量和紧迫程度）；ch.1 Software Requirements §5.3 Prototyping（printed 1-16，原型暴露假设、外观问题会分散注意力、原型可能很贵）；ch.18 Engineering Foundations §6.3 Prototyping（printed 18-9，原型必须有明确目的、在有限上下文中研究特定问题）。</p>
+  <p><strong>行业做法：</strong>SE-EDU《Gathering Requirements》Prototyping 节（本地 <code>courseware/se-education/book/gatheringRequirements/print.html</code>）：原型的定义「a mock up, a scaled down version, or a partial system constructed to get users' feedback」，以及四种用途（验证技术概念、预览或比较方案、早期现场测试、发现需求）。「做多久」「怎么收尾」没有统一标准；时间盒是经验判断，分支加指针是 <code>prototype</code> 技能的做法，不是行业标准。</p>
+  <p><strong>实践方式：</strong><code>prototype</code>（模型可拉起，frontmatter 无 <code>disable-model-invocation</code>）——两条路线（LOGIC.md：单文件 HTML、纯模块、自由按钮、分标签页的引导走查、每场景重置、业务语言；UI.md：同一路由下用 <code>?variant=</code> 切换的多套变体、浮动切换条、优先改造现有页面）；六条通用规矩（可丢弃、易运行、默认不持久化但持久化问题例外、不做功能打磨、显示状态、做完捕获）；逻辑路线的反模式（不写测试、不接真数据库、不做泛化、不把逻辑和页面混在一起、不用框架、不把壳带进生产）。技能文档只作实践方式，不作理论来源。沙盒 <code>kb</code> 是 Python，原型是 JavaScript，能搬走的是状态模型，不是文件本身。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 31 课「研究：把阅读外包，把引用留下」。原型回答「自己动手能观察到什么」，研究回答「外部资料里有什么」。如果第 29 课动作表里那条「换成增量索引」真要排期，先要弄清现有实现的上限、增量索引的代价、别人踩过的坑——这些不是按按钮能按出来的，要去读、去查、把出处留下。研究给出的证据，再回来决定要不要做第二个原型。</p>
+  <p>没答完的问题照老规矩记下来：<code>verdict.md</code> 里写「还没答」的，标上缺哪个场景；原型分支不合并，工单上的指针别删。第 31 课开工前先读主分支上的这份 verdict，看看哪些问题其实需要资料。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0030-prototype-card.html">原型参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

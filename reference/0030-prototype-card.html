@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原型参考卡 · 原型：可丢弃代码回答一个设计问题</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 30 课</p>
+  <h1>原型参考卡</h1>
+  <p class="lede">原型答完就撤；留下的是决定和分支上的记录。问题写在代码前面，载体由问题决定。收尾时把答案写成一句决定，记录留在主分支，原型留在独立分支。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>原型在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">跨需求、设计、构造</td><td>原型没有自己的阶段位置，它临时插进需求、设计或构造，回答一个具体问题，答完就撤。课程把它放在模块 6（专业实践与 AI），因为它是专业实践里的一种手段；它回答的问题落在三个活动里，所以位置是跨活动的。上一课（第 29 课）的动作表是输入，下一课（第 31 课）的研究接走「需要外部资料」的那类问题。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 29 课复盘的动作表。四条动作覆盖缓解、预防、流程、检测四种关注点；类型仍按 mitigate / prevent / process / other 记，检测类归 prevent 或 process。「加进度输出、中断后续跑」是状态模型问题，适合按按钮看变化；「换成增量索引」是性能问题，原型载体是基准脚本，也可以交给研究。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一句能指导实现的决定，加一个留在独立分支上的原型。第 31 课研究「外部资料里有什么」，第 32 课讲什么时候该停、该换上下文。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：一句话、三种风格、一条选择规则</h2>
+<div class="card-rule">
+  <p><strong>一句话：</strong>prototype（原型）是 throwaway code that answers a question（回答一个问题的、用完就扔的代码）；the question decides the shape（问题决定形状）。<strong>三种风格（SWEBOK ch.11 §4.3, printed 11-9）：</strong>throwaway（丢弃式，答完就扔，也可以只是一张纸）、evolutionary（演化式，原文 as an evolution of a working design，从简化版长成产品）、executable specification（可执行规格，原型就是规格）。<strong>选择规则：</strong>SWEBOK 说风格取决于结果类型、质量和紧迫程度；操作上默认丢弃式，只有确定代码要进产品、团队接受边做边改才选演化式，只有行为本身就是验收标准才选可执行规格。<strong>一个边界：</strong>只回答一个问题；问题变了就停。SWEBOK ch.18 §6.3（printed 18-9）：「prototype construction must have a clear purpose and be planned, monitored and controlled — it is a technique to study a specific problem within a limited context.」</p>
+</div>
+
+<h2>行业做法：三条主流做法，加一条技能做法</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">先写问题，再选载体</td><td>状态模型用可按的页面，性能问题用基准脚本，界面问题用变体。SE-EDU 的用途清单：验证技术概念（proof-of-concept）、预览或比较方案、早期现场测试、发现需求。</td><td>产物：一句主问题，加一小段说明模拟什么、看哪几个场景。代价：问题写不清就得先停，不能靠做页面把它蒙过去。</td></tr>
+      <tr><td class="what">用尴尬场景驱动</td><td>先挑纸上想不清的：中途中断、重复恢复、外部写入、最后一条写坏。顺利路径不能帮你发现模型的洞。</td><td>产物：一组必须点的场景。代价：要接受「这不该发生」的瞬间，而不是把它藏起来。</td></tr>
+      <tr><td class="what">时间盒</td><td>一次到几天，视问题大小而定。产物是到点的答案，或者一句「还没答完，问题要砍」。</td><td>这是经验判断，不是标准。代价：到点还没答案，要么砍问题，要么换方法。</td></tr>
+      <tr><td class="what">收尾两件事（技能做法，不是行业标准）</td><td>答案写成一句决定，记录留主分支；代码提交到独立分支，主分支不留原型代码，工单上留指针。</td><td>产物：决定 + 记录 + 分支 + 指针。代价：决定要自己搬进真代码，不能把原型直接上线。</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="small">SWEBOK 给风格、目标和评估方式的分类，SE-EDU 给用途清单；「做多久」「怎么收尾」没有统一标准。分支加指针是 <code>prototype</code> 技能的做法，不是行业标准。</p>
+
+<h2>AI + Matt：两条路线，四件人拍板的事</h2>
+<div class="skill">
+  <p><strong>调用：</strong><code>prototype</code>，模型可拉起（frontmatter 无 <code>disable-model-invocation</code>），也可以直接说「用 prototype 试一下这个状态模型」。<strong>两条路线（技能里叫 branch，本课叫路线，避免和 git 分支混淆）：</strong>LOGIC.md（业务逻辑、状态转移、数据形状——单文件 HTML、纯模块、可以随便点的按钮、分标签页的引导走查、每场景重置、业务语言）；UI.md（界面该长什么样——同一路由下用 <code>?variant=</code> 切换的多套变体、浮动切换条、优先改造现有页面）。选错路线会浪费整个原型。<strong>六条通用规矩：</strong>从第一天标成可丢弃、一条命令或双击能跑、默认不持久化但持久化问题例外、不做功能打磨（视觉上干净克制）、每次动作后显示完整状态、做完捕获。<strong>逻辑路线的硬要求：</strong>真正的逻辑放在可在页面之外独立存在的纯模块里（纯 reducer、显式状态机、一组纯函数，或方法不多、职责清楚的类），页面只负责传动作和画状态。反模式：写测试、接真数据库、做泛化、把逻辑和页面混在一起、用框架、把壳带进生产。<strong>人拍板四件：</strong>问题值不值得用代码回答、哪些场景算尴尬、模型对不对、折进真代码的是哪一部分。<strong>生效判据：</strong>能用一句话写出决定；过程中至少有一个发现推翻了原来的假设。<strong>局限：</strong>技能产出浏览器里的 JavaScript；在 JavaScript / TypeScript 项目里通常能搬，换到 Python 项目，能搬的只是状态模型。Agent 会把漂亮但错误的模型实现得很完整，也会顺手加打磨、加持久化。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p>把原型当产品第一版——「反正能跑，先上线再补测试」，原型期的捷径会变成产品的债。先写页面再想问题——壳越做越细，问题越拖越模糊；问题要写在页面顶部，注释不算。用演示效果代替答案——SWEBOK ch.1 §5.3（printed 1-16）提醒，原型在外观或质量上的问题会把评审者的注意力从核心功能上引开；最后交的是答案。</p>
+</div>
+
+<h2>练习产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">问题</td><td><code>.scratch/prototype-3001/question.md</code>：一句主问题，加一小段说明模拟什么、看哪几个场景（主分支）</td></tr>
+      <tr><td class="what">状态表</td><td><code>notes.md</code>（纸上只打草稿；交给 agent 的表要落成文字）：至少五种状态、六个动作、字段表加检查点、状态 × 动作表；<code>next_index</code> 是算出来的，不直接存</td></tr>
+      <tr><td class="what">原型</td><td><code>prototypes/import-resume.html</code>：单文件、双击能开、纯模块不碰 DOM、自由按钮、五个场景各一个标签页、每场景重置、业务语言、检查点单独可见（<code>prototype/import-resume</code> 分支）</td></tr>
+      <tr><td class="what">决定</td><td><code>.scratch/prototype-3001/verdict.md</code>（决定记录）：第一行一句决定（主句 + 分号条件），下面每条条件一行依据，标出被哪个场景逼出来（主分支）</td></tr>
+      <tr><td class="what">记录与指针</td><td><code>.scratch/prototype-3001/notes.md</code>（主分支）；工单写在 <code>.scratch/incident-2901/issues/</code> 下一个编号，或 <code>.scratch/prototype-3001/issues/01-import-resume.md</code>；顶部写分支名、文件路径、那句决定</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<div class="card-rule">
+  <p>问题能用一句话说清；页面双击能开，不装任何东西；五个场景（正常跑完、中断恢复、外部追加、连续恢复两次、取消后恢复）都点过，<code>notes.md</code> 里至少有一条「我原来以为……，点出来是……」；<code>verdict.md</code> 第一行是一句决定，后面每条条件都能指回一个场景；纯模块不碰 DOM、<code>document</code> 或按钮处理器，页面只负责传动作和画状态；自由按钮、五个场景的引导步骤和重置都能用；检查点单独可见，中断后内存状态确实被清空；原型只在 <code>prototype/import-resume</code> 分支上，主分支有记录和决定、没有原型代码；工单上的指针能找到分支、文件和决定。三类处置：问题不清→重写成一句话；模型漏了→补状态、补转移或补字段，重跑场景；决定没落地→改写成能指导实现和验收的句子，分支或指针不对就按收尾步骤重做。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0030-prototype.html">第 30 课「原型：可丢弃代码回答一个设计问题」</a></p>
+</footer>
+
+</main>
+</body>
+</html>

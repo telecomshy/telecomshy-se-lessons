@@ -20,7 +20,7 @@
 |---|---|---|---|
 | 理论 | `courseware/swebok/swebok-v4.pdf` | 第 1 章，p43–66 | 需求分类、elicitation、analysis、specification、validation、management |
 | 理论 | `courseware/se-education/book/requirements/print.html` | 全章 | 功能 / 非功能需求、需求优先级、验收 |
-| 实践 | `courseware/se-education/book/gatheringRequirements/print.html` | 全章 | 需求来源与 elicitation 的具体做法 |
+| 实践 | `courseware/se-education/book/gatheringRequirements/print.html` | 全章 | 需求来源与 elicitation 的具体做法；第 30 课用 Prototyping 节的 prototype 定义（「a mock up, a scaled down version, or a partial system constructed to get users' feedback」）与四种用途（验证技术概念、预览或比较方案、早期现场测试、发现需求） |
 | 实践 | `courseware/se-education/book/specifyingRequirements/print.html` | 全章 | 需求规格的写法 |
 | 讲义 | `courseware/cmu-17-313/pdfs/07-specs.pdf` | 全篇 | 规格的边界、验收标准 |
 | 经典 | Evans, *Domain-Driven Design*（2003）第 2 章 | 第 2 章 | Ubiquitous Language、bounded context |
@@ -113,6 +113,8 @@
 | 类型 | 本地来源 | 位置 | 用来讲什么 |
 |---|---|---|---|
 | 理论 | `courseware/swebok/swebok-v4.pdf` | 第 13 章、第 14 章 | 安全、职业实践、伦理 |
+| 理论 | `courseware/swebok/swebok-v4.pdf` | ch.11 §4.3 Prototyping Methods（PDF p240 = printed 11-9）、ch.1 §5.3 Prototyping（PDF p57 = printed 1-16）、ch.18 §6.3 Prototyping（PDF p374 = printed 18-9） | 第 30 课已逐字核实：原型定义（incomplete or minimally functional versions）、三种风格（throwaway / evolution of a working design / executable specification）、四类目标（需求规格、架构元素或组件、算法、人机界面）、评估方式、「先理解最不理解的方面」、风格取决于结果类型/质量/紧迫程度；ch.1 的原型暴露假设、外观问题分散注意、可能很贵；ch.18 的「明确目的、在有限上下文中研究特定问题」 |
+| 实践 | `courseware/se-education/book/gatheringRequirements/print.html` | Prototyping 节 | 第 30 课用：prototype 是「a mock up, a scaled down version, or a partial system constructed to get users' feedback」，用途包括验证技术概念（proof-of-concept）、预览或比较方案、早期现场测试、发现需求 |
 | 实践 | `courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf` | 全篇 | 负责任地使用 AI |
 | 案例 | `courseware/cmu-17-313/pdfs/04-737MAX.pdf` | 全篇 | 安全与组织失效 |
 | 实践 | `courseware/cmu-17-313/pdfs/05-Teams-Communication.pdf` | 全篇 | 团队与沟通 |
@@ -156,5 +158,6 @@
 - SWEBOK 没有 root cause / fault localization 专节：ch.5 §3.4 只在 ODC 语境提一句「reducing the time and effort of the root cause analysis」，ch.7 §2.3.1 提技术债要查 root causes，都不足以立「修根因不修症状」的据。第 27 课的「修的是哪一层」立据靠 MIT Reading 13 的 “2. Hypothesize”（症状点≠缺陷点）与 “Fix the bug”（coding error / design error 二分、「slap a patch」警告）；「修根因不修症状」与「回归测试先修还是先写」均按无统一标准的主流说法与取舍处理。
 - 遗留系统替换策略（strangler fig 之类）本地无正源：SE-EDU《Reuse》零命中，SWEBOK ch.7 §4.2 只说 reengineering「often undertaken…to replace aging legacy software」。第 28 课只借这句划边界（替换是另一场仗，不展开），改良提案的验收立据靠 SWEBOK ch.7 §2.1.3 影响分析 + §4.2 重构定义 + SE-EDU《Refactoring》+ 第 14 课 deletion test 与第 21 课 characterization test（Feathers 经典转引）。「改良该做多少」按 SE-EDU「It is too much refactoring when the benefits no longer justify the cost.」当取舍处理，无统一标准。
 - Ousterhout 摘录（`courseware/ousterhout/aposd2ndEdExtract.pdf`）只含 ch.6 与 ch.21，**“Design It Twice” 一章不在摘录里**；第 16 课的「你的第一个想法不太可能是最好的」按经典转引处理，出处以 `codebase-design/DESIGN-IT-TWICE.md` 的转述佐证，不作本地一手来源。
+- 原型方法论的近亲（XP 的 spike、Cockburn 的 walking skeleton、Hunt & Thomas 的 tracer bullet）本地无一手来源；第 30 课不引这些词，只引 SWEBOK 的三种风格与 SE-EDU 的用途清单。以后要展开「spike 与原型怎么分」，先补正源。
 
 > AI生成

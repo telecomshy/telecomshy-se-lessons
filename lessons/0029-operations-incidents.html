@@ -41,7 +41,7 @@
   <p>第 2 课把软件工程拆成八个活动：需求、设计、构造、测试、维护、过程、Configuration &amp; Operations（配置与运维）、专业实践。模块 5 覆盖其中三个——质量、维护与演进、配置与运维。第 25 课在验收的位置上做裁决，第 26 到 28 课在维护的位置上修 bug、防复发、提改良。这三课有一个共同点：都还来得及改代码。</p>
   <p>这一课换个位置。SWEBOK 给「软件工程运维」下的定义是：「the knowledge, skills, processes and tools used by software engineers or their organization to ensure that a software product, including IT infrastructure, system software, and application software, operates well during development, maintenance and in real conditions of operations.（软件工程师或其组织用来保证软件产品——包括 IT 基础设施、系统软件和应用软件——在开发、维护和真实运行条件下运转良好的知识、技能、流程和工具。）」（SWEBOK v4, ch.6, §1.1, printed 6-3）。定义里最关键的是最后半句「真实运行条件」：测试环境里跑得通不算数，用户在用的时候出事，才是运维要接的场面。</p>
   <p>入口线索有两条，都来自前两课留下的账。一条是第 27 课的 <code>.scratch/diagnosis/fix-layer.md</code> 和那次提交里写下的根因。那是另一个 bug（搜索顺序错）的记录，不是这次性能事故的答案；它能提供的是「规则写在哪、谁该守它」的提问方式。这次的根因要自己读 <code>kb/storage.py</code>、<code>kb/cli.py</code>，量一下大库下的 <code>add</code> 耗时。另一条是第 28 课的摩擦清单与改良提案，安排「后续动作」时，它们是现成的候选。这课把前面攒下的诊断和改良收进一个更大的容器：一次事故发生之后，组织到底该记住什么。</p>
-  <p>给第 30 课留下的东西也在这里。复盘排出来的动作里，可能有一两条光靠「修一下」解决不了，属于「要不要换一种做法」的问题——比如知识库要不要从整文件读写换成增量索引。这类问题正是 prototype（原型）要回答的：用可丢弃的代码先试一次，再决定值不值得做。复盘给出问题，原型给出答案；不是每份复盘都会长出设计问题，但长出来的那一条，适合交给原型。</p>
+  <p>给第 30 课留下的东西也在这里。复盘排出来的动作里，可能有一两条光靠「修一下」解决不了，属于「要不要换一种做法」的问题——比如知识库要不要从整文件读写换成增量索引。这类问题可以用 prototype（原型）或一次基准测试来回答：先做个小实验，再决定值不值得做。第 30 课讲怎么按问题选载体：状态模型问题（比如中断后续跑）用按按钮的页面，性能问题（比如增量索引）用基准脚本，也可以交给第 31 课的研究。复盘给出问题，实验负责回答。</p>
 </section>
 
 <section>
@@ -158,7 +158,7 @@ Set-Location $drill</code></pre>
 为什么没早发现：几百条时读文件只要几毫秒；CLI 没有进度输出，也没有性能基准，
       直到 10001 条、2000 条导入才暴露。</code></pre>
       影响面三档可以这样写：「实测：单条 add 0.38 秒（10 次），search 0.56 秒，中断时已写入 237 条。推算：2000 条 × 0.38 秒 ≈ 12.7 分钟（推算，非实测）。没量：当时还有多少人在用，没量。」</li>
-    <li><strong>列后续动作，每条五字段。</strong>至少四条，覆盖缓解、预防、流程、检测四类（检测类按性质归进 prevent 或 process）。例如：缓解——导入分批、加进度输出；预防——把整文件重读换成增量索引（这条从本课根因长出来，不在第 28 课的提案里，28 课提案是 id 与匹配规则那类候选）；流程——导入前先估耗时、超过阈值必须报进度；检测——CI 加一条性能基准。每条写清动作、类型、负责人、完成判据、工单与状态。再挑一条写成本地工单：按 <code>docs/agents/issue-tracker.md</code> 的约定，放到 <code>.scratch/incident-2901/issues/01-&lt;slug&gt;.md</code>；<code>Status:</code> 取 <code>docs/agents/triage-labels.md</code> 里的五个值之一，还没写 brief 用 <code>needs-triage</code>，能交给 agent 了用 <code>ready-for-agent</code>。编号从 <code>01</code> 起，一个动作一个文件，<code>Status:</code> 放在文件顶部。</li>
+    <li><strong>列后续动作，每条五字段。</strong>至少四条，覆盖缓解、预防、流程、检测四种关注点（类型仍按 mitigate / prevent / process / other 记，检测类按性质归进 prevent 或 process）。例如：缓解——导入分批、加进度输出；预防——把整文件重读换成增量索引（这条从本课根因长出来，不在第 28 课的提案里，28 课提案是 id 与匹配规则那类候选）；流程——导入前先估耗时、超过阈值必须报进度；检测（归 prevent 或 process）——CI 加一条性能基准。每条写清动作、类型、负责人、完成判据、工单与状态。再挑一条写成本地工单：按 <code>docs/agents/issue-tracker.md</code> 的约定，放到 <code>.scratch/incident-2901/issues/01-&lt;slug&gt;.md</code>；<code>Status:</code> 取 <code>docs/agents/triage-labels.md</code> 里的五个值之一，还没写 brief 用 <code>needs-triage</code>，能交给 agent 了用 <code>ready-for-agent</code>。编号从 <code>01</code> 起，一个动作一个文件，<code>Status:</code> 放在文件顶部。</li>
     <li><strong>找人评审，按评审标准过一遍。</strong>让 agent 扮演资深工程师，按 ch.15 那五条标准提问（原文是「Review criteria might include」，不是必须凑满五条）：关键数据留了吗、影响评估完整吗、根因够深吗、动作计划和优先级合适吗、结果同步给谁了。你逐条回答；答不上来的，就是复盘还缺的证据。把评审意见和你的处置记在复盘末尾的「评审记录」一节。</li>
     <li><strong>收尾。</strong>确认 <code>git status</code> 里只有复盘、活文档、工单和 <code>.scratch/</code> 这些记录文件，没有代码改动；把复盘提交进仓库——它是团队资产，不是一次性的练习纸。演练目录可以留着，下次用之前重建 <code>kb.jsonl</code>，否则底库越滚越大。</li>
   </ol>
@@ -210,7 +210,7 @@ Set-Location $drill</code></pre>
 </div>
 
 <div class="next">
-  <p><strong>下一课：</strong>第 30 课「原型：可丢弃代码回答一个设计问题」。这一课把一次事故变成一份复盘；如果复盘的动作里有一条是「要不要换一种做法」——比如知识库要不要从整文件读写换成增量索引——它就适合第 30 课的原型。这种问题不该直接开工，也不该只靠讨论，先用一个可以扔掉的 prototype 试一次。复盘给了问题和证据，原型负责回答。</p>
+  <p><strong>下一课：</strong>第 30 课「原型：可丢弃代码回答一个设计问题」。这一课把一次事故变成一份复盘；如果复盘的动作里有一条是「要不要换一种做法」，它可能需要第 30 课的原型。先分清问题：中断后续跑这类状态模型问题，载体是按按钮的页面；增量索引这类性能问题，载体是基准脚本，也可以交给第 31 课的研究。这种问题不该直接开工，也不该只靠讨论，先用一个可以扔掉的 prototype 或一次基准测试试一次。复盘给了问题和证据，实验负责回答。</p>
   <p>没有拍板的按老规矩记下来：复盘里「这次不做」的动作要写清理由，记在动作表下面；影响面里没量到的数字标「没量」，下次演练补上。第 30 课开工前先读这份复盘的动作表。</p>
 </div>
 
