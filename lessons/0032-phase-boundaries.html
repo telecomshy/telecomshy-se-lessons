@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 32 课 · 阶段边界：clear、compact、handoff、subagent</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 6 · 专业实践与 AI · 第 32 课</p>
+  <h1>阶段边界：clear、compact、handoff、subagent</h1>
+  <p class="lede">第 31 课的研究笔记收回来那天，会话里已经堆了不少东西：第 29 课复盘的时间线和四条动作，第 30 课原型的场景记录与那句决定，第 31 课笔记里逐条带引用的证据和一节「还没答」。往下走的路不止一条——可以给工单写 brief，可以先做基准原型，可以把缺口记成未决问题。就在这时候，你注意到 agent 开始忘事：二十轮前给过的指令它没照办，一个已经改过的错误它又犯了一遍。同一模型，同一套工具，只是上下文变长了。</p>
+  <p class="lede">这一课讲的就是这个时刻该拍的那个决定：这个会话接下来怎么办。四个动作摆在面前——清空、压缩、交棒、拆给子代理——外加一个默认选项「继续」。学完带走一次有理由的边界决策：清单、顺序、理由，和一份真的交出去的交接文档（handoff artifact）。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 阅读 45–55 分钟，练习另计</span>
+  <span><b>前置</b> 第 31 课（研究笔记与「还没答」）；第 30 课（verdict 与工单）</span>
+  <span><b>产出</b> 一次有理由的边界决策，加一份交接文档</span>
+  <span><b>主读物</b> SWEBOK v4 ch.14 §2.2、§3；ch.7 §2.2.5；AI Hero 词条 smart zone / handoff / clearing / compaction</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：阶段边界不产出需求、代码或测试，它决定的是「干活的那个上下文怎么换」，属于专业实践。</li>
+    <li>解释 smart zone（智能区）与 context window（上下文窗口）为什么不是一回事，并说清「上下文是预算」这句话的含义。</li>
+    <li>定义 phase（阶段）与 phase boundary（阶段边界），说出为什么这个决定只该在边界上做。</li>
+    <li>按顺序走完那棵五问的判断树，对每件事给出 clear、compact、handoff、subagent（子代理）或继续中的一个，并写出理由。</li>
+    <li>说清 <code>handoff</code> 技能的产物长什么样、落在哪，以及它和第 18 课 design doc 的分工。</li>
+    <li>把一件挂着的事真的交棒出去，用「零上下文的会话能不能接着走」验收它。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：研究收工之后，先决定会话往哪走</h2>
+  <p>第 2 课把软件工程拆成八个活动，模块 6 对应的是 Professional Practice（专业实践）：真实工作不总在主线上。第 30 课处理「下一步不清楚」，用一段可丢弃的代码换一个答案；第 31 课处理「手上没有事实」，把阅读外包给一个新开的上下文。这一课处理第三种常见处境：「上下文装不下，也不该继续装」——手上的活还挂着好几件，可承载它们的那个会话已经太满，或者满得不是地方。</p>
+  <p>它同样不占第九个活动。这一课不写需求、不改代码、不加测试，它决定的是干活的容器怎么换。输入有三处，都在仓库里：第 31 课研究笔记的「还没答」节，第 30 课 <code>verdict.md</code> 里留给研究的问题，以及 <code>.scratch/incident-2901/issues/</code> 下工单的状态。这三样合起来就是「这个会话还挂着什么」的清单，练习的第一步就是把它写下来。</p>
+  <p>往后的边界也先划清：第 33 课讲责任，回答哪些事根本不能交给 AI、哪些输出必须由人验证；本课只回答上下文怎么切，不回答能不能交。两件事容易混在一起——把活派给子代理既是边界决策也是责任决策——所以这一课只讲怎么切，能不能交留给第 33 课。</p>
+</section>
+
+<section>
+  <h2>问题与概念：上下文是预算，不是仓库</h2>
+  <p>先说清那个「开始忘事」的现象。会话变长以后，agent 的表现会下滑：你二十轮前明确给过的指令它不再遵守，一个已经纠正过的错误它反复再犯，或者理直气壮地说出一句上下文里明明写着相反内容的话。Matt Pocock 在 AI Hero 的词条里给这件事起了名字：会话开头 agent 处于 smart zone（智能区），原文形容它是 “sharp, focused, recall is good”（锐利、专注、记得牢）；随着会话变长，它滑进 dumb zone（迟钝区），原文是 “sloppier, forgetful, more mistakes — and more faithfulness hallucinations”（更糙、更忘事、错得更多，还会断言上下文里没有的内容）。他接着点明了机制：「Same model, same harness — just more context. The felt effect of attention degradation.（同一个模型，同一套工具，只是上下文更多了。这就是注意力退化的实际感受。）」在前沿模型上，迟钝区「commonly begins around 125K-150K tokens — though this is debated（通常在 12.5 万到 15 万 token 之间开始，不过这一点有争议）」（AI Hero《Smart zone》词条，本地 <code>courseware/aihero-smart-zone/index.html</code>）。带争议的数字就按带争议讲：它是经验观察，不是规范。</p>
+  <p>这条词条最要紧的一句是它对边界的区分：「The zones don't track the context window limit. A session can be deep in the dumb zone with most of the window still free: the limit is where the harness refuses to continue, but quality falls off long before that.（两个区不跟着上下文窗口的上限走。一个会话可能已经深陷迟钝区，而窗口还剩一大半：上限是工具拒绝继续的地方，可质量早在那之前就开始掉了。）」所以「还能不能塞」和「还好不好使」是两个问题。按前一个问，你会一直塞到工具报错；按后一个问，你得在质量掉下去之前就换容器。同一词条给的行动建议只有一句：「Clear or compact when the session bloats; don't push through.（会话臃肿了就清空或压缩，别硬撑。）」</p>
+  <p>要理解这几个动作为什么长得不一样，先要接受一个更基础的事实：模型是 stateless（无状态）的。交接词条把它的后果写得很直接：「The receiving session starts with zero context — the model is stateless, and nothing from the old session is visible to the new one. Whatever the next session needs has to be carried explicitly; everything else is gone.（接手的会话从零上下文开始——模型无状态，旧会话里的任何东西对新会话都不可见。下一个会话需要什么，就必须显式地带过去；其余的都没了。）」词条还给这个约束起了个名字：no return path（没有回头路）——新会话问不回旧会话，所以带过去的东西必须自己站得住。（AI Hero《Handoff》词条，本地 <code>courseware/aihero-handoff/index.html</code>）清空之所以便宜，压缩之所以有损，交棒之所以要写文档，根子都在这一句上。</p>
+  <p>于是需要一个词来标记「该做这个决定的时刻」。技能包的文档把它叫 phase（阶段）与 phase boundary（阶段边界）：「A <em>phase</em> is a chunk of work inside a session: the grilling, the implementation, the QA. The definition is fuzzy on purpose: a phase ends when you think <em>'ok, we're done with that'</em>.（阶段是会话里的一段活：逼问、实现、验收。这个定义故意是模糊的：当你心里冒出『行，这块完了』，阶段就结束了。）」而「The <em>phase boundary</em> is the gap between two phases, and it is the only place this decision belongs.（阶段边界是两段活之间的空隙，也是这个决定唯一该待的地方。）」（<code>ask-matt/PHASE-BOUNDARIES.md</code>）。同一份文档把中途的选项压到两个：继续，或者把剩下的活拆给子代理——「Compacting mid-phase makes the agent lose the thread.（中途压缩会让 agent 丢了线头。）」</p>
+  <p>为什么人的经验和这个判断长得像？SWEBOK 在职业实践一章的 Individual Cognition（个体认知）一节里给了一个说法：「the limits and processes of individual cognition affect problem-solving（个体认知的限制与过程会影响问题求解）」，并把「The volume of data（数据量）」列进抑制求解能力的因素清单，随后给出对策：「Breaking down problems and solving them one piece at a time reduces cognitive overload.（把问题拆开、一次解一小块，能减轻认知过载。）」（SWEBOK v4, ch.14, §2.2, printed 14-10）。这段讲的是人，不是模型——把「认知过载」直接安到 agent 头上是偷换。它在这一课里的作用是给你一个对照：你自己的注意力和 agent 的上下文都是有限资源，人靠拆小块来对付，agent 靠换容器来对付；而 agent 那一侧的下滑曲线来自行业观察（上一段的词条，作者自己标了「有争议」），SWEBOK 并没有下这个结论。</p>
+  <p>同一章的 Communication Skills（沟通技能）一节，恰好把剩下的两个动作也讲了。§3.1 讲读与摘要：「A software engineer sifts through accumulated information, focusing on the pieces that will be most helpful.（工程师从积累的信息里筛出最有用的那部分。）」（printed 14-12）——压缩就是让模型替你做这次筛选。§3.2 讲写给谁看：「written software engineering products must be accessible, understandable, and relevant to their intended audience.（书面的软件工程产物必须对目标读者可访问、可理解、切题。）」（printed 14-12）——交接文档的质量判据就是这句。§3.3 讲文档为什么能替掉当面沟通：「Software documentation is a common substitute for direct interaction.（软件文档是直接交流的常见替代品。）」，同一节还提醒消息太多会淹没重点：「if one receives too many messages, it becomes difficult to identify the important information.（消息一多，重要信息就难以辨认。）」（printed 14-12）。一个会话里塞满历史，和一个收件箱塞满消息，是同一种病。</p>
+  <p>最后把两套词对上。第 31 课讲过 primary source（一手来源）与 secondary source（二手来源）：拥有论断的来源才是证据，转述只当线索。上下文上这两个词照样成立，技能文档的原话是「Every move except <em>Continue</em> turns a <em>primary source</em> into a <em>secondary source</em>: the session as it happened, replaced by a summary of it.（除继续之外的每个动作，都把一手来源变成二手来源：会话本身，被它的摘要取代。）」会话原文是一手，摘要和交接文档是二手；两者的信息量、噪声和腾挪空间不同，原文那行是「Full / Lots / Little」，二手那行是「Lossy / Less / Lots」（<code>ask-matt/PHASE-BOUNDARIES.md</code>）。这解释了为什么判断树的第一问是「能不能继续」：只有当留着原文的代价比省下的空间更大时，才该付这笔有损的账。</p>
+</section>
+
+<section>
+  <h2>行业做法：一次一件事，交出去要有产物和确认</h2>
+  <p>什么时候换容器、换成什么，没有统一标准——SWEBOK 给的是沟通与认知的原则，没有给出 token 阈值或命令。下面四条是主流做法与取舍，前三条本课练习会直接用上。</p>
+  <p><strong>第一条，一次会话一件事。</strong>Smart zone 词条把预算这层说透了：「The smart zone is a budget, and unrelated work spends it. Every task done in a session uses up tokens, so starting a second task in the same session means starting it closer to the dumb zone. Doing one task per session gives each task the sharpest part of the session.（智能区是一笔预算，不相干的活会花掉它。会话里每做完一件事都消耗 token，所以在同一个会话里开第二件事，等于让第二件事从更靠近迟钝区的地方起步。一次会话做一件事，每件事都能用上会话里最锋利的那段。）」具体做法是给每个会话认领一个能收口的目标，做完就停，下一件事换新会话；产物是「一个会话一个结论」，代价是你要多开几次会话，也要更认真地写交接。这个节奏在课程里出现过一次：第 12 课的 wayfinder 规定「一次 session 最多解一张 ticket（research 例外）」，当时说的是别一口气把地图烧完；本课补上它的理由——每张 ticket 都想用上会话最锋利的那段。</p>
+  <p><strong>第二条，交接要有产物，也要有一个明确的「交出去了」。</strong>Google SRE 把这条写得最实在：「There should be a handoff for tickets, as well as for on-call work. A handoff process maintains shared state between ticket handlers as responsibility switches over.（工单也该有交接，就像值班一样。交接流程在责任人切换时维护住共享状态。）」，并且抱怨大多数团队只做值班交接、不做工单交接（《Dealing with Interrupts》“Actually analyze tickets”节）。同一篇还有一句行动建议：「Formalize the handover process—it's a small price to pay for uninterrupted make time for the people not on-call.（把交接流程固定下来——为了让不当班的人能不被打断地干活，这笔代价很小。）」事故现场的交接还要加一步确认，《Managing Incidents》的 “Clear, Live Handoff” 一节要求交出指挥权的人「should not leave the call until receiving firm acknowledgment of handoff（在得到明确的交接确认之前不要挂断通话）」，并把话说全：「You're now the incident commander, okay?（你现在是事故指挥官了，确认吗？）」。落到本课：交接文档是产物，接手方复述一遍「我接手的是什么、下一步做什么」是确认，两样都没有，交接就只是把文件挪了个地方。</p>
+  <p><strong>第三条，交接文档写给零上下文的读者。</strong>Handoff 词条给了一个可观察的失败信号：「The visible failure of a bad handoff is relitigation: the new session re-opens decisions the old one had settled, because the carry recorded what was decided but not why.（糟糕交接的可见失败是翻案：新会话把旧会话已经定下的决定重新拿出来讨论，因为携带的内容只记了决定了什么，没记为什么。）」判据也给了一句：「Judge a handoff by what a session with zero context could do with it.（用一个零上下文的会话拿着它能做什么，来判断这份交接。）」CMU 17-313 那份讲义从另一个方向说了同一件事：「Explicit context/documentation is MUCH better than implicit documentation（显式的上下文与文档，远好过隐式文档）」（《Responsible AI use》p66）。所谓隐式，就是「我以为它看得见」——而按上一节的事实，它看不见。做法是每条决定后面跟一句为什么，每个产物给路径不给全文（第 18 课的「引用路径，不复制内容」在这里第二次生效），每个还没答的问题写明缺什么。</p>
+  <p><strong>第四条（取舍），交接有成本，别逢事就交。</strong>SWEBOK 在维护一章里专门提过这件事：当开发和维护分成两拨人时，「a handoff process must be put in place between developers and maintainers, which sometimes leads to friction between teams（必须在开发者与维护者之间建立交接流程，而这有时会在团队之间造成摩擦）」（ch.7, §2.2.5 Organizational Aspects of Maintenance, printed 7-8~7-9）。同一节紧接着说，无论组织结构怎么定，要紧的是把任务交给有经验的人、并留下质量可靠的文档。摩擦从哪来？交接要花时间写、要花时间读，写少了接手的人猜，写多了两边都在补同一件事。所以判断的落点是有没有东西要移动：这次交棒要跨工具、跨目录或仓库、跨人，或者要分出一件岔事吗？一件都不占，就别交——继续或者压缩更便宜。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：把判断放进一棵按顺序问的树</h2>
+  <p>这一课在地图上的技能是 <code>handoff</code>。它是用户调用的（frontmatter 里有 <code>disable-model-invocation: true</code>，模型不会自己拉起它），也很短，六个要点交代完整个做法：把当前对话压成一份交接文档，让一个新 agent 接着干；存到操作系统的临时目录（<code>$TMPDIR</code>，没有就用 <code>/tmp</code>，Windows 上是 <code>%TEMP%</code>），<strong>不存当前工作区</strong>；文档里要有一节 “suggested skills”，点名下一个 agent 该调哪些技能；「Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.（不要重复已经存在于其他产物里的内容——spec、计划、ADR、issue、提交、diff——引用它们的路径或 URL。）」；敏感信息（API key、密码、个人信息）要先脱敏；你传的参数则当作「下一次会话聚焦什么」的说明来调整文档。</p>
+  <p>技能只管怎么写这份文档，不管什么时候该用它。判断在 <code>ask-matt</code>（路由器，同样是用户调用）的 Phase boundaries 一节和它指向的 <code>PHASE-BOUNDARIES.md</code> 里。第 3 课正文给过一行版的五个选项——继续、<code>/clear</code>、<code>/handoff</code>、subagent、<code>/compact</code>——它的参考卡又把每个选项的条件列成了一张表，但两处都没给先后。这里给的是顺序：五个问题从上往下问，「The first <em>yes</em> wins（第一个 yes 就赢）」。</p>
+  <p>按顺序问的五个问题是：</p>
+  <ol>
+    <li><strong>能在当前会话继续吗？</strong>两个条件满足一个就行：下一阶段需要这一阶段的原文，或者剩下的 smart zone 够下一阶段用（技能文档给的量级是大约 15 万 token 的余量；实际就看当前会话已经用了多少、下一阶段还要读多少，算不准时按后者估）。逼问之后接实现是标准的「要继续」——实现想要的是当时的推理原文，不是它的摘要。继续不花时间也不丢东西，所以先排除它。</li>
+    <li><strong>上下文对接下来的事无关吗？</strong>这个会话里的探索、决定、死胡同是不是全都可丢？是就 <code>/clear</code>。它是棋盘上最便宜的一步，不花时间，整块窗口立刻回来；而且它不是终点，旧会话还留着可以随时回去。代价是单向的：清掉相关的上下文，你丢掉的是「为什么这么建」，把 diff 再读一遍也找不回来。</li>
+    <li><strong>需要交棒吗？</strong>这一支很窄，只有四种情况：换一套工具（Claude 换 Codex）、换一个目录或仓库、把活交给同事、或者中途分叉出一件岔事而你不想被打断。它买的是 portability（可携带性）——一份能带走的文件。没有东西在移动，就不需要它。</li>
+    <li><strong>这件事能 AFK（离开键盘）做完吗？</strong>范围是不是紧到不需要你随时纠偏？是就派给 subagent（子代理），当前会话一动不动。自动化评审是标准情形：agent 读 diff 出报告，这期间不需要你。</li>
+    <li><strong>都不满足，才 <code>/compact</code>。</strong>上下文相关、同一个工具、同一个目录、而你必须留在环里——树经常落在这里。给它一句指令（「接下来做这一片的验收」），让摘要保留下一阶段需要的东西。</li>
+  </ol>
+  <p>判断之外还有一件事要分清：这份交接文档的寿命和第 18 课的 design doc 不一样。两者都叫交接，<code>handoff</code> 是会话级的，存临时目录，活不过一次会话的范围；design doc 是作品级的，进仓库，跟这个功能一起活到被重写。第 18 课说过它们常一起用——换会话开工时 handoff 管开局，design doc 管长期——本课只补它在边界决策里的位置：交接文档是这次换容器的载体，写的是「下一段活从哪起步」，需要长期留的东西（决定、判据、brief）照旧落回仓库。</p>
+  <p>这棵树把最后一问答落在 <code>/compact</code>，是有意的：它是默认，不是第一反应。「The failure mode when people start here is a fresh session that is confidently wrong about a decision the summary flattened.（从这里开始的失败模式是：一个新会话，对一个被摘要抹平的决定，自信地理解错了。）」（<code>ask-matt/PHASE-BOUNDARIES.md</code>）。顺序本身就是判断的一部分：前四个问题要么更便宜，要么更准。</p>
+  <p>命令点到为止。技能文档按斜杠命令来写（<code>/clear</code>、<code>/compact</code>、<code>/handoff</code>），同一个判断在 OpenCode 里怎么触发，下面这张对照表列出来；斜杠名字在不同版本里可能有别名，以你装到的版本为准：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>判断</th><th>技能文档的写法</th><th>OpenCode 里的对应动作</th></tr></thead>
+      <tbody>
+        <tr><td class="what">清空上下文</td><td><code>/clear</code></td><td>开一个新会话：<code>/new</code>，默认快捷键 Ctrl+X 再按 N；旧会话保留，随时切回</td></tr>
+        <tr><td class="what">压缩当前上下文</td><td><code>/compact</code></td><td><code>session.compact</code>，默认快捷键 Ctrl+X 再按 C；默认还开着自动压缩（<code>compaction.auto</code>），接近上限时自己压，保留最近约 15000 token 的原文</td></tr>
+        <tr><td class="what">交棒</td><td><code>/handoff</code></td><td>同一个 <code>handoff</code> 技能——前面各课写的 <code>/handoff</code> 指的就是它（用户调用，它不在模型可拉起的技能清单里）。OpenCode 里技能按 ID 加载：在消息里写 <code>@handoff 下一次会话……</code>，或用技能选择器挑 <code>handoff</code>；产物落在 <code>%TEMP%</code></td></tr>
+        <tr><td class="what">拆给子代理</td><td>subagent</td><td>子会话，新上下文，可前台可后台；内置的 <code>general</code>（能干多步的活）与 <code>explore</code>（只读搜索）都是这类</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>有两处细节会改变你按下去之后看到什么。其一，OpenCode 的压缩是<strong>原地</strong>发生的：它把较早的对话换成摘要，保留最近一段原文，会话还是那个会话；技能文档说的 “seeds a fresh session with the summary（用摘要开一个新会话）” 描述的是另一类工具的行为。其二，摘要本身是有结构的，OpenCode 的文档给的形状是 <code>## Objective</code>、<code>## Next Move</code> 一类，覆盖目标与需求、决定、已完成与在做的工作、阻塞与下一步、相关文件——所以压缩前那句指令才有用：它决定了摘要里留什么。两处差异都不改判断树，改的只是你按下去之后的预期。</p>
+  <p>分工在这里划清：判断树和五问的顺序是判断，由你来做；<code>handoff</code> 把判断的产物写成文档，它替你组织、引用、脱敏，但替你决定不了带什么走；OpenCode 的压缩、新会话、子代理是机制，触发时机由你定。有四件事只能你拍板——现在是不是真的到了边界；下一阶段要不要这一阶段的原文（要，就别压缩）；交棒的文档里带什么、哪些引用路径、哪些必须写死为什么；哪一块活能 AFK 派出去、报告回来拿什么验收。生效的判据只有一条，就是 Handoff 词条那句：拿这份文档给一个零上下文的会话，它不追问就能接着往下走。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>没到边界就动手。</strong>症状是干到一半按下压缩，然后花十轮把刚才说清的事再说一遍。判断树把这件事写成规则：边界是唯一该做决定的地方，中途只有两个选项——继续，或者把剩下的活拆给子代理。要按也等到「行，这块完了」那一刻，那时的摘要才装得下下一阶段真正需要的东西。</p>
+  <p><strong>一满就压缩。</strong>把 <code>/compact</code> 当第一反应，等于跳过前四个更便宜也更准的问题。最贵的漏判是第一问：下一阶段明明需要这一阶段的推理原文，你却给了它一份摘要，实现就只能照着二手信息猜当初为什么这么定。压缩排在树的最底下，前四问答否了才轮到它。</p>
+  <p><strong>交接文档只记决定了什么。</strong>流水账式的会话复盘（「我们先讨论了 A，又看了 B」）占篇幅，却没有一句为什么；等新会话把定过的决定翻出来重议，损失才显形。防它的办法三条：每条决定跟一句理由；能给路径的给路径，别把 spec、ADR、工单的内容复制进来（第 18 课那条规矩，源出就是 <code>handoff</code> 的原文）；敏感信息先脱敏，「还没答」的问题写清缺什么。同理，把相关的上下文清空也是这一类错误——它的代价是单向的，diff 里读不出当初的取舍。</p>
+</section>
+
+<section>
+  <h2>练习与带走：给「挂着的事」做一次边界决策</h2>
+  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做。起点是第 31 课留下的三样东西：研究笔记 <code>.scratch/research-3101/incremental-index.md</code> 的「还没答」节、第 30 课的 <code>.scratch/prototype-3001/verdict.md</code>（没做第 30 课就跳过）、以及 <code>.scratch/incident-2901/issues/</code> 下的工单状态。这次的产出严格按地图：一次有理由的边界决策。</p>
+  <ol>
+    <li><strong>把挂着的事列成清单。</strong>建 <code>.scratch/boundary-3201/</code>，写 <code>open-items.md</code>：一行一件事，写清它是什么、现状到哪了、下一步是哪段活。至少收进这几条——给增量索引写 brief（方案还没定）、研究笔记里没答的缺口、第 30 课 verdict 留的问题（做过的话）、增量索引工单还停在 <code>Status:</code> 的哪个值上、为什么推不动（方案没定，所以还到不了 <code>ready-for-agent</code>）。写完先别挑动作，清单本身就是这次决策的输入。</li>
+    <li><strong>给每条标出阶段和边界。</strong>在 <code>open-items.md</code> 里补两列：它属于哪一段活（研究、写 brief、实现、还是纯粹记账），以及「这块完了」的判据是什么。判据照 <code>PHASE-BOUNDARIES.md</code> 的原话来写——你心里能不能冒出「行，这块完了」。冒不出来的说明它还不是一件事，先把它拆开。</li>
+    <li><strong>逐条走五问，把答案和理由写进决策记录。</strong>新建 <code>decision.md</code>，把每条挂着的事（下面记作挂账）按顺序过五个问题，记录三样：第一个 yes 落在哪一问、选了哪个动作（继续 / clear / compact / handoff / subagent）、以及一句理由（引用清单里的哪一行支撑它）。五问的主语是会话，落到每条挂账上，问的是「这件活接下来在这个会话里怎么处置」——所以同一个会话可以对不同挂账给出不同动作，最后由第 6 步那一句决定收口。顺序不许跳：第二个问题答「否」才轮到第三个，以此类推。clear 和 compact 这两条<strong>只写判断，不真按</strong>——在理由里写清「如果接着做 X，就该在 Y 时刻压缩，因为……」；handoff 那条要真做，见下一步。</li>
+    <li><strong>挑一件真的交棒出去，跑 <code>handoff</code>。</strong>挑这件事换会话写，正是行业做法第一条「一次会话一件事」的用法。从清单里选那件「下一步是另一段活、而且你不想在这个会话里继续」的事（最典型的是给增量索引写 brief：研究的证据在笔记里，方案还没定，值得换个会话从头想）。加载技能时带上参数，说明下一次会话聚焦什么，在 OpenCode 里写成 <code>@handoff 下一次会话给增量索引工单写 brief，按研究笔记的证据定方案</code>，或者用技能选择器挑 <code>handoff</code> 再附上这句话。技能会把文档写进 <code>%TEMP%</code>；记下文件路径，这一步的产物就是它。</li>
+    <li><strong>用四条核一遍这份交接文档。</strong>逐条看：落点在临时目录而不是仓库里；有一节 “suggested skills”，点名了下个会话该调的技能（这条活大概率是 <code>implement</code> 或 <code>grilling</code>，由你判断）；该引用的给了路径——笔记、工单、verdict 都以路径出现，没有被整段复制进来；决定后面跟着为什么，敏感信息（比如任何密钥、个人数据）已经不在文档里。缺哪条就补哪条，让 agent 重写一次也行。</li>
+    <li><strong>把边界决策收成一句决定。</strong><code>decision.md</code> 第一行写成一句能指导行动的话，格式照第 30 课 verdict 的那句决定：主句加分号条件。比如：「本轮到此收：增量索引的 brief 换新会话写（交接文档在 <code>%TEMP%</code> 的路径）；研究笔记与工单留在仓库原处不动；缺口继续记在『还没答』节，不硬拍；写 brief 的会话从零上下文起步，先读笔记再动笔。」下面每条挂账的五问记录照旧留着，理由要能指回 <code>open-items.md</code> 的行。</li>
+    <li><strong>收尾提交。</strong>沙盒主干是 <code>master</code>。交接文档留在 <code>%TEMP%</code> 不进仓库，仓库里只提交决策记录：
+      <pre><code>git add .scratch/boundary-3201
+git commit -m "boundary: session decision after research"
+git status</code></pre>
+      最后一眼 <code>git status</code>：除 <code>.scratch/</code> 外没有未提交改动。</li>
+  </ol>
+  <p>做完的标准是这几条：清单覆盖了第 31 课「还没答」里的每一条缺口，外加工单状态；每条挂账都能指出第一个 yes 落在五问的哪一问，理由指得回清单里的行；clear 与 compact 至少各有一处判断，写明触发时刻与理由，但没有真按；<code>handoff</code> 真跑过一次，四条核对全过，路径记在 <code>decision.md</code> 里；第一行是一句带条件的决定。地图上这课的产出——一次有理由的边界决策——到此兑现。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这份交接能不能让零上下文的会话接着走</h2>
+  <p>把 <code>decision.md</code> 和那份交接文档一起交给 agent，让它<strong>假装自己是零上下文的接手方</strong>，只核对、不改写。它要真的按文档里的路径去读笔记和工单，光读交接文档本身不算数。第 1 条核对就是行业做法第二条说的那个「确认」：接手方说得出下一步，交接才算完成。</p>
+  <pre><code>在沙盒仓库里核对第 32 课的边界决策与交接文档。你扮演零上下文的接手方：只核对，不要改写任何文件。
+开始前确认 .scratch/boundary-3201/open-items.md 和 decision.md 在；
+交接文档路径写在 decision.md 里（%TEMP% 下），读得到就一起核。
+
+逐条检查：
+1. 假装你要接着写增量索引的 brief：只靠交接文档和它给的路径，
+   你能不能说出「下一步做什么、依据在哪、什么算做完」？
+   说不出来的地方标出来，那就是交接的缺口。
+2. decision.md 第一行是不是一句带条件的决定？下面每条挂账有没有
+   第一个 yes 落在哪一问、选了什么、一句理由？理由能不能指回
+   open-items.md 的行？
+3. 五问的顺序有没有跳？有没有哪条先答了「压缩」而没先问
+   「能不能继续」、「上下文是否无关」、「要不要交棒」、「能不能 AFK」？
+4. clear 和 compact 是不是只写了判断（触发时刻 + 理由）？有没有真的按下去？
+5. 交接文档里有没有决定只写了「是什么」没写「为什么」？
+   抽一条决定，去 open-items.md 和研究笔记里找它的理由，找得到吗？
+6. 交接文档有没有把笔记、工单、verdict 的内容整段复制进来？
+   该引用的是不是都给了路径？有没有敏感信息残留？
+7. 「suggested skills」点名的技能，跟这下一步活匹配吗？
+8. 清单有没有漏掉第 31 课「还没答」里的某条缺口？
+
+结论：一个零上下文的会话拿着这份交接，能不追问就开工吗？最站不住的一条是哪条？</code></pre>
+  <p>读反馈归成四类。<strong>接不上</strong>：接手方说不清下一步或依据在哪，就补交接文档——把缺的路径、缺的为什么补进去，重新加载一次 <code>handoff</code> 让它重写；这正是第五步四条核对要提前抓住的。<strong>顺序或按法错了</strong>：有挂账跳过前几问直接落 compact，或者 clear / compact 真被按了下去，就按五问重走一遍，改 <code>decision.md</code> 的记录。<strong>清单漏了</strong>：研究笔记「还没答」里有缺口没进清单，先补进 <code>open-items.md</code>，再决定它归哪一段活——别直接塞进交接文档。<strong>单条没对上</strong>：suggested skills 点名的技能跟下一步不匹配，或者某条决定只写了「是什么」没写「为什么」，回到对应的那一步局部补，不必重做整轮。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>上下文的可用量看 smart zone，不看窗口上限：质量早在工具报错之前就开始掉，别等装不下才换容器。</li>
+    <li>边界决定只在阶段边界上做，五个问题按顺序问，第一个 yes 赢；压缩排在树底，前四问答否了才轮到它。</li>
+    <li>交棒买的是可携带性，代价是有损：交接文档写给零上下文的读者，决定要带理由，产物给路径不给全文。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.14 Software Engineering Professional Practice §2.2 Individual Cognition（printed 14-10，认知限制影响问题求解、抑制因素含 “The volume of data”、拆小块减轻 cognitive overload）；§3 Communication Skills（printed 14-11~14-12，§3.1 读与摘要 “sifts through accumulated information, focusing on the pieces that will be most helpful”、§3.2 书面产物须 “accessible, understandable, and relevant to their intended audience”、§3.3 “Software documentation is a common substitute for direct interaction” 与消息过多难辨重点）；ch.7 Software Maintenance §2.2.5 Organizational Aspects of Maintenance（printed 7-8~7-9，开发者与维护者之间必须建立 handoff process、且“有时会在团队之间造成摩擦”）。</p>
+  <p><strong>行业做法：</strong>AI Hero（Matt Pocock）AI Coding Dictionary 四个词条，本地 <code>courseware/aihero-smart-zone/index.html</code>、<code>aihero-handoff/index.html</code>、<code>aihero-clearing/index.html</code>、<code>aihero-compaction/index.html</code>——smart zone 的定义与 125K–150K token（作者标注 “though this is debated”）、「zones don't track the context window limit」、一次会话一件事；handoff 的 “with no return path”、零上下文、relitigation 失败信号与验收判据；clearing 的「清空不删会话、只丢工作状态」；compaction 的「一手变二手、有损换空间、在阶段边界上压」。Google SRE Book（本地 <code>courseware/google-sre/</code>）——《Dealing with Interrupts》“Actually analyze tickets” 与 “Ongoing responsibilities” 两节（工单交接维护共享状态、把交接流程固定下来）、《Managing Incidents》“Clear, Live Handoff”（明确交接并等到确认）。CMU 17-313《Responsible AI use》（本地 <code>courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf</code>）p66 “Context is KING” 与 “Explicit context/documentation is MUCH better than implicit documentation”。「一次会话一件事」的阈值与「什么时候必须交棒」没有统一标准，本课按主流做法与取舍处理。</p>
+  <p><strong>实践方式：</strong><code>handoff</code>（用户调用，frontmatter 有 <code>disable-model-invocation: true</code>）——把当前对话压成交接文档，存操作系统临时目录而非工作区，含 “suggested skills” 一节，引用不复制，脱敏，参数即下一会话的焦点。判断树出自 <code>ask-matt</code>（用户调用，路由器）的 “Phase boundaries” 一节与其 <code>PHASE-BOUNDARIES.md</code>（阶段与边界的定义、五问顺序、primary/secondary 对照、判断发生在边界）。工具行为出自 OpenCode 文档：Skills 页（技能按 ID 加载，用户侧写法是「mention it in your prompt as <code>@skill-id</code>」，<code>disable-model-invocation</code> 只是不进模型清单、按 ID 仍可加载）、Compaction 页（自动压缩、<code>keep</code> 默认 15000 token、摘要结构）、Agents 页（subagent 在新子会话里跑，内置 <code>general</code> / <code>explore</code>）、Keybinds 页（<code>session.compact</code> 默认 Ctrl+X 再 C、<code>session.new</code> 默认 Ctrl+X 再 N）与 TUI 页（<code>/new</code> 等斜杠命令）。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 33 课「责任：安全、伦理与 AI 的边界」。这一课把「怎么切上下文」讲完了，切完之后每一份产物还是要人负责：哪些活根本不该交给 agent，哪些输出必须由人验证，出事时责任落在谁身上。第 33 课给这些问题一张清单，外加一个安全取舍。</p>
+  <p>没答完的问题照老规矩记下来：研究笔记「还没答」的缺口别删，<code>decision.md</code> 里写了判断却没真按的 clear / compact，条件到了再回去执行；交接文档在 <code>%TEMP%</code> 里，它活不过一次会话的范围，需要长期留的（brief、判据、决定）都要落回仓库。第 33 课开工前，研究笔记和 <code>decision.md</code> 这两个文件就是「哪些事还挂着」的清单。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0032-boundary-card.html">阶段边界参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

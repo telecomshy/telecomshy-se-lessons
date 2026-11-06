@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 31 课 · 研究：把阅读外包，把引用留下</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 6 · 专业实践与 AI · 第 31 课</p>
+  <h1>研究：把阅读外包，把引用留下</h1>
+  <p class="lede">第 29 课的复盘排出四条动作，其中 prevent（预防）那一条写进了工单：「把整文件重读改成增量索引」，完成判据是「10001 条时单条 <code>add</code> 在 0.1 秒内、<code>search</code> 在 1 秒内」。工单躺在 <code>.scratch/incident-2901/issues/</code> 里，状态还是 needs-triage。现在要决定做不做、怎么做，手上缺的是事实：现有实现到底慢在哪一步？「增量索引」具体指什么，业内有几家做法，各自把代价记在哪一本账上？这些事实一半在自己仓库里，一半在别人写下的资料里。</p>
+  <p class="lede">这一课讲怎么把「读」这件事交给一个后台 agent 去做，把读回来的东西收成一份带一手引用的笔记：每条论断都能点回它的来源，被你核一遍，也被后来的任何人再核一遍。学完带走一份带一手引用的研究笔记。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 阅读 45–55 分钟，练习另计</span>
+  <span><b>前置</b> 第 30 课（原型与 verdict）；第 29 课（复盘动作表与工单）</span>
+  <span><b>产出</b> 一份带一手引用的研究笔记</span>
+  <span><b>主读物</b> SWEBOK v4 ch.18 §4；ch.1 §2.1；ch.15 §2；CMU 17-313《Responsible AI use》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：研究不占第九个活动，它落在工程决策过程里，给「候选方案可不可行」这一步供事实。</li>
+    <li>把一道模糊的题目改写成能判断「答没答完」的研究问题，并判断这道题该查、该量、还是该问人。</li>
+    <li>用 SWEBOK 的三类研究——designed experiment（实验）、observational study（观察研究）、retrospective study（回溯研究）——定位「读别人写下的记录」，说出它的质量受制于什么。</li>
+    <li>定义 primary source（一手来源），说清 agent 的答案是转述，引用要追到「拥有这条论断的来源」。</li>
+    <li>核一份研究笔记：引用能不能点开就核、内部证据有没有记、结论有没有回答「支持谁、反对谁」。</li>
+    <li>用 <code>research</code> 技能开一个新上下文的后台 agent 做阅读，收单文件笔记，把结论回填工单。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：决定缺事实的时候，先去读</h2>
+  <p>第 2 课把软件工程拆成八个活动，模块 6 对应的是 Professional Practice（专业实践）：真实工作不总在主线。上一课处理「下一步不清楚」——先用一次能按按钮的小实验把问题摆到眼前；这一课处理同一件事的另一半「手上没有事实」——需要外部资料时，先查、先读、把出处留下，再回来做决定。</p>
+  <p>两课喂的是决策流程里的同一个环节。SWEBOK 在软件工程经济学一章里写决策的第三步：「For some potential solutions, or candidates, prototyping is a useful way to verify technical feasibility. Peer review can also help verify technical feasibility and possibly spur the identification of even more candidates.（对某些候选方案，原型是验证技术可行性的有用办法。同行评审也能验证技术可行性，还可能引出更多候选。）」（ch.15, §2.3, printed 15-6）。原型验的是「这个方案我自己造出来会怎样」；研究找的是「这个方案别人已经验过、写过、踩过什么」。两条路都往决策里供证据，第 30 课占了前一条，这一课占后一条。</p>
+  <p>这个位置其实在课程里出现过一次。第 12 课讲 wayfinder 的决策地图时，把雾里的问题分成了四种工单类型，其中 research（AFK）那一类写的是「读文档、查第三方 API、查知识库，弄清一个决定卡着的事实」，由子 agent 调 <code>research</code> 技能去解，并且注明「回指第 31 课的研究」。本课就是那个预告的落点：把研究这件事从「一种工单类型」展开成一套做法。</p>
+  <p>输入有两处。主输入是第 29 课复盘排出来的那条 prevent 动作和它的工单；做过第 30 课的，<code>verdict.md</code> 里标了「还没答」的问题也一并接进来——其中原型答得了的留在第 30 课那条原型分支上，要外部资料才答得的，进这一课的研究问题清单。给第 32 课留的边界是另一件事：研究把阅读外包给一个新开的上下文，你在它读的时候继续干自己的活。为什么是新开的、什么时候该把当前上下文清空、压缩、交棒，是下一课「阶段边界」的内容。</p>
+</section>
+
+<section>
+  <h2>问题与概念：经验证据、三类研究、一手来源</h2>
+  <p>回到工单上。要拍「增量索引做不做、怎么做」，先把卡住决定的事实数一遍。第一块：现有实现慢在哪。这个不用查任何人——源代码在自己仓库里，第 29 课量过 10001 条时单条 <code>add</code> 平均 0.38 秒、<code>search</code> 0.56 秒，根因也定位过：<code>cli.main</code> 每条命令都新建一个 <code>JsonlStore</code>，构造时把整个 <code>kb.jsonl</code> 逐行读一遍。顺便把判据摆上来对照：<code>search</code> 的 0.56 秒本来就在 1 秒判据之内，卡住的其实只有 <code>add</code> 的 0.1 秒线。第二块：「增量索引」具体指什么，有几家做法，各家把代价记在哪。第三块：以沙盒的规模——万条级、单人维护、CLI 每条命令一个进程——哪一家匹配。</p>
+  <p>第一块是内部证据：自己的代码、自己的测量。第二、三块要去读别人写下的东西。这三块合起来，就是 SWEBOK 说的 empirical evidence（经验证据）：「The engineering process involves proposing solutions or models of solutions and conducting experiments or tests to study those proposed solutions or models. Thus, engineers must understand how to create an experiment and analyze the results to evaluate proposed solutions. Empirical methods and experimental techniques help the engineer describe and understand variability in their observations, identify the sources of that variability, and make decisions.（工程过程包括提出解决方案或方案模型，并通过实验或测试来研究它们。因此，工程师必须懂得如何构造实验、分析结果来评估候选方案。经验方法与实验技术帮助工程师描述和理解观察中的变化、找出变化的来源，并据此做决定。）」（ch.18, §4, printed 18-4~18-5）。注意最后半句：决定要「据此」做。</p>
+  <p>同一节把工程里常见的研究分成三类，各有各的用途和短板。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>类型</th><th>是什么</th><th>本课的对应物</th><th>短板</th></tr></thead>
+      <tbody>
+        <tr><td class="what">designed experiment（实验）</td><td>操纵一个或多个自变量，测量它们对因变量的影响；前提是先有清晰的假设</td><td>第 29 课的计时、第 30 课的原型与基准脚本</td><td>要自己动手，造假设、造环境、跑</td></tr>
+        <tr><td class="what">observational study（观察研究）</td><td>在真实上下文里观察现象，不操纵变量</td><td>看一次同事的真实导入过程怎么卡住</td><td>上下文混在一起，归因难</td></tr>
+        <tr><td class="what">retrospective study（回溯研究）</td><td>分析存档下来的历史数据，找关系、看趋势</td><td>本课的查资料：读官方文档、规范、别人写下的记录</td><td>分析质量受制于存档数据的质量</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>这张表里最要紧的是回溯那一行的短板。SWEBOK 原文说：「One limitation is that the quality of the analysis depends on the quality of the archived data, and historical data may be incomplete, inconsistently measured or incorrect.（一个限制是，分析的质量取决于存档数据的质量，而历史数据可能不完整、测量口径不一致，或者干脆是错的。）」（ch.18, §4.3, printed 18-5）。这一句把本课的主角定下来了：查资料这项活动的质量，首先取决于你信了谁的记录。一篇博客、一份官方文档、一段源代码，都是别人存下来的数据，质量天差地别。所以研究的第一道功夫是挑来源，其次才是搜得多不多。</p>
+  <p>挑来源的尺子是 primary source（一手来源）：拥有这条论断的来源。<code>research</code> 技能的原文给它列了清单——「official docs, source code, specs, first-party APIs（官方文档、源代码、规范、第一方 API）」，并且要求「not a secondary write-up of them（不去引对它们的二手转述）」；secondary source（二手来源）就是这些转述——博客、教程、问答帖，甚至包括 agent 替你做的总结。转述不是不能用，它在研究里有自己的位置：当线索、当地图，告诉你一手来源在哪；它不能当论据，因为它不「拥有」论断。CMU 17-313 在讲负责任地使用 AI 时把这件事说得最直白：GenAI「will (almost) always give you an answer」（几乎总会给你一个答案），而「That answer is not trustworthy」（这个答案本身不可信）（《Responsible AI use》，p45）。它总给答案，恰恰说明答案本身不算证据。</p>
+  <p>来源定了，还需要一样东西让核对方便：citation（引用）。一条引用把论断指回拥有它的来源——文档名和章节、代码文件和行号、链接和访问日期——让读笔记的人不用重做一遍研究，就能亲手核到那条论断。这条纪律在课程里已经出现过两次：第 25 课的评审报告要求每条意见给依据，第 29 课的时间线要求每个时间点指回一条命令输出或日志。研究笔记是第三次，而且是最该严格的一次，因为笔记里的论断来自仓库之外，读的人连「我大概记得」的资本都没有。</p>
+  <p>最后是三岔口：一道拿不到答案的题，先看事实在谁手里，再决定用哪条路拿。事实在自己仓库里，就去量、去读代码——那是第 29、30 课的活，本课只负责把它记成证据；事实在别人脑子里，就去问——访谈、发 issue 问维护者，第 5 课的逼问和第 13 课的 needs-info 都是这条路；事实在公开资料里，才轮到查——也就是本课。读文档这条路在需求工程里有正式的位置，SWEBOK 把需求来源列成一张清单后补了一句：「Requirements are not limited to only coming from people. Other, non-person requirements sources can include: documentation such as requirements for previous versions, mission statements, concept of operations; other systems; larger business context including organizational policies and processes; computing environment.（需求不只来自人。其他非人来源包括：文档，比如先前版本的需求、任务陈述、运行概念；其他系统；更大的业务上下文，含组织的政策与流程；计算环境。）」（ch.1, §2.1, printed 1-7）。文档和人一样，是正经的证据来源；用错地方才浪费——文档里写着的偏要问人，或者问一句就有的事偏让 agent 搜半天。</p>
+</section>
+
+<section>
+  <h2>行业做法：先写问题，再挑来源，最后把判断写回笔记</h2>
+  <p>研究怎么做、笔记长什么样、引用写到多细，没有统一标准——SWEBOK 给的是研究类型的分类和它的限制，各家团队靠约定。下面三条是主流做法，第四条是取舍；本课的练习照这三条走。</p>
+  <p><strong>第一条，先把题目改写成研究问题。</strong>「研究一下增量索引」是题目，不是研究问题——它没法判断答没答完。研究问题要能收口：一道主问题，下面几个子问题，每个子问题配一条「什么样算答完」的判据。SWEBOK 给实验立的那个前提同样适用于读：「A precondition for conducting this experiment is the existence of a clear hypothesis.（做实验的前提是有一个清晰的假设。）」（ch.18, §4.1, printed 18-5）——没有靶子的阅读，收获只会是一堆摘要。放到本课的工单上，改写长这样：主问题「<code>kb</code> 的存储要不要改、改成什么样才能过 0.1 秒 / 1 秒判据」，拆成三个子问题——现有实现的耗时大头在哪一步（判据：能指到具体函数和具体行为）；增量式存储的主流做法有哪些、各家的写路径和读路径账各是什么（判据：至少两家做法，每家有一手来源）；以万条级、单人维护的规模，哪一家匹配（判据：一个有依据的建议方向）。产物是笔记开头的问题节；代价是写不出判据的子问题得先停——那说明它还太大，或者该换个路（去量、去问、去做原型）。</p>
+  <p><strong>第二条，一手来源优先，二手来源只当线索。</strong>操作上就一个动作：每读到一个论断，问「这条论断的原始出处是谁」，然后追过去。博客说「SQLite 的 WAL 模式快」，笔记里可以记下这条线索，但论据要落到 SQLite 官方文档上——比如《Write-Ahead Logging》 advantages 第一条「WAL is significantly faster in most scenarios.（WAL 在大多数场景下明显更快。）」；同页 disadvantages 里另有一条读侧代价——读多写少的应用可能反而慢百分之一二；§2.3 Performance Considerations 给出机制：「read performance deteriorates as the WAL file grows in size since each reader must check the WAL file for the content and the time needed to check the WAL file is proportional to the size of the WAL file.（WAL 文件越大读性能越差，因为每个读者都得检查 WAL 文件的内容，而检查所需的时间与 WAL 文件的大小成正比。）」（<a href="https://www.sqlite.org/wal.html">sqlite.org/wal.html</a>，访问日期 2026-11-05）。几条合起来才是完整的账：写快了，读在替它买单——只引第一条，「增量索引」听起来就是免费午餐。追不到原始出处的转述，要么留在「线索」区，要么明标「未核实」；把它当论据写进笔记，是研究笔记最常见的破口。</p>
+  <p><strong>第三条，笔记逐条「论断 + 来源 + 支持谁反对谁」。</strong>产物是一份单文件笔记，每条证据一行三样东西：论断本身、它的引用、它对工单上那个判断意味着什么。引用的最小要素是四样：来源名与标题、章节或页码、链接（网页来源）、访问日期——网页会改，访问日期是「我核到的是这一版」的凭据；本地 PDF 用页码，仓库里的代码用文件加函数名。内部证据照同一个格式记，只是来源换成「内部实测（条件与方法）」或具体文件——第 29 课那组 0.38 秒的数字，在笔记里就该写成「来源：内部实测，10001 条，10 次平均（第 29 课复盘）」，跟外部引用享受同等待遇。这一条是本课的约定，不是行业标准；立它的理由只有一条：别人核起来方不方便。写的时候多一行字，换的是三年后这份笔记还能被核。</p>
+  <p><strong>第四条，深度跟着决策代价走，结论回填决定。</strong>SWEBOK 在决策过程的第一步就说：「When the consequences of a wrong decision are significant, such as a go/no-go decision for a large project, more time, effort and care should be spent in this process.（错判的后果越大，比如一个大项目的 go/no-go 决定，这一步就该花越多时间、精力和心思。）」（ch.15, §2.1, printed 15-5）；后果小的时候可以省些工夫，但流程照走。本课这单是一个单人工具的 prevent 动作，半天到一天的研究够了；换成要签三个月合同的技术选型，同一个流程，每条证据的核法都要重一档。收尾三件事：结论写回工单（指针、状态或评论）；研究动到完成判据的——比如发现 0.1 秒这条线在某种做法下要连着读路径一起算——改判据要写明依据，由你拍板；答不了的子问题记「还没答」，写清缺什么。研究交出去的东西，是「决定可以往下走了」这个状态；那份笔记是它的载体。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：用 <code>research</code> 把阅读外包给一个新开的上下文</h2>
+  <p>这一课在地图上的技能是 <code>research</code>。它很短，一段加三条：开头一句话说做法——「Spin up a background agent to do the research, so you keep working while it reads. Start it with a fresh context window.（起一个后台 agent 去做研究，它读的时候你继续干活。用一个全新的上下文窗口启动它。）」；然后给这个 agent 列三件事。第一件是查：「Investigate the question against primary sources (official docs, source code, specs, first-party APIs), not a secondary write-up of them. Follow every claim back to the source that owns it.（对着一手来源调查问题——官方文档、源代码、规范、第一方 API——不去引二手转述。每条论断都追到拥有它的来源。）」第二件是写：「Write the findings to a single Markdown file, citing each claim's source.（把发现写进一份单 Markdown 文件，逐条注明出处。）」第三件是存：「Save it where the repo already keeps such notes; match the existing convention, and if there is none, put it somewhere sensible and say where.（存到仓库已经放这类笔记的地方；跟着已有约定走，没有约定就放个合理的地方，并说明放在了哪。）」Frontmatter 里没有 <code>disable-model-invocation</code>，所以模型可以自己拉起它；你也可以直接说「用 research 查 X」。</p>
+  <p>第一句里的 background agent（后台代理）值得停下来解释，因为它和前几课用 agent 的方式都不一样。第 23 课的 <code>implement</code> 在你的会话里一步步干，你盯着；研究不同——技能要求新开一个 context window（上下文窗口），让它带着一张空白脑子去读。这有两个直接后果。一是它不继承你当前会话的任何上下文：不知道工单在哪、不知道 0.38 秒是什么、不知道你为什么关心增量索引，所以研究问题和来源边界必须白纸黑字写给它，不能指望「它看着办」。二是它读的时候你不闲着：这是这条技能把「读」外包的真正含义——阅读的时间不再占你的脑子，你把省下的注意力花在收笔记和核引用上。</p>
+  <p>落到操作上，一次研究是五步。你写研究问题和来源边界（第一条行业做法），连同落点路径一起交给 <code>research</code> 技能；技能会起一个后台 agent 去读；你等的时候干别的活；收回来一份单文件笔记；你逐条核引用，把结论回填工单。分工在两边都不重，但各有各的不可替：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>agent 做什么</th><th>人拍板什么</th></tr></thead>
+      <tbody>
+        <tr><td class="what">搜、读、排：按你给的子问题去读，把发现整理成带引用的草稿笔记</td><td class="what">这道题该不该研究——还是该自己量、该直接问，或先做个原型</td></tr>
+        <tr><td class="what">追出处：把转述里的论断追到官方文档或源代码，追不到的标出来</td><td class="what">哪些算一手来源——本课的线是官方文档、源代码、规范；博客和帖子只当线索</td></tr>
+        <tr><td class="what">写笔记：按「论断 + 引用 + 支持谁反对谁」的格式起草，落到你指定的路径</td><td class="what">每条引用亲手核一遍——点开链接、翻到页码、跳到代码行；agent 会把「可能是」写成「是」</td></tr>
+        <tr><td class="what">补缺口：你说「这条没核实到」，它换关键词再追一轮</td><td class="what">结论怎么用——回填工单、改不改完成判据、哪些记「还没答」；以及最后做不做</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>表格右列第三条是整个环节的闸门，CMU 那份讲义把它写成一条禁令：「DON'T accept an answer from the LLM as validation（别把 LLM 的回答当验证）」（p67）。核引用就是把这条禁令落成动作：agent 给的笔记看着再顺，引用没核过之前，它只是「转述了某个来源」，还不是「证据」。核过的标记成证据，核不到的降级成线索——这两类在笔记里要分开。也有一处技能和行业做法之间的空白要说破：技能规定了「对一手来源调查」「写单文件笔记」，但没规定笔记的结构、引用的格式、研究问题怎么写——这些是上一节的行业做法和本课的约定，你得自己带进去；技能也不会替你决定要不要照结论做，那是决策流程的事，回到工单和 ADR。</p>
+  <p>怎么判断这次研究生效了？看三个信号。第一，笔记里每条论断都能在一两分钟内核到——点开链接就到、翻到页码就有、跳到文件就是那一行；核不到的说明引用没写够。第二，「支持谁反对谁」那一列直接回答了工单上的问题，读笔记的人不认识你也能接着往下走。第三，至少有一条证据修正了你原来的预设——比如你原以为「增量索引」只有上倒排索引一条路，读完才发现对这个规模有更便宜的写法；一条修正都没有的笔记，多半是把摘要抄了一遍，或者子问题定得太安全。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>把 agent 的答案当来源。</strong>症状是笔记里写满结论，一条出处都没有：「SQLite 的 WAL 很快，适合我们的场景。」这句是从哪来的——官方文档、某个博客、还是 agent 自己的推断？CMU 讲义提醒过，GenAI 几乎总会给你一个答案，而答案本身不可信（p45）。防它的办法便宜：笔记里的每条论断必须有引用，agent 的总结按转述对待，追到一手来源才算证据，追不到就明标「未核实」。宁可笔记短一半，不要没有出处的结论。</p>
+  <p><strong>只有题目，没有问题。</strong>「帮我研究一下索引」派出去，收回来的多半是一份索引综述：A 方案 B 方案 C 方案，面面俱到，没有一条回答「<code>kb</code> 在这个规模下该选谁」。原因是出发时没有判据——没写「什么样算答完」，agent 只好把能找到的都堆给你。改法回到第一条行业做法：先写主问题和子问题的判据，判据写不出来的子问题先别派，去量、去问，或者换成一个能收口的问题。</p>
+  <p><strong>剪贴簿笔记。</strong>另一种常见的收场：笔记是一串摘录的堆叠，每条都有引用，但没有一行说它支持什么、反对什么。三个月后翻开，谁也想不起来当初为什么记下这些。笔记的交付物是判断的原料，摘录只是运输途中打包的方式；「支持谁反对谁」那一列空着的笔记，等于研究没做完——它还没回答工单上的问题。</p>
+</section>
+
+<section>
+  <h2>练习与带走：给「增量索引」做一份研究笔记</h2>
+  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做。主问题是第 29 课那条 prevent 动作：把整文件重读改成增量索引，做不做、怎么做。做过第 29 课练习的，工单已经在 <code>.scratch/incident-2901/issues/01-incremental-index.md</code>；没做过的，先照下面这张卡补一张（路径照旧，<code>Status:</code> 取值见 <code>docs/agents/triage-labels.md</code> 的五个值）：</p>
+  <pre><code># 把整文件重读改成增量索引
+Status: needs-triage
+
+动作：把整文件重读改成增量索引。
+类型：prevent（预防）。
+负责人：我。
+完成判据：10001 条时单条 add 在 0.1 秒内、search 在 1 秒内。
+工单：本文件；研究笔记见 .scratch/research-3101/incremental-index.md</code></pre>
+  <p>做过第 30 课的，把 <code>.scratch/prototype-3001/verdict.md</code> 里标了「还没答」的问题过一遍：原型答得了的留在那条原型分支上，要外部资料才答得的，加进下面的研究问题清单。</p>
+  <ol>
+    <li><strong>把题目拆成研究问题。</strong>建 <code>.scratch/research-3101/</code>，在里面写 <code>incremental-index.md</code> 的开头三节：主问题（「<code>kb</code> 的存储要不要改、改成什么样才能过判据」）、三个子问题和各自的判据（慢在哪一步——判据是能指到具体函数和具体行为，第 29 课的数字和根因先抄进来；主流做法有哪几家、各家写路径和读路径的账——判据是至少两家、每家有一手来源；以万条级单人维护的规模哪家匹配——判据是一个有依据的建议方向）。最后留一节空的「支持 / 反对」和一节「还没答」。写不出判据的子问题，停下来想它该不该归研究。</li>
+    <li><strong>把来源边界说清，交给 <code>research</code>。</strong>研究问题和边界要一起给，因为后台 agent 看不见你的会话。可以直接照抄这段：
+      <pre><code>研究问题见 .scratch/research-3101/incremental-index.md，请逐个子问题调查。
+来源边界：
+- 一手来源才算论据：官方文档、源代码、规范、第一方 API。
+- 博客、教程、问答帖只当线索，要落到它指向的一手来源上；
+  追不到的写进「未核实的转述」，不要混进证据。
+- 每条论断带引用：来源名与标题、章节或页码、链接、访问日期（写你打开链接那天的日期）。
+- 笔记继续写在 .scratch/research-3101/incremental-index.md，单文件，
+  按「论断 + 来源 + 支持谁反对谁」逐条写；答不了的子问题写「还没答」，缺什么写清。
+- 一手来源里注意：我们仓库的 kb/storage.py 本身也是源代码来源，
+  慢在哪一步的子问题可以从它和 kb/cli.py 里找证据。</code></pre>
+      它会起一个后台 agent 去读；这就是「读的时候你继续干活」的那半句。</li>
+    <li><strong>等它读的时候干别的。</strong>可以去处理第 30 课工单清单上的下一张，或者干脆休息。别自己开十个网页去抢它的活——那是把外包又收回来。</li>
+    <li><strong>逐条核引用。</strong>收到笔记后从第一条核起：链接点得开吗？章节对得上吗？引文是原文还是改写？代码行号还在吗？核过的标记成证据；追不到的降级成「未核实的转述」；引文被改写的，换回原文。然后补一条内部证据，格式跟外部引用一致：<code>JsonlStore.__init__</code> 整读文件（来源：<code>kb/storage.py</code>）加 0.38 秒的实测（来源：内部实测，10001 条，10 次平均，第 29 课复盘）；没做第 29 课的，照第 29 课「造出退化」的办法自己量一遍再记，来源写自己的实测条件。顺手核一遍它给的结论有没有越过证据说话。</li>
+    <li><strong>把结论回填工单。</strong>「支持 / 反对」节逐条对着子问题写：每条证据支持哪个判断、反对哪个判断；「还没答」节写清每个缺口和补法。然后更新工单：加一行指针（研究笔记路径）；如果证据动了完成判据——比如 0.1 秒这条线在某种做法下要连读路径一起算——写明依据再改，拍板的是你；<code>Status:</code> 该不该动由你定，方案定下来能写 brief 了才推 <code>ready-for-agent</code>，没定就留在 <code>needs-triage</code>。</li>
+    <li><strong>决定下一步。</strong>按笔记的结论三选一：证据够了，直接给工单写 agent brief（照第 13 课的四原则），推 <code>ready-for-agent</code>；方向定了但关键数字还悬（比如某个方案在 10001 条上到底多快），先做一次基准原型再回来——第 30 课结尾说过，研究给出的证据，再回来决定要不要做第二个原型；做完带着数字回到第 5 步更新工单，再走一遍三选一。暂时定不了，把「还没答」的缺口记成工单评论或新的未决问题，别硬拍。</li>
+    <li><strong>收尾提交。</strong>沙盒主干是 <code>master</code>。笔记和工单都在 <code>.scratch/</code> 下，照常提交：
+      <pre><code>git add .scratch/research-3101 .scratch/incident-2901
+git commit -m "research: incremental index notes"
+git status</code></pre>
+      最后一眼 <code>git status</code>：除 <code>.scratch/</code> 外没有未提交改动。</li>
+  </ol>
+  <p>做完的标准是这几条：主问题能用一句话说清，每个子问题有「什么样算答完」的判据；笔记里至少两条外部一手引用（其中至少一条是官方文档或源代码）和一条内部证据，格式一致；每条论断你亲手核过一遍，「未核实的转述」单独成区；「支持 / 反对」节直接回答工单的问题，读笔记的人不认识你也能接着走；工单有更新——指针、判据或状态至少动了一样；「还没答」的每个缺口都写明缺什么、去哪补。地图上这课的产出——一份带一手引用的笔记——到此兑现。</p>
+</section>
+
+<section>
+  <h2>反馈回路：这份笔记能被别人核到吗</h2>
+  <p>把笔记、工单和研究问题一起交给 agent，让它只核对、不改写。它要真的点链接、翻来源，光读笔记文本不算数。</p>
+  <pre><code>在沙盒仓库里核对第 31 课的研究笔记。只核对，可以打开链接、读源码验证，不要改笔记。
+开始前确认 .scratch/research-3101/incremental-index.md 在，工单在 .scratch/incident-2901/issues/ 下。
+
+逐条检查：
+1. 主问题是不是一句话？每个子问题有没有「什么样算答完」的判据？
+   有没有哪个子问题其实该去量、去问或做原型，而不是查资料？
+2. 抽两条带外部引用的论断，真的打开链接或翻到章节：内容对得上吗？
+   是原文还是改写？访问日期写了吗？
+3. 内部证据（0.38 秒实测、kb/storage.py 的根因）的格式和外部引用一致吗？
+   有没有把内部证据写成没出处的一句结论？
+4. 有没有论断混进了「未核实的转述」？agent 给的总结有没有被当成证据？
+5. 「支持 / 反对」节是不是逐条对着子问题回答？有没有只堆摘录、不回答判断的？
+6. 「还没答」节写清每个缺口了吗？每个缺口给了补法吗？
+7. 工单更新了吗：指针、判据改动、Status 三个里至少动了一个？
+   判据改动有没有写依据？
+8. 结论有没有越过证据说话——比如只引了 WAL 写入快、没引读路径代价？
+
+结论：这份笔记能不能让一个没参与过的人接着做决定？哪一条最站不住？</code></pre>
+  <p>读反馈分三类处理。<strong>问题不清</strong>：子问题没有判据、或者题该换路，就回去改写问题节，重派或收窄范围。<strong>引用断了</strong>：链接打不开、章节对不上、原文被改写，就追一手来源补上，追不到的挪进「未核实的转述」，别删了事——线索也是产出。<strong>判断没落地</strong>：「支持 / 反对」节空着或答非所问，就对着工单问题补判断；工单没更新的按第 5 步补上。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>研究是把「读」外包、把判断留下：问题由你定，来源质量你把关，结论回填决定。</li>
+    <li>一手来源是拥有论断的来源；agent 的答案是转述。每条论断带引用，让后来的人不用重做研究就能核到。</li>
+    <li>研究的深度跟着决策代价走；答不了的记「还没答」，写清缺什么，别硬拍。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.18 Engineering Foundations §4 Empirical Methods and Experimental Techniques（printed 18-4~18-5，经验证据、三类研究 designed experiment / observational study / retrospective study、实验的前提是清晰假设、回溯研究「分析质量取决于存档数据的质量」）；ch.1 Software Requirements §2.1 Requirements Sources（printed 1-6~1-7，需求来源不限于人、documentation 是合法来源）；ch.15 Software Engineering Economics §2.1 / §2.3（printed 15-5~15-6，工程决策过程、决策代价决定投入、原型与同行评审验证技术可行性）。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《Responsible AI use》（本地 <code>courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf</code>）p45「It will (almost) always give you an answer」「That answer is not trustworthy」、p67「DON'T accept an answer from the LLM as validation」。研究笔记的结构、引用的格式、研究到什么程度算够，没有统一标准；「论断 + 来源 + 支持谁反对谁」的笔记格式是本课约定，判据是「别人能不能不重做研究就核到」。SQLite《Write-Ahead Logging》（<a href="https://www.sqlite.org/wal.html">sqlite.org/wal.html</a>，访问日期 2026-11-05）用作课内示例引用。</p>
+  <p><strong>实践方式：</strong><code>research</code>（模型可拉起，frontmatter 无 <code>disable-model-invocation</code>）——起一个新上下文的后台 agent 做研究，对着 primary sources（official docs, source code, specs, first-party APIs）调查、每条论断追到拥有它的来源，发现写成单 Markdown 文件、逐条注明出处，存到仓库已有约定处。技能不规定笔记结构、引用格式与研究问题写法，这些由行业做法和本课约定补位。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 32 课「阶段边界：clear、compact、handoff、subagent」。这一课把阅读外包给了一个新开的上下文窗口——它不继承你当前会话的任何东西，所以要白纸黑字交接。为什么新开是对的？反过来，什么时候该把当前上下文清空、压缩，什么时候该把整个任务交棒给子 agent？第 32 课讲这四种边界决策怎么拍板。</p>
+  <p>没答完的问题照老规矩记下来：笔记里「还没答」的缺口别删，工单上的指针别动；做过第 30 课的，<code>verdict.md</code> 里留给研究的问题，答了的回填、没答的接着留。第 32 课开工前，这两个文件就是「哪些事还挂着」的清单。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0031-research-card.html">研究参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

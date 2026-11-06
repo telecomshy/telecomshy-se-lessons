@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阶段边界参考卡 · 阶段边界：clear、compact、handoff、subagent</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 32 课</p>
+  <h1>阶段边界参考卡</h1>
+  <p class="lede">上下文是预算不是仓库。边界决定只在阶段边界上做，五个问题按顺序问，第一个 yes 赢；交棒买的是可携带性，代价是有损，交接文档写给零上下文的读者。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>阶段边界在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">跨活动，落在专业实践</td><td>阶段边界不占第九个活动：它不产出需求、代码、测试，只决定「干活的那个上下文怎么换」。第 30 课答「下一步不清楚」，第 31 课答「手上没有事实」，本课答「上下文装不下、也不该继续装」。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 31 课研究笔记的「还没答」节、第 30 课 <code>verdict.md</code> 留的问题（没做则跳过）、<code>.scratch/incident-2901/issues/</code> 的工单状态——合起来是「这个会话还挂着什么」的清单。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一份边界决策记录 <code>decision.md</code>，加一份落在 <code>%TEMP%</code> 的交接文档。第 33 课接着答「哪些事不能交给 AI、哪些输出必须人验证」。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：smart zone、阶段边界、一手与二手的上下文</h2>
+<div class="card-rule">
+  <p><strong>smart zone（智能区）：</strong>会话开头 agent 锐利，变长后滑进 dumb zone（迟钝区）——更糙、更忘事、错得更自信，即 attention degradation（注意力退化）。前沿模型通常在 125K–150K token 开始（作者标 “though this is debated”）。「The zones don't track the context window limit」——窗口上限是工具拒绝继续的地方，质量早就开始掉。<strong>上下文是预算，不是仓库。</strong><strong>stateless（无状态）：</strong>模型不记得旧会话，新会话从零开始，需要的东西必须显式携带。<strong>phase / phase boundary（阶段 / 阶段边界）：</strong>阶段是会话里的一段活，「心里冒出『行，这块完了』」就结束；边界是两段活之间的空隙，<strong>这个决定唯一该待的地方</strong>——中途只有继续或拆子代理，中途压缩会丢了线头。<strong>一手 / 二手的上下文：</strong>会话原文是一手来源，摘要与交接文档是二手（Full / Lots / Little 对 Lossy / Less / Lots），所以第一问永远是「能不能继续」。</p>
+</div>
+
+<h2>行业做法：四条，前三条练习直接用</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">一次会话一件事</td><td>每个会话认领一个能收口的目标，做完就停，下一件事换新会话。AI Hero：「Doing one task per session gives each task the sharpest part of the session.」呼应第 12 课 wayfinder「一次 session 最多解一张 ticket」。</td><td>产物：一个会话一个结论。代价：多开几次会话，交接要写得更认真。</td></tr>
+      <tr><td class="what">交接要有产物 + 明确确认</td><td>SRE：「A handoff process maintains shared state between ticket handlers as responsibility switches over.」「Formalize the handover process」；事故交接要等到「firm acknowledgment of handoff」。</td><td>产物：交接文档 + 接手方复述「我接的是什么、下一步做什么」。只有文件没有确认，交接没完成。</td></tr>
+      <tr><td class="what">交接文档写给零上下文的读者</td><td>失败信号是 relitigation（翻案）：只记了决定了什么、没记为什么；判据「用一个零上下文的会话拿着它能做什么」。CMU p66：「Explicit context/documentation is MUCH better than implicit documentation。」</td><td>产物：每条决定跟一句理由、每个产物给路径。代价：写的时候多几行，换来接手的人不重开旧议题。</td></tr>
+      <tr><td class="what">交接有成本，取舍（SWEBOK ch.7 §2.2.5）</td><td>「a handoff process must be put in place between developers and maintainers, which sometimes leads to friction between teams」。落点是有没有东西要移动：不跨工具、不跨目录或仓库、不跨人、不分叉，就别交。</td><td>产物：一次「继续 / 压缩」的便宜决定。代价：交早了白写，交晚了上下文已经烂掉。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：五问判断树 + handoff 技能</h2>
+<div class="skill">
+  <p><strong>判断树（<code>ask-matt</code> 的 Phase boundaries / <code>PHASE-BOUNDARIES.md</code>，第一个 yes 赢）：</strong>① 能在当前会话继续吗——下一阶段要这一阶段的原文，或剩下的 smart zone 够用（技能文档给的量级约 15 万 token；继续不花钱，先排除）；② 上下文对接下来的事无关吗——是则 <code>/clear</code>，代价单向（丢掉「为什么」）；③ 需要交棒吗——只在换工具 / 换目录 / 交给同事 / 中途分叉四种情况，买的是可携带性；④ 能 AFK 做完吗——是则派 subagent，报告回来；⑤ 否则才 <code>/compact</code>，并给它一句指令让摘要留下一阶段要的。<strong>压缩是默认，不是第一反应</strong>——从它开始的失败是「新会话对被摘要抹平的决定自信地理解错」。<br><strong>与第 18 课 design doc 的分工：</strong><code>handoff</code> 是会话级、存临时目录、活不过一次会话；design doc 是作品级、进仓库、跟功能走；换会话开工时前者管开局、后者管长期，要长期留的决定与判据落回仓库。<br><strong><code>handoff</code> 技能（用户调用，<code>disable-model-invocation: true</code>）：</strong>六条——压成交接文档；存操作系统临时目录（Windows <code>%TEMP%</code>）不存工作区；含 “suggested skills” 一节点名下个会话该调的技能；引用不复制（spec / 计划 / ADR / issue / 提交 / diff 只给路径或 URL）；脱敏；参数当作下一会话的焦点。<br><strong>OpenCode 对应动作：</strong>清空 = 开新会话 <code>/new</code>（Ctrl+X 再 N，旧会话保留）；压缩 = <code>session.compact</code>（Ctrl+X 再 C）加默认开启的自动压缩（保留最近约 15000 token），且是<strong>原地</strong>替换、不开新会话；交棒 = 同一个技能，写 <code>@handoff ……</code> 或用技能选择器加载；子代理 = 新上下文的子会话（内置 <code>general</code> / <code>explore</code>）。<br><strong>人拍板四件：</strong>是不是真的到了边界；下一阶段要不要原文；交接文档带什么（引用 vs 写死、脱敏）；哪块能 AFK、报告拿什么验收。<strong>生效判据：</strong>零上下文的会话不追问就能接着走。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p>没到边界就动手——干到一半压缩，然后花十轮把说清的事再说一遍；只在「行，这块完了」那一刻做决定。一满就压缩——跳过前四个更便宜也更准的问题，最贵的漏判是「下一阶段需要原文却只给了摘要」。交接只记决定了什么——流水账没有理由，新会话会把定过的决定翻出来重议；每条决定跟一句理由，能给路径的给路径，敏感信息先脱敏。</p>
+</div>
+
+<h2>练习产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">挂账清单</td><td><code>.scratch/boundary-3201/open-items.md</code>：一行一件事（是什么 / 现状 / 下一步哪段活），补两列：属于哪一段活、「这块完了」的判据</td></tr>
+      <tr><td class="what">边界决策记录</td><td><code>.scratch/boundary-3201/decision.md</code>：第一行一句带条件的决定；每条挂账记「第一个 yes 落在哪一问 + 选了什么 + 一句理由（指回清单的行）」；clear / compact 只写判断（触发时刻 + 理由），不真按</td></tr>
+      <tr><td class="what">交接文档（真跑 <code>handoff</code>）</td><td><code>%TEMP%</code> 下，不进仓库；加载写法 <code>@handoff 下一次会话……</code> 或用技能选择器挑 <code>handoff</code>；四条核对：落点在临时目录、有 “suggested skills”、引用给路径不复制、决定带理由且已脱敏；路径记进 <code>decision.md</code></td></tr>
+      <tr><td class="what">提交</td><td><code>git add .scratch/boundary-3201</code>；收尾 <code>git status</code> 除 <code>.scratch/</code> 外没有未提交改动；主干是 <code>master</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<div class="card-rule">
+  <p>清单覆盖第 31 课「还没答」的每条缺口加工单状态；每条挂账指得出第一个 yes 落在哪一问，理由指得回清单的行；五问没有跳序；clear 与 compact 各至少一处判断且没真按；<code>handoff</code> 真跑过、四条核对全过、路径在 <code>decision.md</code> 里；第一行是一句带条件的决定。反馈回路里 agent 扮演零上下文接手方，按八条核（能不能说出下一步与依据、顺序有没有跳、决定有没有为什么、有没有复制与敏感信息、suggested skills 匹配吗、清单漏没漏）。读反馈归位四类：接不上→补交接文档重跑 <code>handoff</code>；顺序或按法错→按五问重走改记录；清单漏→先补进 <code>open-items.md</code> 再决定归哪段活；单条没对上（suggested skills 不匹配、决定缺为什么）→回对应步骤局部补。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0032-phase-boundaries.html">第 32 课「阶段边界：clear、compact、handoff、subagent」</a></p>
+</footer>
+
+</main>
+</body>
+</html>

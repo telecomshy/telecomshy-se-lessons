@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>研究参考卡 · 研究：把阅读外包，把引用留下</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 31 课</p>
+  <h1>研究参考卡</h1>
+  <p class="lede">研究把「读」外包给一个新上下文的后台 agent，把判断留给自己。一手来源是拥有论断的来源，每条论断带引用；笔记的交付物是判断的原料，研究的深度跟着决策代价走。</p>
+</header>
+
+<h2>位置：它属于哪个活动</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动</th><th>研究在这里做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="skill">跨活动，落在决策环节</td><td>研究不占第九个活动。SWEBOK ch.15 §2.3（printed 15-6）把原型与同行评审并列为验证候选方案技术可行性的手段；研究供的是另一半证据——别人已经验过、写过、踩过什么。课程把它放在模块 6（专业实践与 AI）：上一课（第 30 课）原型答「自己动手能观察到的」，本课答「外部资料里有什么」，第 12 课 wayfinder 的 research（AFK）工单类型在本课正式展开。</td></tr>
+      <tr><td class="skill">输入从哪来</td><td>第 29 课复盘排出的 prevent 动作与工单（增量索引，判据 0.1 秒 / 1 秒）；做过第 30 课的，<code>verdict.md</code> 里「还没答」的问题中要外部资料才答得的，进研究问题清单。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>一份带一手引用的笔记，加一张更新过的工单。研究给阅读用的是新开的上下文窗口——为什么新开、什么时候该清空 / 压缩 / 交棒，是第 32 课「阶段边界」的内容。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>概念：三类研究、一手来源、一条三岔口</h2>
+<div class="card-rule">
+  <p><strong>经验证据（empirical evidence）：</strong>SWEBOK ch.18 §4（printed 18-4~18-5）——工程过程靠实验或测试研究候选方案，据此做决定。<strong>三类研究：</strong>designed experiment（实验，操纵自变量测因变量，前提是清晰假设——本课程的基准与原型是这类）、observational study（观察研究，真实上下文里看现象）、retrospective study（回溯研究，分析存档数据——查资料是这类）。<strong>回溯的短板（ch.18 §4.3, printed 18-5）：</strong>「the quality of the analysis depends on the quality of the archived data, and historical data may be incomplete, inconsistently measured or incorrect.」——所以研究的功夫先花在挑来源上。<strong>一手来源（primary source）：</strong>拥有论断的来源——official docs, source code, specs, first-party APIs；二手来源（secondary source）是转述，只当线索和地图。<strong>引用（citation）：</strong>把论断指回拥有它的来源，判据是后来的人不用重做研究就能核到（第 25 课评审依据、第 29 课时间线来源，同一条纪律）。<strong>三岔口：</strong>事实在自己仓库→量、读代码；在别人脑子里→问（访谈、needs-info）；在公开资料里→查（本课）。</p>
+</div>
+
+<h2>行业做法：三条主流，一条取舍</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>做法</th><th>怎么做</th><th>产物与代价</th></tr></thead>
+    <tbody>
+      <tr><td class="what">先把题目改写成研究问题</td><td>一道主问题，拆成子问题，每个配「什么样算答完」的判据。SWEBOK ch.18 §4.1（printed 18-5）：「A precondition for conducting this experiment is the existence of a clear hypothesis.」</td><td>产物：笔记开头的问题节。代价：写不出判据的子问题先停，改去量、去问或做原型。</td></tr>
+      <tr><td class="what">一手来源优先，二手当线索</td><td>每条论断问「原始出处是谁」，追到官方文档 / 源代码 / 规范；追不到的标「未核实的转述」。CMU《Responsible AI use》p45：GenAI 几乎总会给答案，答案本身不可信。</td><td>产物：每条论断可核。代价：多花时间点进去；换来的是别人不用重走你的路。</td></tr>
+      <tr><td class="what">笔记逐条「论断 + 来源 + 支持谁反对谁」</td><td>引用最小四要素：来源名与标题、章节 / 页码、链接、访问日期；内部证据（自己的测量、自己的代码）照同一格式记，标「内部实测」。</td><td>产物：单文件笔记。本课约定，非行业标准；判据是别人核起来方不方便。</td></tr>
+      <tr><td class="what">深度跟着决策代价走（取舍）</td><td>SWEBOK ch.15 §2.1（printed 15-5）：错判后果越大，越该花工夫。收尾三件事：结论回填工单、改判据写明依据、答不了的记「还没答」。</td><td>产物：「决定可以往下走了」的状态。代价：没有标准答案，按决策代价自己定。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>AI + Matt：research 技能，四件人拍板的事</h2>
+<div class="skill">
+  <p><strong>调用：</strong><code>research</code>，模型可拉起（frontmatter 无 <code>disable-model-invocation</code>），也可以直接说「用 research 查 X」。<strong>技能四件事：</strong>起一个全新上下文窗口的后台 agent（background agent，后台代理），它读的时候你继续干活；对 primary sources 调查、每条论断追到拥有它的来源；发现写成单 Markdown 文件、逐条注明出处；存到仓库已有约定处，没有约定就放合理的地方并说明落点（沙盒没有研究笔记的现成约定，本课放 <code>.scratch/research-3101/</code>）。<strong>新上下文的含义：</strong>它不继承当前会话，研究问题与来源边界必须白纸黑字交给它。<strong>人拍板四件：</strong>这道题该不该研究（还是该量 / 问 / 做原型）；哪些算一手来源；每条引用亲手核一遍（CMU p67：「DON'T accept an answer from the LLM as validation」）；结论怎么用——回填工单、改不改判据、做不做。<strong>技能不管的：</strong>笔记结构、引用格式、研究问题写法（行业做法与本课约定补位）；也不替你决定要不要照结论做。<strong>生效判据：</strong>每条论断一两分钟内核到；「支持 / 反对」直接回答工单问题；至少一条证据修正了预设。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p>把 agent 的答案当来源——笔记里全是结论没有出处；agent 的总结按转述对待，追到一手来源才算证据。只有题目没有问题——「研究一下索引」收回来的是综述；先写主问题、子问题和判据，判据写不出先别派。剪贴簿笔记——每条都有引用但没有「支持谁反对谁」，三个月后没人知道当初为什么记；判断没落地的笔记等于研究没做完。</p>
+</div>
+
+<h2>练习产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">研究笔记（单文件）</td><td><code>.scratch/research-3101/incremental-index.md</code>：主问题 + 三个子问题与判据；证据逐条「论断 + 来源 + 支持谁反对谁」（至少两条外部一手引用 + 一条内部证据，格式一致）；「未核实的转述」单独成区；「还没答」写明缺口与补法</td></tr>
+      <tr><td class="what">工单更新</td><td><code>.scratch/incident-2901/issues/01-incremental-index.md</code>：指针、判据改动（写明依据）、<code>Status:</code> 三个至少动一个；没做第 29 课的按课件五字段补建</td></tr>
+      <tr><td class="what">下一步</td><td>三选一：写 agent brief 推 <code>ready-for-agent</code>；先做基准原型（回指第 30 课）；缺口记成未决问题</td></tr>
+      <tr><td class="what">提交</td><td><code>git add .scratch/research-3101 .scratch/incident-2901</code>；收尾 <code>git status</code> 除 <code>.scratch/</code> 外没有未提交改动；主干是 <code>master</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>练习怎么验</h2>
+<div class="card-rule">
+  <p>主问题一句话说清，每个子问题有判据；至少两条外部一手引用（至少一条官方文档或源代码）加一条内部证据，格式一致；每条论断亲手核过，「未核实的转述」单独成区；「支持 / 反对」节直接回答工单问题；工单至少更新一处；「还没答」写明缺什么、去哪补。三类处置：问题不清→改写问题节，重派或收窄；引用断了→追一手来源补上，追不到的挪进「未核实的转述」，别删了事；判断没落地→对着工单问题补「支持 / 反对」，工单没更新的按步骤补上。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0031-research-notes.html">第 31 课「研究：把阅读外包，把引用留下」</a></p>
+</footer>
+
+</main>
+</body>
+</html>

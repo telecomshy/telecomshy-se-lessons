@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 33 课 · 责任：安全、伦理与 AI 的边界</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 6 · 专业实践与 AI · 第 33 课</p>
+  <h1>责任：安全、伦理与 AI 的边界</h1>
+  <p class="lede">第 23 课那张错误处理工单如果按示例决定做完并合进主干，<code>kb add</code> 在写文件失败时会抛 <code>StorageError</code>，消息里带着原始异常。如果你的实现把原异常拼进了消息，终端里看到的是这样一行：</p>
+  <pre><code>StorageError: could not save entry: [Errno 13] Permission denied: 'D:\code\my_projects\se-course-sandbox\kb.jsonl'</code></pre>
+  <p class="lede">这句话对你很有用：一眼看出是权限问题，路径也指得明明白白。于是你让 agent 把提示改得友好一点，顺手补一条测试。agent 很快交回来：<code>保存失败：D:\code\my_projects\se-course-sandbox\kb.jsonl</code>。读起来确实顺了。可你想起第 15 课把存储抽成 port（端口），就是为将来的薄 HTTP（Hypertext Transfer Protocol，超文本传输协议）adapter（适配器）留的缝——同一个 <code>StorageError</code>，换到 HTTP 响应里，客户端会看到服务器上的绝对路径。</p>
+  <p class="lede">同一条消息，在终端里是诊断信息，在 HTTP 响应里是信息泄露。变的是通道和读者，不是字符串。这一课就从这里开始：责任不是「代码是谁写的」，而是「这句话给谁看、这个动作谁批准、这个错误谁承担」。学完带走一张「哪些事不能交给 AI」的清单，加一个写清理由的安全取舍。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 阅读 45–55 分钟，练习另计</span>
+  <span><b>前置</b> 第 23 课（完成判据与错误契约）；第 25 课（评审裁决）；第 29 课（无责复盘）；第 32 课（委派与交接）</span>
+  <span><b>产出</b> 一张清单和一个安全取舍；支撑产物：观察脚本、闸门句、红队反馈</span>
+  <span><b>主读物</b> SWEBOK v4 ch.13、ch.14 §1.2/§1.7/§1.8/§1.9；MIT 6.031 Reading 30；CMU 17-313 737 MAX 与《Responsible AI use》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：责任不占第九个活动，它给所有活动加一条「后果由谁承担」的约束。</li>
+    <li>用影响半径、可否撤回、可否独立验证三个问题给一件事定位，并给出代做、代笔、代查、人做、不做五种处置。</li>
+    <li>区分责任与背锅：无责复盘把结论落在可修的系统上，责任仍然有人签。</li>
+    <li>说清 security（安全性）的机密性、完整性、可用性三个属性，以及「同一条消息换个通道就从无害变泄露」。</li>
+    <li>说清技能包把边界做成了哪些机制，以及哪个判断它替不了。</li>
+    <li>写出一个带选项、后果、复查条件的安全取舍，并知道它该落在契约还是实现里。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：前三课在决定怎么推进，这一课决定哪些推进方式不允许</h2>
+  <p>第 2 课把软件工程拆成八个活动，模块 6 对应的是 Professional Practice（专业实践）。第 30 课处理「下一步不清楚」，用一段可丢弃的代码换一个答案；第 31 课处理「手上没有事实」，把阅读外包给一个全新的上下文；第 32 课处理「上下文装不下，也不该继续装」，在阶段边界上决定清空、压缩、交棒还是拆给子代理。这三课都在优化同一件事：让活继续往前走。</p>
+  <p>这一课踩刹车。它问的是：哪些活根本不该往前走，哪些只能由人往前走，哪些走之前必须有人签字。它同样不占第九个活动：责任不产出需求、代码或测试，它给八个活动各加一条约束——后果落在谁身上，谁就得看得见、停得住、说得清。输入通常有三处，都在仓库里：第 32 课 <code>decision.md</code> 里每条挂账的处置，尤其是交棒或拆给子代理的那几条；第 23 课讨论过的失败行为（做过练习的人已经写进 <code>Store</code> 契约）；第 31 课研究笔记里逐条带引用的证据。这三样合起来，就是「哪些事已经交出去、交得对不对」的底稿。如果某一份不在，就用这一课给的固定清单和当前仓库状态代替；判断方法不变。</p>
+  <p>先把一个容易混的词分开。第 29 课讲 blameless postmortem（无责复盘），说的是解释原因时不要找人背锅，把结论落在可修的系统上；它不取消责任。responsibility（责任）问的是另一件事：谁对后果签字，谁有权叫停，出事以后谁能把「当时掌握了什么信息、为什么这样判断」讲清楚。无责保护的是人，责任约束的是决定；两件事都成立，复盘才不会变成检讨书，责任也不会变成一句口号。</p>
+  <p>往后的边界也先划清：第 34 课做综合演练，并把流程迁移到真实项目。这一课留下的清单和取舍，正是迁移计划里「哪些活不能交给 agent」那一节的底稿；第 34 课不会再教一遍判断方法，只会拿来用。</p>
+</section>
+
+<section>
+  <h2>问题与概念：一条消息，几个出口</h2>
+  <p>回到开头那条错误信息。它至少会在四个地方出现，读者完全不同。第一处是你的终端：你是仓库所有者，路径对你不是秘密，越具体越好。第二处是日志：可能只有你读，也可能被送到集中日志服务，读者变成运维、审计或第三方。第三处是 HTTP 响应：将来的 adapter 如果把内部异常原样返回，任何能发请求的人都看得到路径。公开 issue（问题单）是第四个出口：任何能看到仓库的人都能读到，它和 HTTP 响应一样，读者不受你控制。同一条字符串，在第一个通道里是诊断，在第三、第四个通道里是泄露。</p>
+  <p>所以 security 的判断不能停在「这句话敏不敏感」。SWEBOK 把 security 定义成一种产品质量属性：产品保护信息和数据，使人和系统只能按自己的类型与授权级别访问（ch.13 §1.1, printed 13-1）。信息安全的三个属性是 confidentiality（机密性）、integrity（完整性）和 availability（可用性）；机密性是「信息不泄露给未授权的个人、实体或进程」，完整性是准确和完整，可用性是被授权方按需访问和使用（§1.2, printed 13-1）。路径本身不是密码，但它能泄露用户名、项目名、目录结构，甚至客户名。把它放进公开 issue 或 HTTP 响应，读者就超出了授权范围。同一章还给了一句更根本的话：Cybersecurity（网络安全）是「safeguarding of people, society, organizations and nations from cyber risks」，而 safeguarding 的意思是「keep cyber risk at a tolerable level」（§1.3, printed 13-2）。安全的目标是把风险留在可接受的范围；降到零既做不到，也不必要。你不可能把所有信息都删掉还不影响诊断；你要决定的是，哪条信息给谁看，风险可容忍到什么程度。</p>
+  <p>安全取舍做到这一步，已经是在做伦理判断了。MIT 6.031 的伦理读本把 ethicality（伦理属性）当作和 correctness（正确性）、clarity（清晰性）、changeability（可修改性）同类的质量属性。原文说「Ethicality is no different.」，接着说「consider and test its ethical properties just as you would any others.」（Reading 30, “Software beyond 6.031”）这句话把伦理从「我觉得不对」拉到工程动作：像测性能一样测它，像做威胁建模一样列出它可能被怎么滥用。同一篇读本还给了一个更具体的动作：「With your ethical testing hat, consider as pessimistically as possible all the ways that what you build might be misused and abused, using the moral lenses from this reading.」（同上；后半句的 moral lenses 本课不展开）本课要做的是尽量悲观地列出「这东西会被怎么用坏」，不需要证明自己是个好人。</p>
+  <p>责任不只是署名。你可以一行代码没写，仍然对「决定把这个功能发出去」负责。MIT 的读本把义务列成四层：一起工作的人、组织、用户，以及被影响但不用这个软件的人和更大的社会；它把后两层叫 two expanding circles of influence（两层向外扩的影响圈）（Reading 30 开头）。越往外，你越看不见反馈，越需要结构来替代直接观察——评审、测试、警告、闸门。这也是为什么「agent 写的」不能把责任转出去。工具没有法人资格，没有雇佣合同，也没有可被追责的声誉；能签字、能被追责、能叫停的，仍然是人。</p>
+  <p>要判断一件事能不能交出去，先给它量三样东西。第一样是 blast radius（爆炸半径）。第 10 课用这个词讲过宽重构：一次改动会在全库多少调用点同时报错。这里借同一个词，换一个维度：一件事做错了，后果会扩散到多远、落在谁身上。CMU 17-313 的 AI 讲义引了一则 FT（Financial Times，金融时报）的报道，说某零售巨头的事故出现「trend of incidents」，特征是「high blast radius」和「Gen-AI assisted changes」（《Responsible AI use》p16）。这条引文说明业内已经在用影响半径来给 AI 参与的改动物色；它不证明「AI 一定会出事」。本地终端里多打一行路径，疼的是你；HTTP 响应里多打一行路径，疼的是所有能发请求的人。</p>
+  <p>第二样是可逆性。这件事做错了，能不能撤回，撤回来要付多少代价？<code>git revert</code> 能撤回一次提交，撤不回一条已经发出去的邮件、一个已经轮换掉的旧密钥、一次已经删除的数据。第三样是可验证性。你能不能找到一份不依赖同一个模型的证据，来检查结果？测试的预期值要来自契约，不能来自实现；引文要来自一手来源，不能来自模型的复述；命令的输出要来自你真的跑过，不能来自 agent 说「全绿」。如果三问里任何一问答「不知道」，这件事就还没准备好交出去。注意，「不知道」不是「不能」，它只是说明你还缺一份验收标准、一条测试、一个闸门或者一次威胁建模。先把不知道变成知道，再谈交给谁。</p>
+  <p>三问的答案落到五种处置上。下表是它们的对照，不是五个信任等级；哪一种更负责任，要看具体的事。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>处置</th><th>什么时候用</th><th>例子</th><th>你还要做什么</th></tr></thead>
+      <tbody>
+        <tr><td class="what">代做</td><td>影响半径小、可撤回、验证硬。</td><td>给失败路径写测试、跑全量测试、机械重命名。</td><td>读证据：测试名、命令输出、diff（差异）。</td></tr>
+        <tr><td class="what">代笔</td><td>判断重、承诺重，但草稿可以外包。</td><td>契约措辞、发布说明、设计文档初稿。</td><td>决定并签字；改到你能解释每一句。</td></tr>
+        <tr><td class="what">代查</td><td>要的是事实和证据，不是结论。</td><td>研究、两轴评审报告、威胁清单。</td><td>读来源，判断证据是否支持结论。</td></tr>
+        <tr><td class="what">人做</td><td>影响半径大、不可逆、或无法独立验证。</td><td>轮换密钥、删数据、合并主干、对外承诺。</td><td>亲自操作；agent 只准备材料。</td></tr>
+        <tr><td class="what">不做</td><td>这件事本身越过底线。</td><td>隐瞒写失败、绕过授权、暗黑模式。</td><td>写明理由；两边都不做。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>五种处置里，前四种回答「谁来做」，第五种回答「该不该做」。SWEBOK 把几条底线写得很直：软件工程师不应「certifying or approving unacceptable products」、「disclosing confidential information」、「falsifying facts or data」（ch.14 §1.8, printed 14-8）；伦理守则的违规也可以是「不作为」，包括「failure to disclose risks」（§1.2, printed 14-4）。§1.7.9 还专门点了 dark patterns（暗黑模式）：故意误导用户的界面设计，「Creating dark patterns is not good ethical practice.」（printed 14-8）。这些问题的答案不在「交给 agent 还是人」之间：两边都不该做。当后果不容易一眼看清时，MIT 的读本还给了四副 moral lenses（道德透镜）——结果、过程、结构、品格——可以当第二意见；本课不展开，需要时再回来查这套问法。</p>
+</section>
+
+<section>
+  <h2>行业做法：四条主流做法，底线另见职业守则与法律</h2>
+  <p>把三问落到行业做法上，能借用的是四件事。先说清标尺：没有任何标准规定「这个任务能不能交给 AI」。职业协会的伦理守则有正式文本，ACM（Association for Computing Machinery，美国计算机学会）和 IEEE（Institute of Electrical and Electronics Engineers，电气与电子工程师协会）都发布过；隐私法（比如欧盟的 GDPR，General Data Protection Regulation，通用数据保护条例）有强制力。这些文本的约束力不一样：职业守则约束协会成员，法律按司法辖区生效；两者都给不出一张通用的任务白名单。剩下的都是主流做法与取舍。这个区分很重要，因为「有规范」和「有答案」是两件事。</p>
+  <p><strong>第一条，先做 threat modeling（威胁建模），再决定给谁开哪个口。</strong>威胁建模问的是：我们有什么资产，谁能碰到它，他会怎么滥用，哪条控制能挡住或至少留下痕迹。SWEBOK 把安全需求工程写成「consider threats, as illustrated by misuse and abuse cases, threat actors, security risk assessments」（ch.13 §4.1, printed 13-3），把安全设计写成「prevent unauthorized disclosure, creation, change, deletion or denial of access」并「conduct threat modeling, illustrating how a system is being attacked to specify a security design for the mitigation」（§4.2, printed 13-4）。具体怎么做：列四栏，资产、谁能碰到、滥用情形、控制。什么时候用：新增一个入口、新增一类数据、接入第三方。产物是一张威胁清单，每行有对应的控制。代价是它会过时，而且不是证明；CERT/CC（CERT Coordination Center，计算机应急响应协调中心）的 top 10 里，最直接的三条是 default deny（默认拒绝）、least privilege（最小权限）、defense in depth（纵深防御）（§4.4, printed 13-5）。</p>
+  <p>拿知识库举例。今天的 CLI（命令行界面）是本地单用户，资产是 <code>kb.jsonl</code>，能碰到它的是本机用户；控制主要是文件权限和「删之前先备份」。第 15 课的 port 让薄 HTTP adapter 很容易加上去，但那一步会把「本机用户」换成「任何能发请求的人」：<code>search</code> 可能泄露全部笔记，<code>add</code> 可能被用来塞垃圾，<code>delete</code> 一旦加上就是未授权删除。威胁清单不需要写成安全审计报告，四行就够：资产、谁能碰到、滥用情形、控制。没有这张清单，「给 agent 加个删除接口」听起来只是多一个命令；有了它，你会先问「谁有权删、怎么证明是他」。</p>
+  <p><strong>第二条，给 agent 最小权限，给数据划边界。</strong>最小权限的意思是：agent 只拿到完成这件事所需的目录、命令和数据，不多给。CMU 17-313 的 AI 讲义把这条写得很直接：「Don't auto-approve commands on your host machine!」，并建议用 dev container（开发容器）隔离，「Broke your container? No worries! Start a new one!」（《Responsible AI use》p72–73）。数据边界则是：密钥、密码、个人信息不进仓库、不进提示词、不进日志、不进交接文档。<code>handoff</code> 技能的原文就要求「Redact any sensitive information, such as API keys, passwords, or personally identifiable information.」。具体怎么做：限定工作目录只能减少误操作，不是隔离；真正的权限边界用 dev container、独立账号或只读挂载。删除、推送、发布、联网这类命令不自动批准；密钥放 <code>.env</code> 并写进 <code>.gitignore</code>，提示词和日志里用占位符；交接前过一遍脱敏。产物是一张权限清单和一张「不外发」清单。代价是摩擦：权限收得越紧，agent 越容易卡住；卡住时正确的动作是去开权限或换做法，不是让它绕过。</p>
+  <p><strong>第三条，不可逆动作要人批准，而且批准的人要看得到。</strong>MIT 的读本有一节叫「Ethical structures, not just ethical individuals」，说的是：一个组织做出有害的系统，更常见的原因是组织缺少一层结构，无法确保「the collective effort of individual participants has an ethical result」；找一个坏人反而解释不了。它还给了个很实用的面试问题：如果一家公司没有把伦理问题纳入评审结构，你该像听到「我们不需要 code review」一样警惕。落到本课，结构就是 gate（闸门）：一个闸门要写清动作、对象、批准人、证据四样。动作是做什么，对象是对哪个文件或服务，批准人是谁，证据是批准前必须看到什么。比如「删除 <code>kb.jsonl</code> 之前，仓库所有者必须看到 <code>Get-Item kb.jsonl | Format-List</code>（Unix 上是 <code>ls -l kb.jsonl</code>）的输出和备份文件路径，并回复 <code>approve delete kb.jsonl</code>；没有这句回复就不执行」才算一个闸门；「弹窗点确定」不算，因为点的人可能不知道自己在批什么。单人练习里你扮演批准人，重点练证据和停止条件；真实项目要把批准人换成能独立判断的人，否则闸门只是自我确认。</p>
+  <p>human in the loop（人在环里）不是「有个人在」。CMU 的 737 MAX 案例里有一张示意图：迎角传感器把数据送到飞行计算机，MCAS（Maneuvering Characteristics Augmentation System，机动特性增强系统）自动转水平尾翼；图注还写着 Lion Air 事故里传感器给错了信息（《737-MAX Casestudy》p6）。这张图适合问一个问题：自动动作的依据来自一个传感器时，驾驶舱里的人要看到什么、有多少时间、有没有权限，才算真的在环里？如果人看不到依据、来不及反应、或者没有权限断开，「有人在环里」就只是名义上的。这份讲义没有展开组织细节，本课也不替它下结论；它给的是一个判断模板：闸门的判据是「这个人看得见、来得及、有权停」；只要求「有个人在」不够。这也解释了为什么批准动作要附证据：不附证据的批准，等于把判断外包给了一个看不见的人。</p>
+  <p><strong>第四条，验证要独立，风险要写下来。</strong>CMU 的讲义把验证写成两句对照：「DON'T accept an answer from the LLM as validation」，「DO use the LLM to create deterministic ways to validate the program (unit tests, integration tests, run tooling)」（《Responsible AI use》p67）。独立的证据可以来自契约里写死的预期值、一条你真的跑过的命令、一份一手来源、一个能解释 diff 的同事；不能来自「模型说它检查过了」。安全工具能帮很大忙，但 SWEBOK 提醒「they cannot find all vulnerabilities」（ch.13 §5.1, printed 13-6）；渗透测试还要在合法边界内、拿到授权才能做，「such tests should always be conducted within legal boundaries and with proper authorization」（§4.5, printed 13-5）。写下来这部分，SWEBOK 把话说得很重：清楚、完整、准确的文档是每个软件工程师的责任；要写「Significant risks and trade-offs」，要写「Warnings of undesirable or dangerous consequences from the use or misuse of the software」（ch.14 §1.8, printed 14-8）。产物是设计文档或 README（项目说明文件）里的「风险与安全使用」一节；代价是文档会过时，所以它要跟代码一起改，不能只在发布前抄一遍。</p>
+  <p>这四条不是四个孤立的检查项。威胁建模决定哪些口要守，最小权限决定谁能碰到，闸门决定哪一步必须停，验证和文档决定事后能不能说清。它们共同把「影响半径」从一个感觉，变成一个可以检查的东西。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：技能包把边界做成状态、确认步骤和脱敏规则</h2>
+  <p>这一课在地图上的技能栏是「—」。技能包里没有 ethics 技能，也没有一条命令能替你判断「这件事能不能交」。这是有意的：判断的对象是你的风险承受度、你的用户、你的法律责任，技能包读不到这些。它能做的是把边界做成状态、确认步骤和脱敏规则。下面五组是这一课会用到的，都是引用，不再重复介绍技能包的入口和调用方式。</p>
+  <p><code>triage</code> 是用户调用的（frontmatter 里有 <code>disable-model-invocation: true</code>），它的状态机里有一个 <code>ready-for-human</code>，原文要求写清「why it can't be delegated (judgment calls, external access, design decisions, manual testing)」。这是最接近现成清单的东西：它把「不能交给 agent」写成了一个状态，还要求写理由。注意它是描述，不是判决——<code>ready-for-human</code> 只说明这件事不适合交给 agent 自己跑，不说明这件事安全、合规、值得做。</p>
+  <p><code>wizard</code> 是模型调用的，专门处理「steps only they can perform」：开哪个网址、点哪里、把凭据填到哪。它用隐藏输入接密钥，不可逆动作前有确认，并且只把 CI（Continuous Integration，持续集成）真正需要的值写进仓库密钥。用它处理轮换密钥、配 CI 凭据这类事，比在聊天里把密钥贴给 agent 强：agent 写脚本，人输值，明文不经过对话。它的产物是 bash 脚本；Windows 上用 Git Bash、WSL（Windows Subsystem for Linux，Windows 的 Linux 子系统）运行，或者让 agent 按同一流程改写成 PowerShell。</p>
+  <p><code>handoff</code> 是用户调用的，要求交接文档脱敏，API（Application Programming Interface，应用程序编程接口）密钥、密码、个人信息都要去掉，其他产物用路径引用而不是整段复制。这条规则和本课的错误信息取舍是同一个问题的两个面：信息要跟着活走，但不能跟着活泄露。</p>
+  <p><code>code-review</code> 是模型调用的，通常在 <code>implement</code> 收尾时拉起。它把证据摆成规范轴和工单轴两栏，明确不把两轴结论合并、不跨轴排名（「Do not merge or rerank findings」「Don't pick a single winner across axes」）。这正是「代查」的样子：报告是证据，代码合不合由你决定。同理，<code>research</code> 要求一手来源、每条论断带引用，产物可核对，但来源是否支持论断仍要你判断；<code>implement</code> 会跑测试、提交，但工单边界、验收标准、review 裁决仍然是人。</p>
+  <p>五组合起来，技能包自动化的是证据收集、状态命名、脱敏、闸门机制、diff 审查；它不能自动化的是你的风险容忍度、谁承担后果、什么算可接受、这件事该不该做。最后一条尤其重要：工具可以帮你更快地做一件错事，而且做得更整齐。所以「AI + Matt」这一节的人的动作有四件，每一件都对应一个产物。</p>
+  <ol>
+    <li><strong>写清单。</strong>用影响半径、可否撤回、可否独立验证三问过一遍交给 agent 的活，填这几栏：任务、影响半径、可逆性、验证证据、处置、你还要做什么、签字人。产物是 <code>delegation-ledger.md</code>；至少有一条「人做」和一条「不做」，每条「代做」都要写出证据从哪来，否则清单多半写得太松。</li>
+    <li><strong>设闸门。</strong>给不可逆动作写清动作、对象、批准人、证据，并验证闸门真的会停：判据是看没有批准时动作有没有发生；配置文件里写了什么不算数。产物是 <code>gates.md</code>。</li>
+    <li><strong>拍取舍。</strong>把选项、判断标准、后果、复查条件写在一起；有利益冲突先说（SWEBOK ch.14 §1.9 要求「any conflict of interest must be disclosed upfront」，printed 14-9）。产物是一份短决策记录。</li>
+    <li><strong>验输出。</strong>读证据，不读摘要；读 diff，不读「已完成」；引文回到一手来源，不读模型的复述。解释不了的东西不签。产物是每条结论后面的证据行。</li>
+  </ol>
+  <p>生效的判据有三条：一个新人拿着清单，不用问你就能判断哪些活不能交给 agent；红队 agent 找不到一条没有证据的「代做」；错误信息的取舍有负责人、有复查条件，而且真的写进了契约或文档。这套东西不能保证你不做错事。它只能让「谁在什么信息下做了什么决定」留下痕迹，让下一次有人能复查。责任不是一张签完就完事的表；它要求你在事后还能解释清楚为什么当时那样判断。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>「agent 写的，责任在 agent」。</strong>工具没有法人资格，没有雇佣合同，也没有声誉可赔。能签字、能被追责、能叫停的仍然是人。这句话真正的用处是提醒你去检查验证；它不能把责任推给一个不会接的人。你可以说「这段是 agent 写的」，但你不能说「所以出事不关我的事」——尤其当你是那个下指令、看报告、点合并的人。</p>
+  <p><strong>「人在环里＝有人点过按钮」。</strong>没有观察、没有时间、没有权限的批准，只是把责任盖了个章。737 MAX 那张示意图值得反复看：自动动作的依据来自传感器，坐在驾驶舱里的人要看得见依据、来得及反应、有权断开，才算在环里。一个看不见 diff 的批准、一个十秒钟内必须点的确认、一个没有回滚方案的发布，都属于这一类。更糟的是，它会留下一条「有人批准过」的记录，让事后追责找错地方。</p>
+  <p><strong>「安全＝把细节全藏起来」。</strong>过度脱敏会毁掉诊断：用户只看到「保存失败」，你也不知道是权限、磁盘满还是路径写错。正确的做法是按通道分流；删光并不能解决问题。终端可以保留细节，日志保留细节但要保护日志本身，HTTP 响应给通用消息加一个 correlation id（关联编号），你拿着编号去日志里查。日志也是数据，把路径写进日志再送到第三方，泄露只是换了个地方。SWEBOK 说安全是把风险留在可容忍的水平（ch.13 §1.3），不是把信息降到零。</p>
+</section>
+
+<section>
+  <h2>练习与带走：给沙盒做一次责任盘点</h2>
+  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做。起点不依赖第 32 课：下面给一份固定的十件事清单。做过第 32 课的人，可以把 <code>decision.md</code> 里的挂账替换进来，但清单的列和判断方法不变。产出落在 <code>.scratch/responsibility-3301/</code>。</p>
+  <p>清单里「处置」只填五个词之一；一件事如果分两段（agent 出报告、人做决定），主处置写前一段，后半段写进「你还要做什么」。「谁签字」只写对这个判断负责的人；「不做」行也写你，理由写在同一格或 <code>review-notes.md</code>。</p>
+  <ol>
+    <li><strong>建清单。</strong>建 <code>.scratch/responsibility-3301/delegation-ledger.md</code>，把下面这张表抄进去，列头照写：
+      <pre><code>| 任务 | 错了会怎样（影响半径） | 能不能撤回 | 怎么独立验证 | 处置 | 你还要做什么 | 谁签字 |
+|---|---|---|---|---|---|---|
+| 给 Store.add 的失败路径写测试 |  |  |  |  |  |  |
+| 实现第 23 课的错误处理工单（没做过就按「失败抛 StorageError、状态回滚」这一条改动填） |  |  |  |  |  |  |
+| 改 Store docstring（文档字符串）里的契约措辞 |  |  |  |  |  |  |
+| 跑全量测试并汇报结果 |  |  |  |  |  |  |
+| 审一个 diff 并决定合不合 |  |  |  |  |  |  |
+| 写对外发布说明或用户邮件 |  |  |  |  |  |  |
+| 轮换 API 密钥、改 CI 的密钥配置 |  |  |  |  |  |  |
+| 删除 kb.jsonl 或清理仓库历史 |  |  |  |  |  |  |
+| 把当前会话交接给下一个 agent |  |  |  |  |  |  |
+| 为了让演示通过，吞掉写失败、显示保存成功 |  |  |  |  |  |  |</code></pre>
+    </li>
+    <li><strong>逐行填。</strong>每格写明确判断，不要写「视情况而定」——那是还没判断。第 2 行可以这样填：影响半径是本地 CLI、单文件，最坏丢一条未保存的输入，并在内存里留半截条目、后续 id 跳号；能撤回，<code>git revert</code> 一个提交；独立验证是失败路径测试的输出（例如 <code>tests/test_storage.py</code> 里的用例）加手动触发一次写失败的 traceback；处置代做；你还要做的是读测试输出和 diff；签字人是你。其余九行照这个粒度写。至少有一条落在「人做」，一条落在「不做」；每一条「代做」的「怎么独立验证」都要写出证据从哪来，不能只写「看测试」。</li>
+    <li><strong>观察错误信息。</strong>把下面这段存成 <code>.scratch/responsibility-3301/observe_error.py</code>，在沙盒根目录跑 <code>python .scratch/responsibility-3301/observe_error.py</code>。它在一个系统临时目录里指向一个不存在的子目录，让 <code>JsonlStore.add</code> 在写文件时失败；不会动你的 <code>kb.jsonl</code>，也不会在仓库里留下目录：
+      <pre><code>import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from kb.storage import JsonlStore
+
+target = Path(tempfile.mkdtemp()) / "no-such-dir" / "kb.jsonl"
+store = JsonlStore(target)
+try:
+    store.add("t", "x")
+except Exception as exc:
+    print("type:", type(exc).__name__)
+    print("message:", exc)
+    for label, linked in (("cause", exc.__cause__), ("context", exc.__context__)):
+        if linked is not None:
+            print(label + ":", type(linked).__name__, linked)
+
+print("in memory after failure:", len(store.search("t")))</code></pre>
+      把输出抄进 <code>error-disclosure.md</code> 之前先脱敏：把每行里的绝对路径换成占位符——仓库内的路径用 <code>&lt;repo&gt;</code>，系统临时目录的路径用 <code>&lt;absolute-path&gt;</code>；异常类型、消息、<code>cause</code>/<code>context</code> 和 <code>in memory</code> 那几行都保留。真实路径只留在终端，不写进仓库。做过第 23 课的人，异常类型可能是 <code>StorageError</code>；用 <code>raise ... from exc</code> 时原始异常在 <code>cause</code> 里，用隐式异常链时在 <code>context</code> 里，两种都算带出原异常；如果两行都出现，是 Python 同时记了显式原因和上下文，不影响判断。没做过的人，异常就是 <code>FileNotFoundError</code>。脚本最后一行会告诉你：失败之后，内存里还能不能搜到这条没写进文件的条目。没做过第 23 课的人会看到 <code>1</code>；做过的人应该看到 <code>0</code>——如果还能看到 <code>1</code>，说明回滚没做对，把它记成风险。这正是第 23 课工单要修的状态一致性问题，本课只记风险，不在这里修。</li>
+    <li><strong>写取舍。</strong>在 <code>error-disclosure.md</code> 里按这几节写：背景、这条消息里有什么、谁在哪个通道能看到、选项、判断标准、决定、后果、复查条件、负责人、利益冲突（本练习写「无」；真实项目写清谁与什么有关）。至少写两个选项，每个写清「诊断损失什么 / 泄露增加什么」；能定量的给量级，不能定量的写清代价。决定要能回答：终端里看到什么、日志里看到什么、HTTP 客户端看到什么、公开 issue 里看到什么。复查条件写一个可观察的事件，比如「加 HTTP adapter 时」「日志开始送到第三方时」「仓库转公开时」。最后写一句：这条决定进契约还是只进实现？建议的答案是：契约只承诺「失败抛 <code>StorageError</code>」，消息文本不属于契约；对外适配器负责把内部消息映射成用户消息。这样消息文本不会冻结实现，泄露风险由适配器这一层挡住。</li>
+    <li><strong>写一个闸门。</strong>在 <code>gates.md</code> 里从清单挑一条「人做」或不可逆的，写成四样齐全的句子：动作（做什么）、对象（对哪个文件或服务）、批准人（谁）、证据（批准前必须看到什么）。例：「在删除 <code>kb.jsonl</code> 之前，仓库所有者必须看到 <code>Get-Item kb.jsonl | Format-List</code>（Unix 上是 <code>ls -l kb.jsonl</code>）的输出和备份文件路径，并回复 <code>approve delete kb.jsonl</code>；没有这句回复就不执行。」如果你选的是轮换密钥，就写清谁在哪个界面操作、agent 不接触哪个值。</li>
+    <li><strong>让闸门真的拦一次。</strong>在同一个目录建 <code>gate-demo.txt</code>（内容随意），再建 <code>check_gate.py</code>：
+      <pre><code>from pathlib import Path
+import sys
+
+base = Path(__file__).parent
+target = base / "gate-demo.txt"
+approval = base / "approval.txt"
+
+if not target.exists():
+    print("nothing to delete")
+    sys.exit(0)
+
+try:
+    text = approval.read_text(encoding="utf-8-sig").strip()
+except (OSError, UnicodeError):
+    text = ""
+
+if text != "approve delete gate-demo.txt":
+    print("refused: no approval")
+    sys.exit(1)
+
+target.unlink()
+approval.unlink()
+print("deleted:", target.name)</code></pre>
+      先直接跑 <code>python .scratch/responsibility-3301/check_gate.py</code>，它应该打印 <code>refused: no approval</code>，<code>gate-demo.txt</code> 还在；再把 <code>approve delete gate-demo.txt</code> 写进 <code>approval.txt</code>，重跑，它应该打印 <code>deleted: gate-demo.txt</code>。脚本会把 <code>approval.txt</code> 一并删掉，批准只用一次；再跑一次会说 <code>nothing to delete</code>，不会崩。把两次命令和输出抄进 <code>gates.md</code>。这一步练的是「没有批准时动作不发生」；句子写得漂亮不算数。</li>
+  </ol>
+</section>
+
+<section>
+  <h2>反馈回路：让一个刚接手的人来挑这份清单</h2>
+  <p>把清单和取舍交给 agent，让它扮演刚接手的安全审查者，只找问题、不改文件。它要真的按路径读文件，不能只读你贴给它的摘要。</p>
+  <pre><code>在沙盒仓库里读 .scratch/responsibility-3301/delegation-ledger.md
+和 error-disclosure.md。你扮演刚接手的安全审查者：只找问题，不改文件。
+
+1. 在「处置 = 代做」的行里，如果有站不住的，挑最站不住的一条：
+   给出具体出错场景、影响落在谁身上、现有验证为什么盖不住。引用原文一行。
+   如果都站得住，说明你检查了哪些行、为什么。
+2. 在错误信息取舍里，如果有没写清的，挑一处：谁能看到、看到什么、
+   什么条件下要复查。引用原文一行。如果没有，说明你检查了哪些节、为什么。
+3. 清单里有没有一条「人做」其实可以代做，或者一条「代做」
+   其实必须人做？如果有，各举一例；如果没有，说明理由。
+4. 清单里有没有该标「不做」却标成其他处置的？那条「不做」的理由是什么，
+   换个人能不能接受？
+
+最后回答：一个新人拿着这份清单，不问作者，能不能判断哪些活
+不能交给 agent？最站不住的是哪一条？</code></pre>
+  <p>把反馈记进 <code>review-notes.md</code>；有真实问题就改，找不到就记它检查了哪些行、你为什么同意，不要为凑数改。在 <code>review-notes.md</code> 末尾留一节「还没答」，记这次没改的问题。读反馈归成五类。<strong>影响半径写小了</strong>：它给出的场景比你想的远，就把「谁会疼」写具体，补上控制或闸门。<strong>验证不独立</strong>：证据来自 agent 的自述、或者来自实现本身，就换成契约预期值、真实命令输出或一手来源。<strong>处置放错了</strong>：一条「代做」其实必须人做，就改处置并写理由；一条「人做」其实可以代做，就补证据行。<strong>取舍缺条件</strong>：没写复查条件、没说谁看哪个通道、没说进契约还是实现，就补到能回答为止。<strong>越过底线</strong>：这件事本身不该做，不是换处置的问题；写明理由，删掉相关动作。</p>
+  <p>改完再跑一次同样的提示，把第二次结果记进 <code>review-notes.md</code>：它还能不能找到同一条问题？找不到，说明改到了点子上；换了一条新问题，也正常，记下来。</p>
+  <p>做完的标准是这几条：清单十行全填，至少一条「人做」、一条「不做」，每条「代做」都有证据行；<code>observe_error.py</code> 跑过，<code>error-disclosure.md</code> 的记录与输出一致（已脱敏），并有背景、消息里有什么、通道、两个选项、判断标准、决定、后果、复查条件、负责人和利益冲突，文件里没有真实绝对路径；<code>gates.md</code> 的闸门句四样齐全，且有一次不带批准的 dry run（<code>refused</code>）和一次带批准的记录（<code>deleted</code>，<code>gate-demo.txt</code> 此时已被删掉，留档看两次输出）；<code>review-notes.md</code> 记了红队两次反馈（或写明为什么没跑第二次），有改动就指回反馈，没有改动就写明理由；最后提交并检查状态：</p>
+  <pre><code>git add .scratch/responsibility-3301
+git commit -m "responsibility: ledger, disclosure, gate, red-team notes"
+git status</code></pre>
+  <p>沙盒主干是 <code>master</code>；最后一眼 <code>git status</code>，除 <code>.scratch/</code> 外没有未提交改动。地图上这一课的产出——一张「哪些事不能交给 AI」的清单，加一个安全取舍——到此兑现。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>责任看后果落在谁身上，不看代码是谁敲的；先问影响半径、可否撤回、可否独立验证。</li>
+    <li>五种处置：代做、代笔、代查、人做、不做；三问里答「不知道」的活，先补证据或加闸，不急着交。</li>
+    <li>安全是把风险留在可接受的范围；把信息删光会毁掉诊断。同一条消息换个通道就可能从诊断变成泄露，取舍要写清读者、选项、后果和复查条件。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.13 Software Security §1.1 security 的产品质量属性定义、§1.2 机密性/完整性/可用性与「not disclosed to unauthorized individuals, entities or processes」、§1.3 cybersecurity「keep cyber risk at a tolerable level」（printed 13-1~13-2）；§4.1 安全需求含 misuse / abuse cases、threat actors、risk assessments（printed 13-3）；§4.2 安全设计与 threat modeling（printed 13-4）；§4.4 CERT/CC top 10 的 default deny、least privilege、defense in depth（printed 13-5）；§4.5 渗透测试须在合法边界内并获授权、§5.1 工具「cannot find all vulnerabilities」（printed 13-5~13-6）。ch.14 Software Engineering Professional Practice §1.2 伦理守则、违规含不作为「failure to disclose risks」、对公众健康安全福祉的承诺（printed 14-3~14-4）；§1.7.6 职业责任与过失（printed 14-7）；§1.7.9 dark patterns「Creating dark patterns is not good ethical practice.」、§1.7.10 数据隐私与 GDPR（printed 14-8）；§1.8 文档责任：写 significant risks and trade-offs、warnings of dangerous consequences，避免 certifying unacceptable products、disclosing confidential information、falsifying facts or data（printed 14-8）；§1.9 取舍分析须客观公正、利益冲突先披露（printed 14-9）。MIT 6.031 Reading 30《Ethical Software Engineering》（本地 <code>courseware/mit-6.031/classes/30-ethics/index.html</code>）——“Ethicality is no different.”、“consider and test its ethical properties just as you would any others.”、“With your ethical testing hat, consider as pessimistically as possible all the ways that what you build might be misused and abused, using the moral lenses from this reading.”、义务的四层与两层向外扩的影响圈、「Ethical structures, not just ethical individuals」、moral lenses。</p>
+  <p><strong>行业做法：</strong>CMU 17-313《Responsible AI use in SE》（本地 <code>courseware/cmu-17-313/pdfs/02-responsible-AI-use.pdf</code>）p16 引 FT 的「trend of incidents」「high blast radius」「Gen-AI assisted changes」；p45「It will (almost) always give you an answer」「That answer is not trustworthy」；p67「DON'T accept an answer from the LLM as validation」「DO use the LLM to create deterministic ways to validate the program」；p72「Don't auto-approve commands on your host machine!」与 p73 dev container。CMU 17-313《737-MAX Casestudy》（本地 <code>courseware/cmu-17-313/pdfs/04-737MAX.pdf</code>）p6 示意图：迎角传感器数据送飞行计算机、MCAS 自动转水平尾翼、Lion Air 事故中传感器给错信息。职业伦理守则与隐私法是正式文本，但前者约束协会成员、后者按司法辖区生效；「哪个任务能交给 AI」没有统一标准，本课按风险分级、最小权限、人工闸门、独立验证这四条主流做法与取舍处理。</p>
+  <p><strong>实践方式：</strong><code>triage</code>（用户调用，frontmatter 有 <code>disable-model-invocation: true</code>）的 <code>ready-for-human</code> 状态与「why it can't be delegated (judgment calls, external access, design decisions, manual testing)」；<code>wizard</code>（模型调用）的「steps only they can perform」、隐藏输入、不可逆动作前确认、只写持续集成真正需要的密钥；<code>handoff</code>（用户调用）的「Redact any sensitive information, such as API keys, passwords, or personally identifiable information.」；<code>code-review</code>（模型调用，<code>implement</code> 收尾拉起）的「Do not merge or rerank findings」「Don't pick a single winner across axes」；<code>research</code>（模型调用）的一手来源与逐条引用。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>下一课：</strong>第 34 课「综合演练 + 迁移到真实项目」。这一课把判断方法留在了 <code>.scratch/responsibility-3301/</code>：委托清单、错误信息取舍、闸门句和红队反馈。第 34 课会把这份清单带进迁移计划，用它回答「哪些活可以交给 agent 搬，哪些必须你亲手做，哪些输出必须验到什么程度」，然后在一个完整功能上把前 33 课的流程走一遍。</p>
+  <p>没答完的问题记进 <code>.scratch/responsibility-3301/review-notes.md</code> 的「还没答」一节，下一课开工前先读它：错误信息的取舍如果有复查条件，条件到了再回来改；清单里标了「人做」但还没真正设闸门的行，迁移前补上；红队提出的新问题如果这次没改，也写进同一份笔记，不要留在聊天里。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0033-responsibility-card.html">责任参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

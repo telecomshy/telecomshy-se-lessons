@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 34 课 · 综合演练 + 迁移到真实项目</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+
+<header class="masthead">
+  <p class="eyebrow">模块 6 · 专业实践与 AI · 第 34 课</p>
+  <h1>综合演练 + 迁移到真实项目</h1>
+  <p class="lede">第 33 课的 <code>error-disclosure.md</code> 里，错误信息的取舍挂着一个复查条件：「加 HTTP adapter 时」。当时它只是一行字：本地 CLI 保留详情，跨信任边界的 adapter（适配器）映射成通用消息加关联编号。这一课，你把这个 adapter 真的做出来、送上线。前 33 课每课只走一个活动，这一课把八个活动连成一条路走一遍；走完，再把这条流程搬进你的真实项目 knowledge-pet。</p>
+  <p class="lede">带走的东西有两样：一个上线的功能——薄 HTTP（Hypertext Transfer Protocol，超文本传输协议）adapter——加一份迁移到 knowledge-pet 的计划。课程到这一课为止。</p>
+</header>
+
+<div class="lesson-meta">
+  <span><b>时间</b> 阅读 45–55 分钟；演练约 2 小时、迁移计划约 1 小时，另计、跨多个会话</span>
+  <span><b>前置</b> 第 2 课的八个活动；每一站的前置见「AI + Matt」对照表的退路栏</span>
+  <span><b>产出</b> 上线的 HTTP adapter（发布说明加可选标签）+ <code>.scratch/migration-3401/</code> 下的迁移计划</span>
+  <span><b>主读物</b> SWEBOK v4 ch.10 §1.1、§2.8 与 ch.8 §6；Google SRE《Release Engineering》</span>
+</div>
+
+<div class="objectives">
+  <h2>学完你应该能</h2>
+  <ul>
+    <li>说清这一课的位置：它不占第九个活动，它把八个活动串成一条线，也是全课的收口。</li>
+    <li>用 SWEBOK 的裁剪四步，说清流程怎么搬进另一个仓库：识别差异特征、挑标准与文档、选策略与阶段、记录决定与理由。</li>
+    <li>在沙盒把一个功能从需求走到上线：八站各说清入口、你拍什么、产物是什么、缺了对应课怎么退。</li>
+    <li>按可重复的口径发布：发布说明、可选标签、检查绿，已知限制写进说明。</li>
+    <li>写一份迁移计划：六节齐全，差异盘点立据，决定带理由，引用给路径。</li>
+    <li>用零上下文判据验收迁移计划：新会话拿着它，不追问就能开工。</li>
+  </ul>
+</div>
+
+<section>
+  <h2>位置：前 33 课各走一站，这一课把八站连成一条路</h2>
+  <p>第 2 课把软件工程摊成八个活动，之后的每一课都在其中一个活动里练。模块 6 的四课练的是推进路上的判断：第 30 课答「下一步不清楚」，第 31 课答「手上没有事实」，第 32 课答「上下文装不下也不该装」，第 33 课答「哪些推进方式不允许」。这一课不占第九个活动：它没有新概念要教，做的是把这八个活动连起来走一遍。模块 6 四课的判断在演练里都会用到一次——30 课把一句决定写成「主句加分号条件」的格式，站 1 拍板时照着写；31 课的引用纪律管迁移计划的出处；32 课的五问管会话边界；33 课的清单管计划里「哪些交 agent」。</p>
+  <p>它也是全课的收口。第 3 课装好工作台之后，每个活动都得到了一节课、一套产物、一张参考卡，但从需求到上线整条链，你还没有一次走完过。演练补的就是这一段。另一个对象要分清：演练对象是沙盒里真的功能，做完会合回主干、可以打标签；迁移对象是 knowledge-pet 的流程。课程一开始就定了边界——练习都在沙盒做，最后一课给 knowledge-pet 只写迁移计划，不改它的代码。所以 knowledge-pet 在本课只读不写；它的价值在于真实：tracker、词表、密钥、两进程，每一样都和沙盒不一样，每一样都会在迁移计划里变成一行待办。</p>
+  <p>沙盒和 knowledge-pet 各是什么，先对齐一下。沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 是课程的练习仓库：一个迷你知识库，<code>kb add</code> 和 <code>kb search</code> 两个命令，存储已经抽成 Store port（端口）——<code>kb/storage.py</code> 的模块注释里写着「调用者（CLI、将来的 HTTP adapter、测试）只应该依赖 Store 这个 port」。这个「将来的 HTTP adapter」等了十九课，这一课上线。knowledge-pet <code>D:\code\my_projects\knowledge-pet</code> 是你的真实项目：AI 知识问答桌宠，Tauri 壳加 Python sidecar（独立于壳的 Python 进程，knowledge-pet 自己的词条），产品决策已经记了一堆（<code>docs/research/</code> 里七份研究记录、GitHub 上的 Phase 0 spec 与工单），代码一行还没有。</p>
+</section>
+
+<section>
+  <h2>问题与概念：先走通，再裁剪</h2>
+  <p>课程节奏和真实节奏的差别，就是这一课要补的洞。课程里每一课只走一个活动：这一课练测试，下一课才轮到 CI（Continuous Integration，持续集成）。真实项目没有这种排法——一个功能从模糊想法到上线，中途要换会话、要查资料、要停下来问「这活能不能交给 agent」。单站练熟了，链路未必接得上：spec 写好了没人接、工单拆好了没测试兜、review 报告拿到了不知道谁裁决，这些断点只有真的连走一遍才会露出来。</p>
+  <p>第 29 课已经用过 drill（演练）这个词：那次演练的是事故，你同时扮演上报的人、值班的人和写复盘的人，记录写回仓库时注明「演练重放」。这次演练的是流程：一个真的功能从需求走到上线，每一站都真的调技能、真的落产物。演练和练习的差别就在这里——练习回答「这个活动怎么做才好」，演练回答「活动之间接不接得上」。</p>
+  <p>为什么先演练、后迁移？因为一条只在课件里存在的流程，搬进新仓库时你分不清两件事：卡住是新仓库不合适，还是流程本来就断。先在熟悉的环境里走通一遍，卡点才有出处——你在沙盒第几站卡了什么、怎么解的，随手记进 <code>.scratch/migration-3401/notes.md</code>（练习第 0 步会建这个文件），迁移计划里「按活动的迁移顺序」和「风险与回滚」两节就拿它立据。没有这份记录，计划里的迁移顺序只是课件目录的抄写。</p>
+  <p>搬运的动作有个正式名字。SWEBOK 在过程一章里写了这样一段：「Each software system has its differential characteristics. These differential characteristics, together with the stakeholders' needs, lead to specific life cycles. This adaptation will include identifying all the relevant characteristics, selecting the appropriate standards or documents internal to an organization, selecting a development strategy/life cycle model, stages, and processes, and documenting the decisions and rationale.（每个软件系统都有自己的差异特征；这些特征连同干系人的需要，导出各自的生命周期。这次裁剪（adaptation）包括：识别所有相关特征，挑选合适的标准或组织内部文档，选开发策略、生命周期模型、阶段与过程，并把决定与理由记录下来。）」（ch.10 §2.8, printed 10-8）。这段话把裁剪拆成四步：识别差异特征，挑标准与文档，选策略、阶段与过程，记录决定与理由。最后还有一句给搬运人的许可：「The adaptation will not require keeping the names provided in Section 2, or including them all（裁剪不要求保留第 2 节给出的那些名字，也不要求把它们全部带上）」——迁移计划允许留、允许舍、允许换名字，条件是四步都走了、理由都写了。</p>
+  <p>这个道理第 9 课出现过一次。同一章 §1.1 写着「no ideal process, or set of processes exists: software processes must be selected, adapted, and applied as appropriate for each project and each organizational context（不存在理想的过程或过程集合：软件过程必须针对每个项目和每个组织情境恰当地选择、裁剪和应用）」（printed 10-2）。第 9 课用它在一个项目里选过程模型，本课用它把整套流程搬进另一个项目——尺度变了，道理没变。</p>
+  <p>裁剪的第一刀切在哪，行业有一个便宜的做法，放在下一节讲。先记住它借用的概念：第 10 课的 tracer bullet（追踪弹），一条纵穿所有层的最小完整路径。搬流程的时候，「所有层」换成「所有站」。</p>
+</section>
+
+<section>
+  <h2>行业做法：追踪弹、可重复的发布、两层复盘</h2>
+  <p>先把标尺说清：「流程怎么搬进另一个项目」没有统一标准。SWEBOK 给的是裁剪的步骤，没给「该留什么」的清单；下面三条是主流做法和取舍，每条写清怎么做、产物是什么、代价是什么。</p>
+  <p><strong>第一条，第一张工单当流程的追踪弹。</strong>迁移不从铺配置开始，从一张真工单开始：挑一张小而完整的工单，让它走完需求到上线整条链，卡在哪一站就补哪一站的配置，补完再走第二张。什么时候用：搬流程的头一两周。产物是第一条链的完整记录——spec、工单、测试、发布说明。代价是第一张工单最慢，每一站都在现学。取舍在这里：有些团队先把全套模板配齐再开工，那是人数摊薄了配置成本；单人项目反过来，追踪弹更便宜，因为配置错了会立刻在工单上疼。例子就是本课的演练：HTTP adapter 的第一张工单走八站，<code>notes.md</code> 里记下的每个卡点，都是第二张工单（在 knowledge-pet 上）开工前要补的配置。</p>
+  <p><strong>第二条，发布口径要可重复。</strong>Google SRE 把 release engineering（发布工程）概括为「building and delivering software（构建并交付软件）」，并且说「Running reliable services requires reliable release processes.（可靠的运行依赖可靠的发布流程。）」他们的要求具体到字面：产物要「built in a reproducible, automated way so that releases are repeatable and aren't 'unique snowflakes.'（以可复现、自动化的方式构建，让发布可重复，而不是独一无二的雪花）」，对发布流程的任何改动都「should be intentional, rather than accidental（应该是有意的，而不是随手的）」（SRE Book,《Release Engineering》）。SWEBOK 给 release 的定义则支持把这件事做小：「release refers to distributing software and related artifacts outside the development activity, including internal releases and distribution to customers（发布指把软件和相关制品分发到开发活动之外，包括内部发布和分发给客户）」（ch.8 §6, printed 8-13）——内部发布也算发布，单人沙盒也有「上线」可谈。落到本课，上线口径是三件套加一条底线：实现合回主干、README（项目说明文件）里一段发布说明（端点、启动命令、已知限制）、可选的一个标签；底线是检查绿——CI 配置过就看 CI，没配置过就本地跑第 24 课那三条命令。已知限制写进发布说明，就是第 33 课「写 significant risks and trade-offs」的最小版。代价是口径要维护：下个版本还得照着走，改动要是有意的。</p>
+  <p><strong>第三条，复盘分两层。</strong>上线之后回看，第 29 课已经把两件事分清：postmortem（事故复盘）管「这次事故为什么发生」，<code>retro</code> 管「下一次 agent 跑得更顺」，对象是 agent 的工作环境——导航、自动检查、编码标准、工具开销。演练里没出事故，收口跑 <code>/retro</code> 就够；真把 <code>kb.jsonl</code> 弄坏了，那就按第 29 课走复盘，别混。<code>retro</code> 是用户调用（frontmatter 里有 <code>disable-model-invocation: true</code>），它给的是建议清单：能自动化的落仓库（lint 规则、CI 任务），判断类的记 <code>CODING_STANDARDS.md</code>（第 24 课的口径）。建议只有落盘才会生效，这是它的代价——也是第 29 课「文档写完不算交付」在环境改进上的版本。</p>
+</section>
+
+<section>
+  <h2>AI + Matt 怎么落地：八站一张表，每格回指一堂课</h2>
+  <p>这一课在地图上的技能栏是「全部主线」。没有新技能要介绍——第 3 课的总览仍然有效，每个技能的入口、调用类型、人拍什么，都在讲它的那一课立过。下面这张表把八站排开，每格回指一堂课。它同时是第 2 课那张活动图的收尾：Requirements 与 Testing &amp; Quality 各占两站，设计与架构并进站 2 的接缝确认，配置与运维接走站 6 和站 8 的发布，维护与演进由迁移计划继承，专业实践（32、33 课的判断）贯穿全程，不单设一站。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>站</th><th>对应活动（第 2 课）</th><th>入口</th><th>你拍什么</th><th>产物</th><th>没做对应课就……</th></tr></thead>
+      <tbody>
+        <tr><td class="what">1 需求</td><td>Requirements</td><td><code>/grill-with-docs</code>（用户调用，第 5 课）</td><td>端点、错误映射、监听地址、匹配语义、并发、依赖</td><td><code>GLOSSARY.md</code> 词条（ADR sparingly）</td><td>参考卡 0005、0004</td></tr>
+        <tr><td class="what">2 规格</td><td>Requirements + Design &amp; Architecture（接缝确认）</td><td><code>/to-spec</code>（用户调用，第 8 课）</td><td>spec 验收（能不能开工）、范围边界</td><td><code>.scratch/http-adapter/spec.md</code></td><td>参考卡 0008</td></tr>
+        <tr><td class="what">3 工单</td><td>Process &amp; Management</td><td><code>/to-tickets</code>（用户调用，第 10 课）</td><td>粒度、阻塞边、合并拆分</td><td><code>.scratch/http-adapter/issues/</code></td><td>参考卡 0010</td></tr>
+        <tr><td class="what">4 实现</td><td>Construction</td><td><code>/implement</code>（用户调用，第 23 课；红绿出自第 20 课）</td><td>seam（接缝）、节奏、每轮一个行为</td><td>分支上的提交与测试</td><td>参考卡 0023</td></tr>
+        <tr><td class="what">5 测试盘点</td><td>Testing &amp; Quality</td><td>无新技能——按第 19、21、22 课判据自查</td><td>断言落在哪、替身分工</td><td>结论进 <code>notes.md</code></td><td>参考卡 0019、0021、0022</td></tr>
+        <tr><td class="what">6 CI</td><td>Configuration &amp; Operations</td><td>无独立技能——链或本地三条命令（第 24 课）</td><td>红了算谁的、什么不进链</td><td>绿的运行或绿的退出码</td><td>参考卡 0024</td></tr>
+        <tr><td class="what">7 审查</td><td>Testing &amp; Quality（评审）</td><td><code>/code-review</code>（模型调用，也可手动，第 25 课）</td><td>分档、裁决、放行</td><td><code>.scratch/http-adapter/review-report.md</code></td><td>参考卡 0025</td></tr>
+        <tr><td class="what">8 上线与复盘</td><td>Configuration &amp; Operations（发布）；retro 是过程改进</td><td><code>/retro</code>（用户调用，第 24 课；分界见第 29 课）</td><td>发布口径、建议落哪</td><td>发布说明加可选标签，<code>notes.md</code> 收口</td><td>参考卡 0029</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>八站里 agent 跑的是流程，人的判断都已经在各自的课里立过规矩：站 1 拍端点语义和错误映射——第 5 课的规矩是推荐答案要逐条拍、不照单全收，第 33 课的取舍在这时执行；站 2 验 spec 能不能开工（第 8 课的检查单）；站 3 拍粒度和阻塞边（第 10 课 quiz 三问）；站 4 拍 seam 和节奏（第 20、23 课）；站 7 分档裁决（第 25 课，判断题不配必改）。迁移计划里的判断更重：SWEBOK 裁剪四步全要人拍板——差异特征是什么、留什么、舍什么、为什么，agent 查得到事实，拍不了板。</p>
+  <p>生效判据两条。第一条对演练：八站产物齐全且可查——spec、工单、分支上的实现提交、绿的检查、两轴报告、发布说明，每样都能打开、指得到提交。第二条对迁移计划，借的是第 32 课 handoff 的判据：「Judge a handoff by what a session with zero context could do with it.（用一个零上下文的会话拿着它能做什么，来判断这份交接。）」迁移计划就是写给零上下文读者的交接文档：新开一个会话，只给它这份计划，它不追问就能说出第一张工单是什么、自己能做哪几步、哪几步要等人。反馈回路验的就是这一条。</p>
+</section>
+
+<section>
+  <h2>三个常见误区</h2>
+  <p><strong>把流程当清单抄进新仓库。</strong>34 节课的产物在新仓库原样重建一遍——词表一份、spec 模板一份、CI 配一份——看起来勤奋，其实是把裁剪跳过了。SWEBOK 那句「不要求保留那些名字、也不要求全带上」说得很直：差异特征没识别就照单全收，搬过去的东西一半用不上，另一半缺着。防法：迁移计划的每一节先写这个仓库的特征是什么，再写据此留什么、舍什么；写不出特征，就先回差异盘点那一节。</p>
+  <p><strong>把演练做成补课大扫除。</strong>发现第 19 课练习没做、第 24 课 CI 没配，就想在演练里一次全补上——演练会走不完，卡点记录也会变成流水账。防法：每站的退路就是干这个用的。缺的记进 <code>notes.md</code>，进迁移计划的迁移顺序；真要补哪课，回那课的参考卡单独补，别挤在演练里。</p>
+  <p><strong>把迁移计划写成产品计划。</strong>knowledge-pet 要做什么功能、模块怎么分，<code>docs/architecture.md</code> 已经写完，那不是迁移计划的事。迁移计划管的是流程落点：第一张工单从哪张开始、测试与 CI 什么时候进、哪些活交 agent、卡住了怎么回滚。防法：计划里出现功能清单式的段落就删掉，换成对 <code>docs/architecture.md</code> 的路径引用。</p>
+</section>
+
+<section>
+  <h2>练习与带走：八站演练，加一份迁移计划</h2>
+  <p>练习分两半。前一半在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做综合演练：薄 HTTP adapter 从需求走到上线，八站全真跑，约两小时，跨多个会话。后一半写迁移计划，落 <code>.scratch/migration-3401/</code>，约一小时。两半之间靠 <code>notes.md</code> 连着：演练的卡点喂给计划。</p>
+  <h3>第 0 步：起点盘点</h3>
+  <ul>
+    <li>确认分支与状态：<code>git branch --show-current</code>（沙盒在 master 上），<code>git status --short</code>（应为空，或只剩你机器上已有的缓存目录）。</li>
+    <li>装工具：<code>python -m pip install ruff pytest</code>，装过跳过。</li>
+    <li>建 <code>.scratch/migration-3401/notes.md</code>，抬头写一行说明（演练站志：哪一站、卡了什么、怎么解的）。之后每站卡了东西就追加一行。</li>
+    <li>处理第 33 课的遗留：做过 33 课练习，打开 <code>.scratch/responsibility-3301/error-disclosure.md</code> 和 <code>review-notes.md</code> 的「还没答」一节——错误信息取舍的复查条件「加 HTTP adapter 时」在本课触发，站 1 照那份取舍执行；红队没改的问题顺手过一眼。没做过，用参考卡 0033 的示例决定当起点，站 1 把它拍成自己的决定。</li>
+    <li>knowledge-pet 本课只读，路径 <code>D:\code\my_projects\knowledge-pet</code>。</li>
+    <li>会话安排：站 1–3 在一个会话里跑；每张工单实现前按第 3 课的话清一次；站与站之间要不要换会话，按第 32 课五问判断，多数情况是继续。</li>
+  </ul>
+  <h3>站 1：需求——把 adapter 问清楚</h3>
+  <p>输入 <code>/grill-with-docs</code>，说：给沙盒知识库加一个薄 HTTP adapter，把 add 和 search 暴露成本地 HTTP 接口。它按设计树一轮一轮问，每个问题带推荐答案（第 5 课的格式）；推荐只是猜测，逐条拍板。下面这些问题大概率会出现，推荐答案仅供参考——它们是示例决定，不是标准答案：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>问题</th><th>推荐答案（示例）</th><th>它落在哪</th></tr></thead>
+      <tbody>
+        <tr><td>暴露哪些操作？</td><td>POST /add 与 GET /search?q= 两个；不做 delete——Store 契约里没有它。</td><td>spec 的 Solution 与 Out of Scope</td></tr>
+        <tr><td>错误怎么映射？</td><td>请求体缺 title/text 返回 400；写失败等内部错误返回 500 通用消息加关联编号（correlation id），详情进 stderr（标准错误流）——照第 33 课那份取舍执行。</td><td>Implementation Decisions 加发布说明的已知限制</td></tr>
+        <tr><td>监听地址？</td><td>只监听 127.0.0.1——最小权限（第 33 课），不暴露局域网。</td><td>Implementation Decisions</td></tr>
+        <tr><td>q 为空、大小写、匹配语义？</td><td>沿用 Store 契约；第 19 课没拍过的（子串还是整词、空 query 返回什么）在这一站拍掉，写进 GLOSSARY 或 spec。</td><td>Testing Decisions</td></tr>
+        <tr><td>一次能扛几个请求？</td><td>单线程 HTTP server 够用：单机单人，JsonlStore 的内存副本也经不起并发写；要并发先改 Store 或加锁，那是另一张工单。</td><td>Implementation Decisions</td></tr>
+        <tr><td>用什么库？</td><td>标准库 http.server，不引入新依赖——CI 的安装清单保持一行。knowledge-pet 的 sidecar 用 FastAPI 是它自己的决策（<code>docs/research/resolution-2-fastapi.md</code>），两个仓库不必一致。</td><td>Implementation Decisions</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>frontier 空了才算完（第 5 课的规矩）。这站的产物是 <code>GLOSSARY.md</code> 的首批词条；拍下的决定写成一句带条件的话（第 30 课 verdict 的格式：主句加分号条件），记进逼问记录，站 2 会用到；逼问记录留在会话里，站 2 同一个会话接着用——<code>/grill-with-docs</code> 是 grilling（第 5 课）和 domain-modeling（第 4 课）的组合，前者问、后者写词表；出现难反转、又有真实取舍的决定时，按第 5 课「sparingly」的口径落 ADR（<code>docs/adr/</code>，沙盒 <code>docs/agents/domain.md</code> 的约定），大概率一个都不写。退路：参考卡 0005、0004（词条）。</p>
+  <h3>站 2：规格——写成能开工的六节</h3>
+  <p>输入 <code>/to-spec</code>。它先探索仓库，把准备用的 seam 摆出来跟你确认——这个功能的公开边界就是 HTTP 接口本身：路径、方法、状态码、响应 JSON（JavaScript Object Notation）的形状；存储躲在 Store port 后面，adapter 不越过去。spec 按六节模板写，发布到 <code>.scratch/http-adapter/spec.md</code> 并打 <code>Status: ready-for-agent</code>。写完自查两处：Out of Scope 有没有写上不做 delete、不做鉴权、不上 HTTPS；Implementation Decisions 里的错误映射是不是照站 1 的决定写的。然后过「能不能开工」检查单（第 8 课）。退路：参考卡 0008。</p>
+  <h3>站 3：工单——拆成能独立验收的两三张</h3>
+  <p>输入 <code>/to-tickets</code>。粒度你拍板（quiz 三问：粒度、阻塞边、合并拆分）。示例拆法两张——01「HTTP adapter 端到端最小链」：启动、入库、检索走真实路径，配上测试；02「错误映射与关联编号」：缺字段返回 400，内部失败返回 500 通用消息加关联编号、详情进 stderr。多一张少一张都行，判据是每张能独立验收。发布到 <code>.scratch/http-adapter/issues/</code> 后做两件事：把词表与 spec、工单一并提交（<code>git add GLOSSARY.md .scratch/http-adapter</code> 后 commit；站 1 若落了 ADR，把 <code>docs/adr</code> 也加进这条命令），<code>git log -1 --oneline</code> 记下这个 commit——它是站 7 的固定点（fixed point）；再开分支 <code>git checkout -b feature/http-adapter</code>——实现与审查关在分支里（第 27 课的纪律），站 8 合回主干时「上线」才有东西可合。退路：参考卡 0010。</p>
+  <h3>站 4：实现——一张工单一次红绿</h3>
+  <p>每张工单一次 <code>/implement</code>。流水线是第 23 课那张表：报工单标题 → <code>tdd</code> 红绿（「where possible, at pre-agreed seams」）→ 类型检查与单文件测试高频、全量收尾 → code-review → commit。流水线收尾那次 code-review 是单张工单的，报告随手记进 <code>notes.md</code> 或不落盘；站 7 才是对整条分支的正式两轴审查。seam 确认时的答案你已经想好：测试打在 HTTP 接口上——真实 socket（套接字），用 <code>urllib</code> 请求 127.0.0.1 上的随机端口；存储注入 <code>InMemoryStore</code>——adapter 的构造函数收一个 <code>Store</code> 参数，测试传 <code>InMemoryStore</code>，替身用法按第 22 课的判断。两处提示：JsonlStore 的持久化行为另用真件检查兜底（第 19 课契约测试的口径，JsonlStore 那一路用真实文件）；02 工单的 500 路径需要一个会失败的 store——第 22 课的 stub（桩件）就是干这个的。做完一张看 diff（差异）、跑 <code>python -m pytest -q</code>，再做下一张。退路：参考卡 0023（流程）、0020（红绿）、0022（替身）。</p>
+  <h3>站 5：测试盘点——按判据过一遍，缺的记账不补课</h3>
+  <p>全量 <code>python -m pytest -q</code> 绿了之后，按第 19、21、22 课的判据过一遍：断言落在公开结果上（状态码、响应 JSON）还是戳了 handler 的内部对象；测试有没有绕过 HTTP 直接调函数；InMemoryStore 的测试和真件检查的分工清不清楚。缺什么记进 <code>notes.md</code>（比如「Store 契约测试缺失——第 19 课练习没做」），别在演练里顺手补——补课回各自课的参考卡，缺口进迁移计划的迁移顺序。退路：参考卡 0019、0021、0022。</p>
+  <h3>站 6：CI——链在就看它，不在就本地三条</h3>
+  <p>CI 第 24 课的链配过（<code>.github/workflows/ci.yml</code> 在），就把分支推上去看 Actions 绿，或者本地跑同款三条命令；没配过（大概率），本地跑三条：<code>python -m ruff format --check .</code>、<code>python -m ruff check .</code>、<code>python -m pytest -q</code>。红了就修，存量清理按第 24 课的办法单独提交。「没配链」这件事本身记进 <code>notes.md</code>——迁移计划里「测试与 CI 先行」那条顺序，现场证据就是它。退路：参考卡 0024。</p>
+  <h3>站 7：审查——双轴报告，逐条裁决</h3>
+  <p>输入 <code>/code-review</code>，固定点给站 3 记下的 commit（spec 与工单在开分支之前提交，三点 diff 里就只剩实现），spec 源指 <code>.scratch/http-adapter/</code> 下的 spec 或工单文件。报告落 <code>.scratch/http-adapter/review-report.md</code>。然后按第 25 课的读法走：先分两轴（规范轴 Standards / 工单轴 Spec），再分档核来源（引得到成文规则的记 hard（硬违规），坏味道观察记 judgement（判断题）），再配严重度给裁决（必改 / Nit（吹毛求疵）/ Optional（可选）/ FYI（仅供参考），判断题不配必改），改完跑全量。退路：参考卡 0025——卡上有示例两轴报告，没做过第 23 课练习也能练分档。</p>
+  <h3>站 8：上线与复盘——口径收口</h3>
+  <p><code>git checkout master</code> 后 <code>git merge feature/http-adapter</code>（沙盒主干是 master；分支删不删随你）。README 加一段「HTTP adapter（第一版）」：两个端点、启动命令、已知限制——只监听 127.0.0.1、无鉴权、错误只给通用消息加关联编号。这段就是发布说明，也是第 33 课「风险与安全使用」的最小版；可选再打一个标签（<code>git tag v0.1.0</code>，命令在收尾那步）。然后输入 <code>/retro</code> 回看这次演练：它按导航、自动检查、编码标准、工具开销给建议——能自动化的落仓库，判断类的记 <code>CODING_STANDARDS.md</code>；复盘收尾写进 <code>notes.md</code> 最后一节。退路：参考卡 0029，先分清 retro 和 postmortem。</p>
+  <h3>第 2 部分：迁移计划——六节，写在差异盘点之后</h3>
+  <p>演练走完，写 <code>.scratch/migration-3401/migration-plan.md</code>。原料四样：差异盘点（下一步做）、演练的 <code>notes.md</code>、第 33 课的 <code>delegation-ledger.md</code>（没做过就照参考卡 0033 的样例）、knowledge-pet 的真实文件。先把 knowledge-pet 的现状看一遍：<code>AGENTS.md</code>、<code>docs/architecture.md</code>、<code>docs/ipc-seam.md</code>、<code>docs/agents/issue-tracker.md</code>，<code>git -C D:\code\my_projects\knowledge-pet branch -a</code>（main 之外还有 prototype/ipc-shape）；装了 gh（GitHub 命令行）就跑 <code>gh issue list --repo telecomshy/knowledge-pet --limit 20</code>，没装就跳过。这是 SWEBOK 裁剪四步的第一步——识别差异特征。下表是盘点的骨架：前两列是写课时核过的实况，第三列由你填，每行都要填出对流程的具体影响。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>维度</th><th>沙盒</th><th>knowledge-pet</th><th>对流程的影响（你填）</th></tr></thead>
+      <tbody>
+        <tr><td>issue tracker</td><td>本地 Markdown，工单落 <code>.scratch/</code></td><td>GitHub issues，<code>gh</code> 命令，仓库私有</td><td></td></tr>
+        <tr><td>领域词表</td><td><code>GLOSSARY.md</code>（懒创建）</td><td><code>CONTEXT.md</code>（旧版命名，setup 时的产物）</td><td></td></tr>
+        <tr><td>代码</td><td><code>kb/</code> 两个命令加 Store port</td><td>还没有代码</td><td></td></tr>
+        <tr><td>测试与 CI</td><td>演练后有了（或本地三条命令）</td><td>都没有</td><td></td></tr>
+        <tr><td>密钥</td><td>无</td><td>云端 API Key，多供应商，设置里填</td><td></td></tr>
+        <tr><td>进程形态</td><td>单进程 CLI</td><td>Tauri 壳加 Python sidecar，两进程，HTTP/SSE</td><td></td></tr>
+        <tr><td>已有工件</td><td>前三十三课的练习产物</td><td>wayfinder 决策在 <code>docs/research/</code>（七份），Phase 0 的 spec #11 与工单 #12–#18 在 GitHub 上，原型分支 <code>prototype/ipc-shape</code></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>盘点填完，计划正文按六节写。每节给一句「写什么」和「原料从哪来」：</p>
+  <ol>
+    <li><strong>现状与目标。</strong>写 knowledge-pet 已经有什么（上面盘点表的第二列，逐条给路径）和还没有什么；目标收成一句话：从第一张真工单起，八站在 knowledge-pet 跑起来。原料是盘点表和 <code>docs/research/</code> 里的既有记录。</li>
+    <li><strong>迁移范围与非目标。</strong>范围写 workbench 对齐的事：词表文件名从 <code>CONTEXT.md</code> 迁到 <code>GLOSSARY.md</code> 还是保留旧名（以你装到的 SKILL.md 为准，决定带一句理由）、第一张工单走完整链、测试与 CI 随第一张工单进。非目标写清三样：不搬沙盒代码、不重写 <code>docs/research/</code> 里已定的决策、不动产品架构（那是 <code>docs/architecture.md</code> 的事）。原料是误区三的防法。</li>
+    <li><strong>按活动的迁移顺序。</strong>排在最前的通常是测试与 CI（沙盒的卡点证据在 <code>notes.md</code>）；已在用的（wayfinder 的研究与原型、triage 的标签）不动；spec #11 已在 GitHub 上，实现站从 <code>/implement</code> 接第一张工单开始。原料是八站对照表加 <code>notes.md</code>：沙盒卡住的站，顺序里前置。</li>
+    <li><strong>哪些交 agent / 哪些人做 / 哪些必须验。</strong>底稿是第 33 课的委托清单，加 knowledge-pet 特有行：云端 API Key 由人输值（<code>wizard</code> 的隐藏输入），<code>.env</code> 进 <code>.gitignore</code>，提示词与日志用占位符——数据边界（第 33 课）；Rust 壳与 Python sidecar 两套检查各是什么、进不进 CI，写进验收；SSE 长连接的测试替身按第 22 课边界，先 InMemory adapter 后真件。每条代做都写出证据从哪来，不能只写「看测试」。原料是 <code>delegation-ledger.md</code> 的七列。</li>
+    <li><strong>风险与回滚。</strong>从差异盘点长出来，每行三段：差异、风险、对策。tracker 换成 GitHub——gh 命令由 agent 提议、你确认后跑（第 33 课闸门的最小版）；密钥泄露不可撤回——所以输入通道留给人；两进程集成测试贵——先替身后真件。回滚写清：计划本身是文档，随便改；已搬的每一步各成一个提交，能单独撤。原料是盘点表第三列和第 33 课的三问。</li>
+    <li><strong>验收与时间盒。</strong>验收对齐八站产物：第一张工单上线后，spec、工单、测试、检查绿、两轴报告、发布说明齐全可查。时间盒写一个能兑现的范围：第一个时间盒只搬顺序节里列的前几站，<code>/retro</code> 之后决定继续还是调整。原料是生效判据两条。</li>
+  </ol>
+  <p>写法纪律三条，全是旧课的规矩，这里点名不展开：引用路径不复制（第 18 课）；每个决定带为什么（第 32 课的 relitigation（翻案）判据——翻案发生是因为只记了决定没记理由）；写给零上下文的读者（第 18 课的验收问句：没读过前文的 agent 能不能开工）。计划写完先别提交——它还要过下面这道反馈回路，改完才一起落账。</p>
+</section>
+
+<section>
+  <h2>反馈回路：让零上下文的接手人挑这份计划</h2>
+  <p>把计划交给一个零上下文的 agent：开一个新会话（或派一个子代理），工作目录随它，只给它计划路径。它扮演刚接手 knowledge-pet 的人，只回答问题，不改任何文件，但要按计划给的路径去读文件：</p>
+  <pre><code>读 D:\code\my_projects\se-course-sandbox\.scratch\migration-3401\migration-plan.md，
+按它引用的路径去读 knowledge-pet 和沙盒的相关文件。你扮演一个零上下文、
+刚接手 knowledge-pet 的人，只回答问题，不改任何文件。
+
+1. 你要开工的第一张工单是什么？从计划的哪一节、哪一行得出？
+2. 哪些活你可以直接做？哪些必须等人拍板？各举一条，引计划原文。
+3. 有没有哪个决定让你想重新讨论（只记了决定、没记为什么）？
+4. 有没有哪一步的产物要求说不清「做到什么程度算完」？
+5. 计划里有没有把产品功能当迁移内容写进去的段落？
+
+最后回答：拿着这份计划开工，你第一个要问人的问题是什么？</code></pre>
+  <p>读反馈归四类处置。<strong>接不上</strong>：第一问答不出第一张工单，就补第一节现状或第三节顺序，缺的路径补进去。<strong>想翻案</strong>：第三问有产出，给那个决定补为什么；补不出理由的，把它记进第五节「风险与回滚」，或在计划末尾单列一节「未决问题」，别让它假装已定。<strong>验收含糊</strong>：第四问指到的步骤，对齐八站产物清单，让每条验收标准指得到产物。<strong>越界</strong>：第五问指到的段落，删掉产品内容，换成 <code>docs/architecture.md</code> 的路径引用。反馈与处置记 <code>.scratch/migration-3401/plan-review.md</code>，改完再跑一次同样的提示，第二次结果也记进去——它还能不能挑出同一条问题。</p>
+  <h3>收尾：提交与完成标准</h3>
+  <p>两轮反馈处置完，落这几笔账；retro 若往仓库落了改动（lint 规则、CI 任务、<code>CODING_STANDARDS.md</code>），先单独提交一笔：</p>
+  <pre><code>git add README.md
+git commit -m "release: HTTP adapter 第一版，发布说明含已知限制"
+git tag v0.1.0
+git add .scratch/http-adapter .scratch/migration-3401
+git commit -m "capstone: 演练记录与 knowledge-pet 迁移计划"
+git status</code></pre>
+  <p>做完的标准是这几条：八站产物齐全可查——spec、工单、分支上的实现提交、全量测试绿、检查绿（或三条命令退出码为 0）、两轴报告带裁决、README 发布说明、标签可选；<code>notes.md</code> 有每站的卡点记录；迁移计划六节齐全，差异盘点每行的「对流程的影响」都填了，正文没有从 knowledge-pet 复制来的大段内容（只有路径和短引用）；反馈回路两轮有记录；最后 <code>git status</code> 干净。地图上这一课的产出——一个上线的功能，加一份迁移计划——到此兑现，34 节到此走完。</p>
+</section>
+
+<div class="recap">
+  <h2>今天带走的三句话</h2>
+  <ol>
+    <li>流程靠裁剪搬进新仓库：先在熟悉的地方把整条链走通一遍（演练），再按新仓库的差异特征决定留什么、舍什么、先搬哪一站（SWEBOK ch.10 §2.8 的四步）。</li>
+    <li>第一张工单就是流程的追踪弹：走完需求到上线八站，卡在哪一站，迁移顺序就把那一站前置；上线按可重复的口径收口——发布说明、可选标签、能重跑的检查。</li>
+    <li>迁移计划是写给零上下文读者的：差异盘点立据、决定带理由、引用给路径；用第 32 课的判据验它——新会话拿着它，不追问就能开工。</li>
+  </ol>
+</div>
+
+<div class="source">
+  <p><strong>理论来源：</strong>SWEBOK v4（本地 <code>courseware/swebok/swebok-v4.pdf</code>）——ch.10 Software Engineering Process §1.1 的「no ideal process, or set of processes exists: software processes must be selected, adapted, and applied as appropriate for each project and each organizational context」（printed 10-2，第 9 课已引）；§2.8 Software Life Cycle Adaptation（printed 10-8）的差异特征、裁剪四步与「The adaptation will not require keeping the names provided in Section 2, or including them all」；ch.8 Software Configuration Management §6 Release Management and Delivery（printed 8-13）的 release 定义「distributing software and related artifacts outside the development activity, including internal releases and distribution to customers」。经典转引：Hunt &amp; Thomas《The Pragmatic Programmer》（1999）的 tracer bullet——本地无全文，第 10 课同款处理，本课只把「所有层」换成「所有站」。</p>
+  <p><strong>行业做法：</strong>Google SRE Book《Release Engineering》（本地 <code>courseware/google-sre/release-engineering/index.html</code>）——release engineering 定义「building and delivering software」、「Running reliable services requires reliable release processes.」、「built in a reproducible, automated way so that releases are repeatable and aren't 'unique snowflakes.'」、「Changes to any aspect of the release process should be intentional, rather than accidental.」。「流程怎么裁剪、上线口径多严」没有统一标准，以上是主流做法与取舍。</p>
+  <p><strong>实践方式：</strong>全部主线技能按站回指——<code>grill-with-docs</code>（第 5 课）、<code>to-spec</code>（第 8 课）、<code>to-tickets</code>（第 10 课）、<code>implement</code> 与 <code>tdd</code>（第 20、23 课）、<code>code-review</code>（第 25 课）、<code>retro</code>（第 24 课，分界见第 29 课）、<code>handoff</code> 与 <code>ask-matt</code> 的零上下文判据（第 32 课）、委托清单与数据边界（第 33 课）；沙盒 <code>kb/storage.py</code> 的 Store port（第 15 课）；knowledge-pet 的 <code>AGENTS.md</code>、<code>CONTEXT.md</code>、<code>docs/architecture.md</code>、<code>docs/ipc-seam.md</code>、<code>docs/research/</code> 与 GitHub tracker。技能文档只作实践方式，不作理论来源。</p>
+</div>
+
+<div class="next">
+  <p><strong>课程到此走完。</strong>没有下一课，接下来的三件事都在课程之外。第一，按迁移计划开工：从差异盘点和第三节顺序开始，knowledge-pet 的第一张工单走完整链——它的 tracker 是 GitHub，开工前确认 <code>gh</code> 可用。第二，参考卡当手册用：每课的参考卡从那课课件的页脚进，忘了一条规矩就回那张卡。第三，遇到课没覆盖的情况，用 <code>ask-matt</code> 路由，或者回到第 2 课那张八个活动的图，自己定位它在哪个活动里。</p>
+  <p>沙盒留在了能跑的状态：CLI 加一个只监听本地的 HTTP adapter，测试、检查、发布说明齐全。它不值得继续雕琢——要练的工程判断，接下来都在 knowledge-pet 上练。</p>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="../reference/course-map.html">七个模块，三十四节课</a> · 参考卡：<a href="../reference/0034-capstone-card.html">综合演练与迁移参考卡</a></p>
+</footer>
+
+</main>
+</body>
+</html>

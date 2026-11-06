@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>综合演练与迁移参考卡 · 综合演练 + 迁移到真实项目</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page card-page">
+
+<header class="masthead">
+  <p class="eyebrow">参考卡 · 第 34 课</p>
+  <h1>综合演练与迁移参考卡</h1>
+  <p class="lede">流程靠裁剪搬进新仓库：先在熟悉的地方走通整条链，再按新仓库的差异特征决定留什么、舍什么、先搬哪一站。第一张工单就是流程的追踪弹；迁移计划写给零上下文的读者。</p>
+</header>
+
+<h2>概念：演练、裁剪、可重复的发布</h2>
+<div class="card-rule">
+  <p><strong>drill（演练）：</strong>一个真的功能从需求走到上线，每一站都真的调技能、真的落产物。练习回答「单个活动怎么做才好」，演练回答「活动之间接不接得上」。第 29 课的演练对象是事故，本课的演练对象是流程。<br>
+  <strong>adaptation（裁剪）：</strong>SWEBOK ch.10 §2.8（printed 10-8）的四步——识别差异特征、挑标准与文档、选策略/阶段/过程、记录决定与理由；「The adaptation will not require keeping the names provided in Section 2, or including them all」：允许留、舍、换名字，条件是四步都走了、理由都写了。同章 §1.1（printed 10-2）：「no ideal process, or set of processes exists…」（第 9 课已引，尺度换成整个流程）。<br>
+  <strong>release（发布）：</strong>SWEBOK ch.8 §6（printed 8-13）：「distributing software and related artifacts outside the development activity, including internal releases and distribution to customers」——内部发布也算发布。SRE《Release Engineering》的要求：发布可重复、「aren't 'unique snowflakes.'」、对流程的改动「intentional, rather than accidental」。</p>
+</div>
+
+<h2>八站速查：入口、拍板、产物、退路</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>站</th><th>活动</th><th>入口</th><th>你拍什么</th><th>产物</th><th>没做对应课就…</th></tr></thead>
+    <tbody>
+      <tr><td class="what">1 需求</td><td>Requirements</td><td><code>/grill-with-docs</code>（用户，第 5 课）</td><td>端点、错误映射、监听地址、匹配语义、并发、依赖</td><td><code>GLOSSARY.md</code> 词条（ADR sparingly）</td><td>卡 0005、0004</td></tr>
+      <tr><td class="what">2 规格</td><td>Requirements + Design &amp; Arch</td><td><code>/to-spec</code>（用户，第 8 课）</td><td>spec 验收、范围边界</td><td><code>.scratch/http-adapter/spec.md</code></td><td>卡 0008</td></tr>
+      <tr><td class="what">3 工单</td><td>Process &amp; Mgmt</td><td><code>/to-tickets</code>（用户，第 10 课）</td><td>粒度、阻塞边、合并拆分</td><td><code>.scratch/http-adapter/issues/</code></td><td>卡 0010</td></tr>
+      <tr><td class="what">4 实现</td><td>Construction</td><td><code>/implement</code>（用户，第 23 课；红绿第 20 课）</td><td>seam、节奏、每轮一个行为</td><td>分支上的提交与测试</td><td>卡 0023</td></tr>
+      <tr><td class="what">5 测试盘点</td><td>Testing &amp; Quality</td><td>按第 19、21、22 课判据自查</td><td>断言落在哪、替身分工</td><td>结论进 <code>notes.md</code></td><td>卡 0019、0021、0022</td></tr>
+      <tr><td class="what">6 CI</td><td>Config &amp; Ops</td><td>链或本地三条命令（第 24 课）</td><td>红了算谁的、什么不进链</td><td>绿的运行或退出码 0</td><td>卡 0024</td></tr>
+      <tr><td class="what">7 审查</td><td>Testing &amp; Quality</td><td><code>/code-review</code>（模型，也可手动，第 25 课）</td><td>分档、裁决、放行</td><td><code>review-report.md</code></td><td>卡 0025</td></tr>
+      <tr><td class="what">8 上线与复盘</td><td>Config &amp; Ops（发布）；retro 过程改进</td><td><code>/retro</code>（用户，第 24 课；分界第 29 课）</td><td>发布口径、建议落哪</td><td>发布说明加可选标签</td><td>卡 0029</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="note">「检查绿」三条命令（第 24 课口径）：<code>python -m ruff format --check .</code>、<code>python -m ruff check .</code>、<code>python -m pytest -q</code>。固定点＝spec 与工单提交后的那个 commit；实现与审查在 <code>feature/http-adapter</code> 分支上，站 8 合回 master。</p>
+
+<h2>需求站的六个问题（示例答案，不是标准答案）</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>问题</th><th>推荐答案（示例）</th></tr></thead>
+    <tbody>
+      <tr><td>暴露哪些操作？</td><td>POST /add 与 GET /search?q=；不做 delete——Store 契约里没有它。</td></tr>
+      <tr><td>错误怎么映射？</td><td>缺字段 400；内部失败 500 通用消息加关联编号，详情进 stderr（第 33 课取舍，复查条件在本课触发）。</td></tr>
+      <tr><td>监听地址？</td><td>只监听 127.0.0.1（最小权限）。</td></tr>
+      <tr><td>q 为空、大小写、匹配语义？</td><td>沿用 Store 契约；第 19 课没拍过的在这一站拍掉。</td></tr>
+      <tr><td>并发？</td><td>单线程 server 够用；要并发先改 Store 或加锁，另开工单。</td></tr>
+      <tr><td>用什么库？</td><td>标准库 http.server，不引入新依赖；knowledge-pet 用 FastAPI 是它自己的决策。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>迁移计划：六节骨架</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>节</th><th>写什么</th><th>原料</th></tr></thead>
+    <tbody>
+      <tr><td class="what">1 现状与目标</td><td>knowledge-pet 已有/没有的东西，逐条给路径；目标一句话：第一张真工单起，八站跑起来</td><td>差异盘点表、<code>docs/research/</code></td></tr>
+      <tr><td class="what">2 迁移范围与非目标</td><td>词表文件名拍板（<code>CONTEXT.md</code> → <code>GLOSSARY.md</code> 或保留）、第一张工单走完整链、测试与 CI 随第一张进；非目标：不搬沙盒代码、不重写已定决策、不动产品架构</td><td>盘点表、<code>docs/architecture.md</code></td></tr>
+      <tr><td class="what">3 按活动的迁移顺序</td><td>测试与 CI 通常前置（沙盒卡点立据）；已在用的不动；实现站从 <code>/implement</code> 接 spec #11 的第一张工单开始</td><td>八站表、<code>notes.md</code></td></tr>
+      <tr><td class="what">4 交 agent / 人做 / 必须验</td><td>第 33 课委托清单打底，加特有行：API Key 人输值、<code>.env</code> 进 <code>.gitignore</code>、占位符；两套语言检查进验收；SSE 先替身后真件</td><td><code>delegation-ledger.md</code>（或卡 0033 样例）</td></tr>
+      <tr><td class="what">5 风险与回滚</td><td>差异 → 风险 → 对策；gh 命令人确认后跑；密钥通道留给人；集成测试先替身后真件；每步单独提交、能单独撤</td><td>盘点表第三列、第 33 课三问</td></tr>
+      <tr><td class="what">6 验收与时间盒</td><td>第一张工单上线后八站产物齐全可查；第一个时间盒只搬前几站，<code>/retro</code> 后再决定</td><td>生效判据两条</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="note">差异盘点七个维度：tracker（本地 Markdown ↔ GitHub issues）、词表（<code>GLOSSARY.md</code> ↔ 旧版 <code>CONTEXT.md</code>）、代码（有 ↔ 无）、测试与 CI（无/演练后有 ↔ 无）、密钥（无 ↔ 云端 API Key）、进程形态（单进程 CLI ↔ Tauri 壳 + Python sidecar）、已有工件（练习产物 ↔ wayfinder 决策、spec #11、工单 #12–#18、<code>prototype/ipc-shape</code>）。每行必须填出「对流程的影响」。</p>
+
+<h2>生效判据</h2>
+<div class="card-rule">
+  <p><strong>对演练：</strong>八站产物齐全可查——spec、工单、分支上的实现提交、全量测试绿、检查绿、两轴报告带裁决、README 发布说明，每样都能打开、指得到提交；反馈回路两轮有记录。<br>
+  <strong>对迁移计划：</strong>借第 32 课 handoff 判据「Judge a handoff by what a session with zero context could do with it.」——零上下文的新会话拿着它，不追问就能说出第一张工单是什么、自己能做哪几步、哪几步要等人。写法纪律：引用路径不复制（第 18 课）、决定带理由（第 32 课 relitigation 判据）、写给零上下文读者。<br>
+  <strong>提交：</strong>站 3 先提交 <code>GLOSSARY.md</code> 与 <code>.scratch/http-adapter</code>（记固定点）；反馈回路后 <code>git add README.md</code> 发布说明一笔 + <code>git tag v0.1.0</code>（可选）、<code>git add .scratch/http-adapter .scratch/migration-3401</code> 记录一笔；最后 <code>git status</code> 干净。</p>
+</div>
+
+<h2>三个容易滑进去的坑</h2>
+<div class="note">
+  <p><strong>把流程当清单抄进新仓库：</strong>差异特征没识别就照单全收，搬过去一半用不上、一半缺着；每节先写仓库特征，再写留舍。<strong>把演练做成补课大扫除：</strong>缺的记进 <code>notes.md</code> 进迁移计划，补课回各课参考卡单独补，别挤在演练里。<strong>把迁移计划写成产品计划：</strong>功能与架构是 <code>docs/architecture.md</code> 的事；计划管流程落点，出现功能清单段落就删，换路径引用。</p>
+</div>
+
+<h2>练习产物</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>产物</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr><td class="what">演练记录</td><td><code>.scratch/migration-3401/notes.md</code>：每站一行卡点（哪一站、卡了什么、怎么解的），末节 retro 收尾</td></tr>
+      <tr><td class="what">演练产物</td><td><code>.scratch/http-adapter/</code>（spec、issues、review-report.md）+ 分支实现合回 master + README 发布说明 + 可选 tag</td></tr>
+      <tr><td class="what">迁移计划</td><td><code>.scratch/migration-3401/migration-plan.md</code>：差异盘点七行带影响列 + 六节</td></tr>
+      <tr><td class="what">反馈记录</td><td><code>.scratch/migration-3401/plan-review.md</code>：两轮零上下文接手人反馈与处置</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer class="colophon">
+  <p>课程地图：<a href="course-map.html">七个模块，三十四节课</a> · 课件：<a href="../lessons/0034-capstone-migration.html">第 34 课「综合演练 + 迁移到真实项目」</a></p>
+</footer>
+
+</main>
+</body>
+</html>
