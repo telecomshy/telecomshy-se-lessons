@@ -150,7 +150,7 @@ store.find(Query(tag="设计", since=...))  # 新维度：Query 加字段</code>
   <p>把两套候选和取舍理由交给 agent，让它按下面这份检查单过一遍。它查的是「比」这个动作有没有真的发生。</p>
 
   <pre><code>读我纸面的两个接口候选和取舍理由（贴在下面），再读
-C:\Users\admin\.agents\skills\codebase-design\SKILL.md 与 DESIGN-IT-TWICE.md。
+%USERPROFILE%\.agents\skills\codebase-design\SKILL.md 与 DESIGN-IT-TWICE.md。
 
 逐条检查：
 1. 两个候选真的不同吗？调用示例并排比——只差命名、参数顺序就是换皮。
@@ -181,7 +181,7 @@ C:\Users\admin\.agents\skills\codebase-design\SKILL.md 与 DESIGN-IT-TWICE.md。
   <p><strong>理论来源：</strong>SWEBOK v4 第 3 章 p83–98——§4.6 Design Rationale（printed 3-11：设计理由包含「考虑过的替代方案、为选定一个拒绝其余而分析的取舍和判据」；「记录被否掉的决定和否掉它们的理由也是有用的」，供假设变化时重新审视）；§5 Software Design Strategies and Methods 导言（printed 3-11：多种策略「引导设计者先关注什么、如何进行、如何构造模块」）；§5.9 Constraint-Based Design（printed 3-12：约束「缩小设计空间，排除不可行或不可接受的替代方案」「迫使少数几个早期决定出现」）。</p>
   <p><strong>行业做法：</strong>CMU 17-313《08-design-docs》p7–8（好的设计文档「提出关键设计决定，重点写各自的取舍」，最好的设计文档覆盖备选设计并记录各自长处短处；本地路径 <code>courseware/cmu-17-313/pdfs/08-design-docs.pdf</code>）；SE-EDU《Design Approaches》（multi-level design、top-down/bottom-up/mix、agile design 与 full upfront design 的对照；本地路径 <code>courseware/se-education/book/designApproaches/print.html</code>）。</p>
   <p><strong>经典来源：</strong>Ousterhout,《A Philosophy of Software Design》“Design It Twice”一章——「你的第一个想法不太可能是最好的」（书不在本地，此处经典转引；本地摘录 <code>courseware/ousterhout/aposd2ndEdExtract.pdf</code> 只含 ch.6 与 ch.21，第 14 课已用，「设计两次」章节不在摘录里）。</p>
-  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）——<code>SKILL.md</code> 词汇表（depth / leverage / locality / seam）与 <code>DESIGN-IT-TWICE.md</code>（框问题空间、并行子代理各带一条设计约束、五件产出、depth / locality / seam placement 三轴散文对比、强判断与混合方案）；本机路径 <code>C:\Users\admin\.agents\skills\codebase-design\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>实践方式：</strong><code>codebase-design</code>（模型调用）——<code>SKILL.md</code> 词汇表（depth / leverage / locality / seam）与 <code>DESIGN-IT-TWICE.md</code>（框问题空间、并行子代理各带一条设计约束、五件产出、depth / locality / seam placement 三轴散文对比、强判断与混合方案）；本机路径 <code>%USERPROFILE%\.agents\skills\codebase-design\</code>（只作实践方式，不作理论来源）。</p>
 </div>
 
 <div class="next">

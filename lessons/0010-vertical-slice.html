@@ -99,7 +99,7 @@
   <p>判断工单拆得好不好，最好办法是让 agent 按下面这份检查单过一遍。它查的不是格式，而是「拆解本身站不站得住」。</p>
 
   <pre><code>读我这份 to-tickets 产出的工单（.scratch/&lt;feature&gt;/issues/ 下所有文件），
-再读 C:\Users\admin\.agents\skills\to-tickets\SKILL.md、
+再读 %USERPROFILE%\.agents\skills\to-tickets\SKILL.md、
 SE-EDU《Project Planning》（Work breakdown structure / Milestones 两节）。
 
 逐条检查：
@@ -126,7 +126,7 @@ SE-EDU《Project Planning》（Work breakdown structure / Milestones 两节）�
 
 <div class="source">
   <p><strong>理论来源：</strong>SE-EDU《Project Planning》——Work breakdown structure（把全部工作拆成更小、更明确的单元，可带前置任务与工时估算，每单元清楚何时算做完）、Milestones（里程碑是阶段进展标志，交付哪些特性要参考依赖与优先级，可高层计划 + 近几个里程碑详设）；SWEBOK v4 第 9 章《Software Engineering Management》（过程计划、计划与风险，回指第 9 课 ch.9 p9-8~9-9）。</p>
-  <p><strong>实践方式：</strong><code>to-tickets</code>（用户调用）——探索仓库用 GLOSSARY + 尊重 ADR、找 prefactor 机会（Make the change easy）、按 vertical-slice-rules 起草纵向切片、四个确认问题、按阻塞顺序发布到 tracker（本地文件一张一卡/块文件，或真实 tracker 原生阻塞关系），打 <code>ready-for-agent</code>；本机路径 <code>C:\Users\admin\.agents\skills\to-tickets\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>实践方式：</strong><code>to-tickets</code>（用户调用）——探索仓库用 GLOSSARY + 尊重 ADR、找 prefactor 机会（Make the change easy）、按 vertical-slice-rules 起草纵向切片、四个确认问题、按阻塞顺序发布到 tracker（本地文件一张一卡/块文件，或真实 tracker 原生阻塞关系），打 <code>ready-for-agent</code>；本机路径 <code>%USERPROFILE%\.agents\skills\to-tickets\</code>。只作落地方式，不是理论出处。</p>
   <p><strong>行业经典：</strong>Hunt &amp; Thomas《The Pragmatic Programmer》(1999) 的 tracer bullet；Freeman &amp; Pryce《Growing Object-Oriented Software, Guided by Tests》(2009) 的 walking skeleton——两者的「先做一条能跑通的最小闭环」，就是本课「第一张工单」的出处。</p>
   <p><strong>延伸：</strong>第 11 课「计划、估算与度量」——每个工单都带了阻塞边和「一个上下文窗口」的尺寸，正是第 11 课估算的依据。</p>
 </div>

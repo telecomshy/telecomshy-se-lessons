@@ -145,7 +145,7 @@
 
 - 理论：`courseware/swebok/swebok-v4.pdf` 第 1 章，p48–61。
 - 实践：`courseware/se-education/book/gatheringRequirements/print.html`。
-- 工具：`C:\Users\admin\.agents\skills\grilling\SKILL.md`（只作实践方式）。
+- 工具：`%USERPROFILE%\.agents\skills\grilling\SKILL.md`（只作实践方式）。
 
 ## 缺口
 

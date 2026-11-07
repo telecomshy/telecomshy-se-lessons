@@ -125,7 +125,7 @@
   <p>ADR 最常见的问题，不是格式错，而是「写都写了但没写到点上」：被否方案没写、三条判据没全、把 changelog 当 ADR。好在判据和格式都写成了清单，让 agent 拿清单来查，最可靠。</p>
 
   <pre><code>读我这条 ADR，再读
-C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md 和 SKILL.md。
+%USERPROFILE%\.agents\skills\domain-modeling\ADR-FORMAT.md 和 SKILL.md。
 
 逐条检查：
 1. 三条判据（难回滚 / 没有上下文很怪异 / 有真实取舍）是否真的成立？缺哪一条？
@@ -152,7 +152,7 @@ C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md 和 SKILL.md。
 
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 1 章（Software Requirements），p43–66——需求管理：change control（变更控制）是管理需求的核心、需求的 stability / volatility（p57–62）、tracing 与变更的 footprint（p60）；Michael Nygard, <em>Documenting Architecture Decisions</em>（2011）——ADR 的提出与「记录决定与为什么」的主张（线上文章，无本地全文）。</p>
-  <p><strong>实践工具（以此为准）：</strong><code>domain-modeling</code> 维护 <code>docs/adr/</code> 目录约定与 <code>ADR-FORMAT.md</code> 模板（含三判据、可选 Status / Considered Options / Consequences）；本机路径 <code>C:\Users\admin\.agents\skills\domain-modeling\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>实践工具（以此为准）：</strong><code>domain-modeling</code> 维护 <code>docs/adr/</code> 目录约定与 <code>ADR-FORMAT.md</code> 模板（含三判据、可选 Status / Considered Options / Consequences）；本机路径 <code>%USERPROFILE%\.agents\skills\domain-modeling\</code>。只作落地方式，不是理论出处。</p>
   <p><strong>延伸：</strong>ADR 严格说也落在 Design &amp; Architecture（设计记录，见 SWEBOK 第 2 章 p67–82）；本课按需求链收尾来教，是为了接住「需求会变、所以为什么值得留」这条主线。</p>
 </div>
 

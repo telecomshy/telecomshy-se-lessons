@@ -85,7 +85,7 @@
 
 ## 三、技能包本体（最权威，流程细节以此为准）
 
-- 本地目录 `C:\Users\admin\.agents\skills\`
+- 本地目录 `%USERPROFILE%\.agents\skills\`
   每个技能的 `SKILL.md` 就是该流程的定义。不另造同义词、不简化步骤。
 - `ask-matt/SKILL.md` 与 `ask-matt/PHASE-BOUNDARIES.md`
   技能包全景：主线、支线、术语层；阶段边界的五选一决策树。用于：第 3、32 课。

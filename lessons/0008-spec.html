@@ -108,7 +108,7 @@
   <p>判断一份 spec 够不够开工，最好办的办法，是拿一个「读它能不能开工」的检查单，让 agent 自己过一遍。这不是格式检查，而是「它有没有把开工需要的东西都写全」。</p>
 
   <pre><code>读我这份 spec（.scratch/&lt;feature&gt;/spec.md），再读
-C:\Users\admin\.agents\skills\to-spec\SKILL.md、项目的 GLOSSARY.md 和 docs/adr/。
+%USERPROFILE%\.agents\skills\to-spec\SKILL.md、项目的 GLOSSARY.md 和 docs/adr/。
 
 逐条检查：
 1. 这份 spec 能不能只靠自己开工？有没有依赖 spec 之外、没写进去的约定？
@@ -134,7 +134,7 @@ C:\Users\admin\.agents\skills\to-spec\SKILL.md、项目的 GLOSSARY.md 和 docs/
 
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 1 章（Software Requirements），p43–66——需求规格说明（requirements specification）：把需求记录下来以便记忆和传达、是最有争议的一块、面向受众的组织原则（p50 一带）、结构化自然语言 / user story 格式、ISO/IEC/IEEE 29148 需求文档模板（p1-12）；CMU 17-313《Software Specifications》p5——spec 是客户与工程师就该软件如何运作达成一致的基础，也是估算成本、风险、进度的现实基础；SE-EDU《Specifying Requirements》（回指第 6 课）。</p>
-  <p><strong>实践工具（以此为准）：</strong><code>to-spec</code>——用户调用（<code>disable-model-invocation</code>），流程为「探索仓库 → 画 seam → 写模板 spec → 发布到 tracker → 打 <code>ready-for-agent</code>」；本机路径 <code>C:\Users\admin\.agents\skills\to-spec\</code>。只作落地方式，不是理论出处。</p>
+  <p><strong>实践工具（以此为准）：</strong><code>to-spec</code>——用户调用（<code>disable-model-invocation</code>），流程为「探索仓库 → 画 seam → 写模板 spec → 发布到 tracker → 打 <code>ready-for-agent</code>」；本机路径 <code>%USERPROFILE%\.agents\skills\to-spec\</code>。只作落地方式，不是理论出处。</p>
   <p><strong>延伸：</strong>seam（接缝）在本课只是 to-spec 的一个动作，第 15 课「接缝与适配器」会正式展开；到那之前，你只要把它理解为「测试从哪一层插进去」即可。</p>
 </div>
 

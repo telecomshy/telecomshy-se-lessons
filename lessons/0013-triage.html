@@ -147,7 +147,7 @@
   <p>把两条 issue 文件交给 agent，让它按下面这份检查单过一遍。它查的不是格式，是「这条输入现在能不能开工、合同签得硬不硬」。</p>
 
   <pre><code>读我沙盒里这两条 issue（.scratch/&lt;feature-slug&gt;/issues/ 下的两个文件，含 ## Comments），
-再读 C:\Users\admin\.agents\skills\triage\SKILL.md、AGENT-BRIEF.md、OUT-OF-SCOPE.md。
+再读 %USERPROFILE%\.agents\skills\triage\SKILL.md、AGENT-BRIEF.md、OUT-OF-SCOPE.md。
 
 逐条检查：
 1. 拆得对吗？两个文件各只含一件事，category（bug / enhancement）标对了吗？
@@ -174,7 +174,7 @@
 
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 1 章 p43–66（需求 validation：进入规格前先验证）与 p57–62（requirements management / change control：变更走受控入口）；Google SRE Book《Being On-Call》（收到问题后 triage + 按需升级）与《Effective Troubleshooting》Triage 一节（按影响面定级、先止血、保留证据；Triage/Examine/Diagnose 是易败步骤）；CMU 17-313《07-specs》p5（spec 是契约，回指第 6、8 课）。</p>
-  <p><strong>实践方式：</strong><code>triage</code>（用户调用，<code>disable-model-invocation: true</code>）——五步流程（gather context 含 redundancy / prior rejection 两检查 → recommend 等你点头 → verify the claim → grill if needed 调 grilling + domain-modeling → apply outcome 五种产物）；brief 写法见 <code>AGENT-BRIEF.md</code> 四原则，拒的功能留档见 <code>OUT-OF-SCOPE.md</code>。本机路径 <code>C:\Users\admin\.agents\skills\triage\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>实践方式：</strong><code>triage</code>（用户调用，<code>disable-model-invocation: true</code>）——五步流程（gather context 含 redundancy / prior rejection 两检查 → recommend 等你点头 → verify the claim → grill if needed 调 grilling + domain-modeling → apply outcome 五种产物）；brief 写法见 <code>AGENT-BRIEF.md</code> 四原则，拒的功能留档见 <code>OUT-OF-SCOPE.md</code>。本机路径 <code>%USERPROFILE%\.agents\skills\triage\</code>（只作实践方式，不作理论来源）。</p>
   <p><strong>延伸：</strong>第 14 课进模块 3「设计与架构」，第一站是深模块、信息隐藏与不变量——brief 签好了，接下来轮到把它做对。</p>
 </div>
 

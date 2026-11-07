@@ -115,8 +115,8 @@
 
   <pre><code>读我这份 design doc（.scratch/&lt;feature&gt;/design.md），有 spec 的话
 一起读 .scratch/&lt;feature&gt;/spec.md；再读
-C:\Users\admin\.agents\skills\handoff\SKILL.md 里「不重复已有产物、
-引用路径」那条规矩，以及 C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md
+%USERPROFILE%\.agents\skills\handoff\SKILL.md 里「不重复已有产物、
+引用路径」那条规矩，以及 %USERPROFILE%\.agents\skills\domain-modeling\ADR-FORMAT.md
 （如果文档引用了 ADR）。
 
 逐条检查：
@@ -147,7 +147,7 @@ C:\Users\admin\.agents\skills\handoff\SKILL.md 里「不重复已有产物、
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 2 章 p67–82（printed 2-1~2-16）——§2 Software Architecture Description（printed 2-4：AD 是工作产物；「有形的表示」对演化中的系统和进出的人员宝贵；面向有关注点的干系人，给构建者当 blueprint，给测试、部署、运维、维护当依据）。第 3 章 p83–98——§4 Recording Software Designs（printed 3-7~3-8：设计产物捕获四样——问题词汇、解法词汇、重大决定、每个非平凡决定的理由；沟通随受众和详略而变；in-process “working” specifications 与 final design products 的区分）、§4.6 Design Rationale（printed 3-11：理由对部署后维护的人未必显然，记录理由提升长期可维护性）、§6.1 Design Reviews and Audits（printed 3-13：评审查完成度、需求覆盖、未决问题与潜在问题，任何阶段可做，可由设计团队、独立第三方或其他干系人做）。</p>
   <p><strong>行业做法：</strong>CMU 17-313《08-design-docs》（本地路径 <code>courseware/cmu-17-313/pdfs/08-design-docs.pdf</code>）：p6 文档分类；p7 design doc 的定位（「Code review before there is code!」）与好文档三件（目标与用例、实现思路不过细、关键决定带取舍）；p8 最差文档嵌歧义；p11 常见模板十一项；p13–15 RFC 的用与不用、六个状态标签；p18 评审练习。SE-EDU《Documentation》（本地路径 <code>courseware/se-education/book/documentation/print.html</code>）：developer-as-maintainer（写给维护者）的文档、Go Top-down、Aim for Comprehensibility、Document Minimally but Sufficiently。design doc 没有统一标准，以上是主流做法与取舍。</p>
-  <p><strong>实践方式：</strong><code>handoff</code>（用户调用，会话级交接，「不重复已有产物、引用路径」的规矩出自它的 <code>SKILL.md</code>）；<code>to-spec</code> 的 spec 模板（对照分工：Implementation Decisions 不放文件路径和代码）；<code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code> 收取舍与落选方案。本机路径 <code>C:\Users\admin\.agents\skills\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>实践方式：</strong><code>handoff</code>（用户调用，会话级交接，「不重复已有产物、引用路径」的规矩出自它的 <code>SKILL.md</code>）；<code>to-spec</code> 的 spec 模板（对照分工：Implementation Decisions 不放文件路径和代码）；<code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code> 收取舍与落选方案。本机路径 <code>%USERPROFILE%\.agents\skills\</code>（只作实践方式，不作理论来源）。</p>
 </div>
 
 <div class="next">

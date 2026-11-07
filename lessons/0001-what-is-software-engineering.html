@@ -49,7 +49,7 @@
   <p>编程是把行为写出来：给定输入，产生输出。软件工程是在<strong>时间、规模、代价</strong>之下，让这个行为一直成立。</p>
   <p>他还给了一个很好用的判据：</p>
   <blockquote>
-    <p>It's programming if “clever” is a compliment, but it's software engineering if “clever” is an accusation.<br>在一次性脚本里，「写得巧」是夸奖；在要活五年的系统里，「写得巧」是指控。</p>
+    <p>It's programming if “clever” is a compliment, but it's software engineering if “clever” is an accusation.<br>意译：在一次性脚本里，「写得巧」是夸奖；在要活五年的系统里，「写得巧」是指控。</p>
   </blockquote>
   <p>因为「巧」通常意味着依赖了没写进契约的行为。短命代码无所谓；长命代码里，这些依赖会变成某天突然断掉的线。</p>
 
@@ -72,23 +72,23 @@
 </section>
 
 <section>
-  <h2>AI 降低了哪一种难度</h2>
+  <h2>AI 降低了哪一种复杂度</h2>
   <p>1986 年，Fred Brooks 把软件开发的困难分成两类：</p>
   <ul>
     <li><strong>essential complexity（本质复杂度）</strong>：把问题想清楚——要什么、约束是什么、行为如何组合、谁接受什么后果。</li>
     <li><strong>accidental complexity（偶然复杂度）</strong>：工具、语言、环境带来的麻烦——语法、样板代码、查 API、配环境。</li>
   </ul>
-  <p>AI 把偶然复杂度压得很低。样板代码、语法错误、重复改写、查文档，这些它做得比人快。</p>
-  <p>但本质复杂度没有消失。你让 agent 写得更快，如果方向错了，只是<strong>更快地错</strong>。所以这门课的重点不是「怎么让 AI 多写代码」，而是「怎么在让它写之前，把问题想清楚」。</p>
-  <p>后面三十三节课，本质上都在做同一件事：把本质复杂度提前解决掉，好让 AI 的快用在正确的地方。</p>
+  <p>AI 把偶然复杂度的大头压得很低。样板代码、语法错误、查文档，这些它做得比人快；配环境它帮得上忙，但经常还是要人来收尾。</p>
+  <p>但本质复杂度没有消失。你让 agent（智能体）写得更快，如果方向错了，只是<strong>更快地错</strong>。所以这门课的重点不是「怎么让 AI 多写代码」，而是「怎么在让它写之前，把问题想清楚」。</p>
+  <p>后面三十三节课，本质上都在做同一件事：先让问题有答案，再让 AI 动手，好让它的快用在正确的地方。</p>
 </section>
 
 <section>
   <h2>为什么个人开发者更需要它</h2>
   <p>过去，软件工程常被当成团队和架构师的事。一个人写脚本、做小工具，靠手快和感觉也能应付，因为代码短、用户少、坏了重跑，三个问题都偏轻。</p>
   <p>AI 改变了这个平衡。一个人现在能产出过去一个团队才能写完的代码，但判断、验证、设计和交接的负担并没有被分摊，反而集中到了这一个人身上。你让 agent 写得越快，越需要有人回答：这一步做对了吗？这个模块该不该拆？这个行为有没有被测试锁住？三个月后接手的人（很可能还是你）看得懂吗？</p>
-  <p>这些问题不是公司流程的装饰，而是软件工程的核心。AI 把「写」的成本降下来了，却把「判断」的成本抬了上来。个人开发者如果没有这套判断力，就会用更快的速度生产自己验证不了、维护不了的代码。</p>
-  <p>所以这门课把软件工程当作主线，把 AI 和技能包当作实践方式。我们不是学一套公司里的流程，而是给自己一套在高速产出时仍然能判断对错的方法。</p>
+  <p>这些问题正是软件工程的核心，公司流程只是它们在组织里的影子。AI 把「写」的成本降下来了，判断的量却跟着产出涨了上去。个人开发者如果没有这套判断力，就会用更快的速度生产自己验证不了、维护不了的代码。</p>
+  <p>所以这门课把软件工程当作主线，把 AI 和技能包当作实践方式。这套方法给你自己用：在高速产出的时候，你仍然能知道自己做得对不对。</p>
 </section>
 
 <section>
@@ -96,10 +96,10 @@
   <p>遇到任何一段代码或一个任务，先问这三句：</p>
   <ol class="steps">
     <li><strong>它要活多久？</strong>小时、月、年，还是十年？</li>
-    <li><strong>多少人碰它、依赖它？</strong>只有你、一个团队，还是外部用户？</li>
+    <li><strong>多少人碰它、依赖它？</strong>只有你、一个团队、多个团队，还是外部用户？</li>
     <li><strong>坏了谁付代价？</strong>没人、你自己、客户，还是合规与法律责任？</li>
   </ol>
-  <p>三个都偏「短、少、轻」，按编程问题处理，别上重装备。任何一个偏「长、多、重」，就进入工程问题，需要计划、测试、文档、审查。</p>
+  <p>三个都偏「短、少、轻」，按编程问题处理，别上重装备。任何一个偏「长、多、重」，就进入工程问题，需要计划、测试、文档、审查。落在中间——比如活一个月、一个团队在用、坏了自己返工——就按三问卡的中间档走：先看另外两问，拿不准按更重的算，只先加一个测试。</p>
   <p>这张判断规则已经做成一张可打印的卡片：<a href="../reference/0001-three-questions.html">三问卡</a>。</p>
 </section>
 
@@ -115,8 +115,8 @@
 </section>
 
 <section>
-  <h2>练习：六个场景，你来判</h2>
-  <p>先自己选，再点开「看判断」。两个选项字数一样，没有格式提示。</p>
+  <h2>练习：六个场景，加你手上的项目</h2>
+  <p>前六题先自己选一个，再展开「看判断」；两个选项长度、样式完全一样，排版里没有藏答案。第七题判的是你手上的项目，没有标准答案。</p>
 
   <div class="quiz">
     <div class="quiz-item">
@@ -172,6 +172,15 @@
         <p class="answer"><b>工程问题。</b>时间、规模（客户加支持团队）、代价（合同责任）三项都重。</p>
       </details>
     </div>
+
+    <div class="quiz-item">
+      <p class="quiz-q">7. 你手上正在做的一个真实项目——想一个具体的，别拿上面六个代替。</p>
+      <p class="choices"><span>编程问题</span><span>工程问题</span></p>
+      <details>
+        <summary>看怎么判</summary>
+        <p class="answer">拿三问过一遍：它要活多久？多少人碰它、依赖它？坏了谁付代价？三个都轻，按编程问题处理；任何一个偏重，进工程问题；落在中间，按三问卡的中间档走——先看另外两问，拿不准按更重的算。判完把三个答案记下来，README、便签都行，下次犹豫上多重流程时直接看。</p>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -179,19 +188,19 @@
   <h2>今天带走的三句话</h2>
   <ol>
     <li>软件工程 = 编程 × 时间 × 规模 × 代价。</li>
-    <li>先问寿命和代价，再决定上多少规范。</li>
+    <li>先问寿命、规模、代价，再决定上多少规范。</li>
     <li>AI 降低偶然复杂度，不降低本质复杂度。</li>
   </ol>
 </div>
 
 <div class="source">
-  <p><strong>主读物：</strong>Titus Winters, <a href="https://abseil.io/resources/swe-book/html/ch01.html">“What Is Software Engineering?”</a>，<em>Software Engineering at Google</em> 第 1 章。重点读 <em>Time and Change</em> 与 <em>Trade-offs and Costs</em> 两节。</p>
+  <p><strong>主读物：</strong>Titus Winters, <a href="https://abseil.io/resources/swe-book/html/ch01.html">“What Is Software Engineering?”</a>，<em>Software Engineering at Google</em> 第 1 章。重点读 <em>Time and Change</em>、<em>Scale and Efficiency</em> 与 <em>Trade-offs and Costs</em> 三节。</p>
   <p><strong>延伸：</strong>Fred Brooks, “No Silver Bullet”（1986）。本地已存 PDF：<a href="../courseware/brooks/no-silver-bullet.pdf">courseware/brooks/no-silver-bullet.pdf</a>。原文也收录在 <em>The Mythical Man-Month</em> 1995 纪念版；先抓住 essential / accidental 这一对区分即可。</p>
 </div>
 
 <div class="next">
   <p><strong>下一课：</strong><a href="../lessons/0002-what-software-engineering-covers.html">第 2 课「软件工程到底包含什么」</a>。你会看到软件工程不只是写代码，而是一组彼此牵制的活动；看清全貌之后，我们再决定这门课怎么走。</p>
-  <p>有任何不清楚的，直接问我。我是你的老师，不是这本书的朗读器。</p>
+  <p>哪一问答不出来，直接问我。这一课真正的作业在第 7 题：拿你手上的项目过一遍三问。</p>
 </div>
 
 <footer class="colophon">

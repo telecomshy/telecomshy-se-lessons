@@ -118,8 +118,8 @@
   <p>把组件图和三条取舍说明交给 agent，让它按下面这份检查单过一遍。它查的是「取舍」这个动作有没有真的发生。</p>
 
   <pre><code>读我纸面的组件图和三条取舍说明（贴在下面），再读
-C:\Users\admin\.agents\skills\codebase-design\SKILL.md 的词汇表，
-以及 C:\Users\admin\.agents\skills\domain-modeling\ADR-FORMAT.md（如果我落了 ADR 草稿）。
+%USERPROFILE%\.agents\skills\codebase-design\SKILL.md 的词汇表，
+以及 %USERPROFILE%\.agents\skills\domain-modeling\ADR-FORMAT.md（如果我落了 ADR 草稿）。
 
 逐条检查：
 1. 图上每个组件有一句话职责吗？已经存在的组件，能对应到代码里的模块或缝吗？虚线的规划组件，写得出它将来落在哪、为什么现在先不建吗？
@@ -148,7 +148,7 @@ C:\Users\admin\.agents\skills\codebase-design\SKILL.md 的词汇表，
   <p><strong>理论来源：</strong>SWEBOK v4 第 2 章 p67–82（printed 2-1~2-16）——§1.2 Stakeholders and Concerns（printed 2-3：关注点随干系人角色而变，quality attributes 是关注点的一大类，Figure 2.2 关注点清单）；§2 Software Architecture Description 与 §2.1 Architecture Views and Viewpoints（printed 2-4~2-6：视图回应关注点、logical / process / physical / development view、viewpoint、multiple views problem）；§2.2 Architecture Patterns, Styles and Reference Architectures（printed 2-6~2-7：风格分类与清单）；§2.4 Architecture as Significant Decisions（printed 2-7：质量属性间的取舍是设计决定的依据、architecture rationale、architectural technical debt）；§3.2.1 Architecture Analysis（printed 2-9：ASR 定义）；§4.1 “Goodness” in Architecture（printed 2-10~2-11：关注点对撞的例子；ATAM 有一句概述，方法本地无材料不展开）。第 3 章 p95–96——§6.2 Quality Attributes 与 §6.3 Quality Analysis and Evaluation Techniques（printed 3-13~3-14：质量属性的运行时/非运行时分类、scenario-based techniques）。</p>
   <p><strong>行业做法：</strong>SE-EDU《Architecture》（本地路径 <code>courseware/se-education/book/architecture/print.html</code>）：Bass 等人的架构定义（「架构关心接口的公开面」）、架构图无标准记法与画图规矩（符号克制、别滥用双向箭头）、架构风格清单及一句话解释、「大多数应用混用多种风格」。</p>
   <p><strong>经典转引：</strong>Bass、Clements、Kazman《Software Architecture in Practice》的 quality attribute scenario（质量属性场景）六段写法——书不在本地，只借「刺激、响应、度量」的骨架；ATAM / SAAM / QAW 等架构评估方法，SWEBOK ch.2 §4.1 有一句概述（ATAM 用效用树加展示质量的场景做评估），方法本身本地无材料，本课不展开。</p>
-  <p><strong>实践方式：</strong><code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>（模型调用，第 7 课）收取舍说明；<code>codebase-design</code> 的 <code>SKILL.md</code> 词汇表管模块级词汇（module / interface / seam / adapter）；<code>improve-codebase-architecture</code> 的词汇纪律（别把 module 说成 component，第 28 课）。本机路径 <code>C:\Users\admin\.agents\skills\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>实践方式：</strong><code>domain-modeling</code> 的 <code>ADR-FORMAT.md</code>（模型调用，第 7 课）收取舍说明；<code>codebase-design</code> 的 <code>SKILL.md</code> 词汇表管模块级词汇（module / interface / seam / adapter）；<code>improve-codebase-architecture</code> 的词汇纪律（别把 module 说成 component，第 28 课）。本机路径 <code>%USERPROFILE%\.agents\skills\</code>（只作实践方式，不作理论来源）。</p>
 </div>
 
 <div class="next">

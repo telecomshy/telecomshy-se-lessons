@@ -134,7 +134,7 @@
   <p>判断纸面练习画得对不对，让 agent 按下面这份检查单过一遍。它查的不是格式，是「你有没有把「雾」和「可开工」分开、有没有守住「地图解决的是决定」这条线」。</p>
 
   <pre><code>读我这份「多来源知识库」的纸面决策地图（目的地 / Not yet specified / 我挑的那张 ticket / 是否该用 wayfinder 的判断），
-再读 C:\Users\admin\.agents\skills\wayfinder\SKILL.md。
+再读 %USERPROFILE%\.agents\skills\wayfinder\SKILL.md。
 
 逐条检查：
 1. Destination 先写清了吗？它是一句「走到什么算」的具体描述，不是「把这做大」这类口号？
@@ -160,7 +160,7 @@
 
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 9 章 p9-9（自适应式：需求不稳时不宜预先排满，用总体估算 + 逐迭代调整、约束反推迭代数）；SE-EDU《Project Planning》Milestones（高层计划 + 近几个里程碑详设——「不现实为整个项目做详细计划」）；延伸 CMU 17-313《03-project-planning》（计划、里程碑与风险，作延伸来源）。</p>
-  <p><strong>实践方式：</strong><code>wayfinder</code>（用户调用，<code>disable-model-invocation: true</code>）——建图（命名目的地 → 广度优先 grill 摸前沿 → 无雾则停 → 建地图 → 建可指定 ticket → 第二遍连阻塞边 → research 子代理并行）与走图（load 高层图 → 认领 frontier 第一张 → 按类型解 → resolution + 关 issue + 地图追加一行 → 毕业新雾 / 清 out of scope）。本机路径 <code>C:\Users\admin\.agents\skills\wayfinder\</code>。</p>
+  <p><strong>实践方式：</strong><code>wayfinder</code>（用户调用，<code>disable-model-invocation: true</code>）——建图（命名目的地 → 广度优先 grill 摸前沿 → 无雾则停 → 建地图 → 建可指定 ticket → 第二遍连阻塞边 → research 子代理并行）与走图（load 高层图 → 认领 frontier 第一张 → 按类型解 → resolution + 关 issue + 地图追加一行 → 毕业新雾 / 清 out of scope）。本机路径 <code>%USERPROFILE%\.agents\skills\wayfinder\</code>。</p>
   <p><strong>延伸：</strong>第 13 课「外部输入：triage 与 agent-ready」——处理别人递进来的、还没理清的外部问题；<strong>本课练习不真建图</strong>（纸面走查），需要时再让 agent 用 wayfinder 建真实地图。</p>
 </div>
 
