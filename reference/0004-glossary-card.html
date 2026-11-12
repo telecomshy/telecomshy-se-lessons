@@ -22,8 +22,8 @@
     <tbody>
       <tr><td class="skill">Requirements（需求）</td><td>需求句里的名词必须唯一，否则验收标准无法执行。</td></tr>
       <tr><td class="skill">Design &amp; Architecture（设计与架构）</td><td>类型、接口、模块名从领域词来；命名漂移会让接口失真。</td></tr>
-      <tr><td class="skill">Testing（测试）</td><td>测试名、场景、oracle（判定标准）都依赖词义。</td></tr>
-      <tr><td class="skill">Maintenance（维护）</td><td>三个月后的你和 agent 靠词表读代码。</td></tr>
+      <tr><td class="skill">Testing &amp; Quality（测试与质量）</td><td>测试名、场景、oracle（判定标准）都依赖词义。</td></tr>
+      <tr><td class="skill">Maintenance &amp; Evolution（维护与演进）</td><td>三个月后的你和 agent（智能体）靠词表读代码。</td></tr>
     </tbody>
   </table>
 </div>
@@ -91,7 +91,7 @@ _Avoid_: synonym-a, synonym-b</code></pre>
 </div>
 
 <div class="card-rule">
-  <p><strong>边界能写，步骤不写。</strong>「删除一个 Document 意味着它不再能被 search 返回」是边界，写。<br>「先删索引记录，再删文件，最后清缓存」是步骤，交给设计文档或 ADR（架构决策记录）。</p>
+  <p><strong>边界能写，步骤不写。</strong>「删除一个 Document 意味着它不再能被 search 返回」是边界，写。<br>「先删索引记录，再删文件，最后清缓存」是步骤，交给设计文档或 ADR（Architecture Decision Record，架构决策记录）。</p>
 </div>
 
 <h2>什么进，什么不进</h2>

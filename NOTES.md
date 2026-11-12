@@ -618,4 +618,14 @@
 - 改动文件：`lessons/0003-ai-practice-and-workbench.html`（23 处）、`reference/0003-skill-map.html`（6 处）；参考卡无受审计结论影响的表述，未再同步；课程地图第 3 课行无需改。
 - 流程观察：① 调用类型全对 ≠ 行为描述全对——38/38 的 frontmatter 核对带来的安心被「红-绿-重构」这个描述层偏差打破，逐技能核「它做什么」仍然必须；② 主代理预核在线引文 + 审计员本地核事实的分工首跑有效：一条误报被主代理复核拦下，两条真问题由审计员抓出，双向都起了作用。
 
+## 第六十次调整（2026-11-12）
+
+- 老课审计第四批：**第 4 课审完并按惯例落实「必须改 5 + 全部建议改 6」，无一否决**。派审计前机械自查修 11 处：术语首见 4 处（`SWEBOK（软件工程知识体系）`主读物行、`agent（智能体）`学习目标、`DDD` 全称从第二次出现挪回首见、`spec（规格说明）`）；活动名回指 4 处（课件表与参考卡的 `Testing（测试）`/`Maintenance（维护）`改回第 2 课规范名 `Testing & Quality（测试与质量）`/`Maintenance & Evolution（维护与演进）`，练习 2 答案「Design 阶段」改「Design & Architecture 阶段」）；参考卡 3 处（agent 首见补中文、ADR 首见补英文全称、同表活动名）。Evans 引文（"By using the model-based language pervasively…"）由主代理在线核对逐字属实（DDD 无本地全文，SOURCE-MAP 按经典处理），译文质量归审计员判。
+- 审计结果：报「必须改 5、建议改 6、可不改 7」，总体判断「修掉必须改即达完全掌握」。技能事实底账干净：`grill-with-docs` 的 SKILL.md 全文一句「Call the Skill tool twice, for 'grilling' and 'domain-modeling'」坐实调用描述；GLOSSARY-FORMAT 四规则、懒创建、GLOSSARY-MAP 多上下文、CONTEXT.md 旧版注（setup SKILL.md「the legacy `CONTEXT.md`」）逐条对上；SWEBOK p48–61 覆盖五类需求活动核实成立（§1.11 与 Figure 1.3 在 PDF p48）；SE-EDU《Requirements》三条断言核实（functional/non-functional ✓、prioritization ✓、glossary 0 命中 ✓）。参考卡无必须改项。
+- 必须改五条全落实：① **贯穿例子状态矛盾**——第一天删索引+第二天又删文件后，`kb list` 读磁盘目录、文件已删，不可能还列着它 → 「第二天你搜不到但 list 还列着」的症状挪到第一次删除之后、第二次对话之前，时序自洽；② **Evans 中译失真**——中段「不满足于它还没顺口时」不通、尾句整句漏译 → 重译补全；③ recap「标准、主流、观点」→「取舍」（与正文、参考卡三分法一致）；④ 产出栏「一张位置卡」全文无着落 →「一张参考卡」（与第 5/6/7 课产出行惯例一致）；⑤ **「agent 每次开工前读词表」被算成 domain-modeling 自动化的事**，与 `SKILL.md` 第 8 行「(Merely *reading* `GLOSSARY.md` for vocabulary is not this skill…)」正面相抵（真实出处是 setup 写的 `domain.md`，第 3 课 L115 有据）→「自动化」改两件事，新增一段正名归属并回指第 3 课。
+- 建议改六条全落实：L105「讨论了 elicitation」在 SE-EDU 该章 0 命中（该章原话 "gathered, analyzed, specified, and managed"）→ 改「概括为 gather、analyze、specify、manage，并单列了 prioritization 一节」；L112 Entry 进词表与 L182 沙盒「不进词表」并读卡住 → Document 候选词补半句和解（「哪天索引记录要被单独讨论了，就得给它自己的名字（做法一示例里的 Entry 就是这么来的）」）；平时 agent 写词条、本课让学习者手写没点破 →「动作」节补一句；`/domain-modeling` 手动入口口风统一（「记住常态」+ 删重复安抚 +「只是另一种入口，不用专门记」）；「不是 A，而是 B」审计列 12 处 → 留 lede 与表内「不是建议不用，是禁用」两处；L86「把这件事叫做」指代不清 →「给这套做法起了名字」。
+- 主代理按「一次改完同类问题」追加 3 处（审计未列的同款）：L37「但它不是需求列表……它发生在」改「位置在……之前」；L55「这不是某一个工具的偏好，而是……」改「这个约束来自需求活动本身，跟用什么工具无关」；译文开头「只有当……直到……」衔接再顺一遍。改后全课「不是…而是」剩 2 处（lede 定调 + 表内对照），在自定上限内。
+- 改动文件：`lessons/0004-domain-language-and-context.html`（30 处编辑）、`reference/0004-glossary-card.html`（2 处）；课程地图第 4 课行无需改。标签配平复查通过（div 15/15、table 3/3、tr 12/12、td 23/23、section 8/8、p 93/93）。
+- 流程观察：① 审计员对贯穿例子做状态机推演才抓出时序矛盾——「招牌例子」正是最该推演的地方，机械自查查不出这类逻辑 bug；② 否定性断言（「没规定必须写 glossary」）用关键词 0 命中验证、肯定性断言逐条找原文，这个核实方式可沿用。
+
 > AI生成
