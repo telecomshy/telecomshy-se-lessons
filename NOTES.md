@@ -607,4 +607,15 @@
 
 - 表演性开场的改法修正（用户指出）：十条清单第 2 条原来的示范改法「有一个现实问题要先说清：……」本身就是表演式开场的变体——把「预告重要性」放在最前面仍是同一动作，只是短一点，规范在自相矛盾。改为：删掉开场白直接说事，重要性由内容自己承担；过渡用事实衔接，不用预告衔接。grep 全 lessons 与 reference 核过：这个「假改法」没有实例（「说破 / 值得单独」的命中均为引文照抄、前后课回指或 ADR 概念名，属正当用法），只改规范文本，课件不动。改动文件：`COURSE-STANDARD.md`。以后审计表达层按新示范执行。
 
+## 第五十九次调整（2026-11-12）
+
+- 老课审计第三批：**第 3 课审完并按惯例落实「必须改 + 全部建议改」，其中建议改 1 条经核实否决**。本课是待审清单里技能事实最密的一课。派审计前机械自查修 10 处术语首见：正文 4 处（`agent（智能体）` 首见沿用第 2 课 L134 译法；UI 首见原在 L247、提前到 L177 的括号列举处，借机把括号列举改成「比如」句式避开括号套括号；`agent-ready 的 brief` 补「agent 可直接执行的任务简报」、与第 13 课释义一致），参考卡 6 处（spec、seam、frontier、agent-ready、Local markdown、single-context 补双语）。主代理在线预核两条 README 引文：「not vibe coding」属实；「装两个 agent 会看到两次」的现行原文是「Pick one per agent, because installing both gives you every skill twice」，如实摘录交给审计员判断。
+- **交接文档挂起项销账**：本机 `C:\Users\admin\.agents\skills\` 现有 78 个目录 = Matt 技能恰 38 个 + 非 Matt 40 个（26 个 `arkcli-*`、8 个 `shy-*`、find-skills、skill-creator、obsidian-markdown、playwriter、resolving-merge-conflicts、software-factory）。38 与课件三层表（18+12+8）逐一相符，「按旧机清点写」的担心不成立，教学内容不改；L306「别把机器上的技能全当成 Matt 的」注释恰好覆盖混入情况。
+- 审计结果：报「必须改 3、建议改 12、可不改 8」。事实层大面积干净：38 个技能的调用类型逐一对 frontmatter（disable-model-invocation）全对，三层表成员无遗漏无混入；setup 四产物、懒创建、`.scratch/<feature>/` 布局、GLOSSARY/CONTEXT 版本注记与沙盒实况相符；练习四情境答案有 SKILL.md/ask-matt 支撑；跨课回指（第 1、2、4、7、8、10、13 课）全兑现。
+- 必须改三条全落实：① 「红-绿-重构」与 `tdd/SKILL.md`「Refactoring is not part of the loop. It belongs to the review stage」冲突（19/20/23 课都按技能口径，只有第 3 课漏改）→ 五步第四步与第一层表 tdd 行改「红-绿循环（重构留给收尾审查）」并指到第 20 课；② README 引述对象错位（「装给两个 agent 会重复」实为「同一 agent 上插件与复制文件两种方式并存会重复」）→ 注记照原文改述，课程建议（只用 OpenCode、选一个主入口）保留；③ 第二层导语「要开 PR」与两层表自相矛盾（pr 在第一层）→ 改「要给提交加自动检查」（对应 setup-pre-commit）。
+- 建议改 12 条落实 11 条、否决 1 条。**否决的是「L54 四个 agent 各有各的安装命令与 README 不符」**：README 实际给 Claude Code / Codex / GitHub Copilot / Gemini CLI 各有一段专属安装命令，是给审计员的摘录裁掉了那几段导致误报——教训：给审计员的在线摘录必须完整覆盖被核对论断的整个面，否则会把忠实原文的句子误报成失实。落实的 11 条要点：CMU 转述收敛为「用 OpenCode 做 AI 辅助的项目开发」、证据落点改本地课程页快照（本地只证得了项目名）；retro 五项清单加「等」（SKILL.md 实列七类，另有 No-ops、Information access）；七问与落点表「行数碰巧都是七」补桥接句；setup「逐项问你」改「有默认值的项直接采用」并在 Domain docs 行注明默认不问（SKILL.md「write it without asking」）；四种方式表补「前置配置和路由器也是你输入命令」桥接、与三层表「调用=用户」接上；第 1 课回指贴原文（「判断的量跟着涨了上去」）；第一层导语补「个别标签是相近活动的具体化」；「不是 A，而是 B」8 处削到 2 处（留 L41 选型转折与 L187 全课论点）、「工具会变，判断不会」两处留 L45 一处；「不用背」六处删 L230、L382 两处；L51 电报式补全；产出栏改「能按需查阅的技能全景表（参考卡）」。可不改 8 条维持现状。
+- 事故一笔：批量落实时把落点表收尾的 `</div>` 误写成 `<div>`，随即发现并修正，标签配平复查通过（div 23/23、table 8/8、tr 74/74）。
+- 改动文件：`lessons/0003-ai-practice-and-workbench.html`（23 处）、`reference/0003-skill-map.html`（6 处）；参考卡无受审计结论影响的表述，未再同步；课程地图第 3 课行无需改。
+- 流程观察：① 调用类型全对 ≠ 行为描述全对——38/38 的 frontmatter 核对带来的安心被「红-绿-重构」这个描述层偏差打破，逐技能核「它做什么」仍然必须；② 主代理预核在线引文 + 审计员本地核事实的分工首跑有效：一条误报被主代理复核拦下，两条真问题由审计员抓出，双向都起了作用。
+
 > AI生成
