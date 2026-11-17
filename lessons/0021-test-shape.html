@@ -37,7 +37,7 @@
 <section>
   <h2>位置：样本、时机都定了，剩下的问题是形状</h2>
   <p>第 2 课把软件工程拆成八个活动。第 19 课在 Testing &amp; Quality（测试与质量）里做样本设计：对着 <code>Store</code> 契约划分输入、挑边界、定预期值。第 20 课转入 Construction（构造），把用例表按红绿循环的节奏写成代码。这一课回到 Testing &amp; Quality：什么样的测试算好，是测试活动自己要回答的质量问题。三条标准立在纸上，落笔的动作仍然发生在构造的循环里，两个活动在这里咬合。</p>
-  <p>为什么挑这个时候做体检？第 20 课的练习刚攒出一张回归网：<code>delete</code> 的四组红绿测试，加上第 19 课留下的 <code>search</code> 契约测试，都绿着。趁这批测试还新，给它们做一次体检最省力：改形状的成本随测试数量涨，拖到几百条再动，没人愿意。往后第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界——mock 是绑实现的重灾区，今天立的判据到时候直接用；第 23 课的 <code>/implement</code> 在工单里跑红绿循环；第 24 课让 CI（Continuous Integration，持续集成）自动跑。测试面还是第 15 课那个 <code>Store</code> port（端口）：测试只认 <code>add</code>、<code>search</code>、<code>delete</code> 三个公开方法。</p>
+  <p>为什么挑这个时候做体检？第 20 课的练习刚攒出一张回归网：<code>delete</code> 的四组红绿测试，加上第 19 课留下的 <code>search</code> 契约测试，都绿着。趁这批测试还新，给它们做一次体检最省力：改形状的成本随测试数量涨，拖到几百条再动，没人愿意。往后第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界——mock 是绑实现的重灾区，今天立的判据到时候直接用；第 23 课的 <code>@implement</code> 在工单里跑红绿循环；第 24 课让 CI（Continuous Integration，持续集成）自动跑。测试面还是第 15 课那个 <code>Store</code> port（端口）：测试只认 <code>add</code>、<code>search</code>、<code>delete</code> 三个公开方法。</p>
 </section>
 
 <section>

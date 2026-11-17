@@ -47,7 +47,7 @@
 
 <h2>AI + Matt：code-review 的双轴流水线</h2>
 <ul>
-  <li><strong>调用类型：模型调用。</strong>frontmatter 无 <code>disable-model-invocation</code>，<code>implement</code> 收尾拉起（「Once done, call the Skill tool with "code-review" to review the work.」），你也可以手动点名「review since X」。前置：issue tracker 由 <code>/setup-matt-pocock-skills</code> 配好；沙盒的 tracker 是 local-markdown 约定（<code>docs/agents/issue-tracker.md</code>），工单文件就是 tracker 里的 issue，spec 源指它就行。</li>
+  <li><strong>调用类型：模型调用。</strong>frontmatter 无 <code>disable-model-invocation</code>，<code>implement</code> 收尾拉起（「Once done, call the Skill tool with "code-review" to review the work.」），你也可以手动点名「review since X」。前置：issue tracker 由 <code>@setup-matt-pocock-skills</code> 配好；沙盒的 tracker 是 local-markdown 约定（<code>docs/agents/issue-tracker.md</code>），工单文件就是 tracker 里的 issue，spec 源指它就行。</li>
   <li><strong>五步流程：</strong>固定点（「Whatever the user said is the fixed point」，三点 diff <code>git diff &lt;fixed-point&gt;...HEAD</code> 对 merge-base，先验 ref 与非空 diff）→ spec 源（issue 引用 → 传参路径 → <code>docs/</code>、<code>specs/</code>、<code>.scratch/</code> 下跟分支或功能匹配的文件 → 问你；没有就报「no spec available」）→ standards 源（<code>CODING_STANDARDS.md</code> / <code>CONTRIBUTING.md</code> ＋永远随行的 Fowler 坏味道基线十二条；「The repo overrides」「Always a judgement call」）→ 两个并行子代理（各新上下文，每份「Under 400 words」）→ 汇总（两轴分列、不合并不排名、跳过工具管的）。</li>
   <li><strong>人拍板四件：</strong>固定点给谁（错则整份报告错）；spec 源指哪；每条裁决（改 / 不改 / 记未决，带理由带严重度）；分档复核（「hard」要核来源，smell 永远是判断题）。</li>
   <li><strong>生效判据：</strong>每条意见指向具体行、引了来源、hard 与 judgement 分开、工具管的不出现；再加注入实验——塞一处工单外改动，工单轴要点名 scope creep，塞一处坏味道，规范轴只给判断题。</li>

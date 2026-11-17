@@ -147,10 +147,10 @@
 
 <section>
   <h2>AI + Matt 怎么落地：<code>domain-modeling</code></h2>
-  <p>这一课的概念由 <code>domain-modeling</code> 落地。它是一个<strong>模型调用（model-invoked）</strong>的底层技能：正常流程里你不用手动输入，跑 <code>/grill-with-docs</code> 时，它会和 <code>grilling</code> 一起被调用。</p>
-  <p>第 3 课已经讲过技能包的调用方式，这里不再重复整张表。你只需要记住常态：不用输入 <code>/domain-modeling</code>，它由流程拉起；你负责回答、拍板和审查产物。</p>
+  <p>这一课的概念由 <code>domain-modeling</code> 落地。它是一个<strong>模型调用（model-invoked）</strong>的底层技能：正常流程里你不用手动输入，跑 <code>@grill-with-docs</code> 时，它会和 <code>grilling</code> 一起被调用。</p>
+  <p>第 3 课已经讲过技能包的调用方式，这里不再重复整张表。你只需要记住常态：不用手动加载 <code>@domain-modeling</code>，它由流程拉起；你负责回答、拍板和审查产物。</p>
 
-  <p>正常流程是这样的：你运行 <code>/grill-with-docs</code>。它同时调用 <code>grilling</code>（一轮一轮问你）和 <code>domain-modeling</code>（盯住词）。当你说「把文档从知识库里删掉」时，<code>domain-modeling</code> 会追问：你说的 Document 是磁盘文件，还是索引记录？你选一个，它就把词条写进 <code>GLOSSARY.md</code>。</p>
+  <p>正常流程是这样的：你写 <code>@grill-with-docs</code>。它同时调用 <code>grilling</code>（一轮一轮问你）和 <code>domain-modeling</code>（盯住词）。当你说「把文档从知识库里删掉」时，<code>domain-modeling</code> 会追问：你说的 Document 是磁盘文件，还是索引记录？你选一个，它就把词条写进 <code>GLOSSARY.md</code>。</p>
   <p>你实际要做的事有四件。第一，提供领域里的真实说法和例子，别只给抽象名词。第二，回答它的追问，拍板哪个词是规范说法、边界在哪。第三，审查它写出来的词条：是不是两句以内、有没有 Avoid、有没有混进实现细节。第四，在代码、测试、工单里用这个词；agent 漂了，就把它指回 <code>GLOSSARY.md</code>。</p>
   <p>如果你不在 grill 流程里，也可以直接说「用 domain-modeling 把这三个词收进 GLOSSARY.md」。这只是同一个技能的另一种入口，不用专门记。</p>
   <p>它自动化了什么？两件事。第一，词条有固定格式，Avoid 列表把「不要怎么说」写死，减少同义词漂移。第二，它把「什么时候写」变成了懒创建：第一次有词被真正定下来时才建文件，不提前写一本词典。</p>

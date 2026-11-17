@@ -89,7 +89,7 @@
 </div>
 
 <h2>AI + Matt 怎么落地：<code>grilling</code></h2>
-<p><code>grilling</code> 是<strong>模型调用（model-invoked）</strong>的技能（第 3 课地图口径）：你说「跑一次 grilling，目标是把 X 问成决定」，agent 就把它拉起来；专门的用户入口是 <code>/grill-with-docs</code> 与 <code>grill-me</code>。它把模糊想法长成 design tree，一轮一轮问 frontier，并给每个问题附推荐答案。</p>
+<p><code>grilling</code> 是<strong>模型调用（model-invoked）</strong>的技能（第 3 课地图口径）：你说「跑一次 grilling，目标是把 X 问成决定」，agent 就把它拉起来；专门的用户入口是 <code>@grill-with-docs</code> 与 <code>@grill-me</code>。它把模糊想法长成 design tree，一轮一轮问 frontier，并给每个问题附推荐答案。</p>
 <p>你要做三件事：回答 frontier 每个决定（尤其认真挑推荐）；把领域真实说法、约束、旧实现喂给它；当它停、问「一致了吗」时，核对有没有被悄悄默认的决定。</p>
 <p><strong>它自动化了什么：</strong>拆树、排轮次、算前沿、亮默认值、事实派子代理查。<strong>它没自动化：</strong>每个决定、每个推荐是否接受、树是否问完——全是你把关。</p>
 <p><strong>适用条件与边界：</strong>它逼问的对象是你自己，不是真实用户。单人项目里这是合理收敛；交付真人的产品仍要补真实用户访谈。它不能替代 elicitation 的访谈 / 观察 / 问卷。</p>

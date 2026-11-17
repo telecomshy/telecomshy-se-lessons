@@ -37,7 +37,7 @@
 <section>
   <h2>位置：用例表从案头走进构造的节奏</h2>
   <p>第 2 课把软件工程拆成八个活动，上一课在 Testing &amp; Quality（测试与质量）里做完了案头工作：对着 <code>Store</code> 契约划分输入、挑边界、定预期值，产出 <code>tests/test_storage.py</code>。这一课转入 <strong>Construction（构造）</strong>，回答的问题从「测什么」变成「代码按什么节奏写出来」。SWEBOK 把 test-first programming 收在第 4 章 Construction 里（SWEBOK v4, ch.4, §4.16, printed 4-14），第 5 章测试没有给它单独立节，只在讲测试左移的 §6.1.2 里论及它（ch.5, printed 5-23~5-24）。归类本身就说明了它的身份：测试先行是一种构造代码的节奏。</p>
-  <p>前后课的分工也这样定。第 19 课管样本：哪些用例值得写。这一课管时机：什么时候写、什么时候写实现。往后第 21 课修测试的形状，让它只测行为、不测实现；第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界；第 23 课的 <code>/implement</code> 命令在内部就调用 <code>tdd</code> 技能跑这个循环；第 24 课让 CI（Continuous Integration，持续集成）自动跑。你在第 15 课定下的 <code>Store</code> port（端口）依然是这一课的测试面：测试只认 <code>add</code>、<code>search</code>，今天再加一个 <code>delete</code>，两个 adapter（适配器）都照契约实现。</p>
+  <p>前后课的分工也这样定。第 19 课管样本：哪些用例值得写。这一课管时机：什么时候写、什么时候写实现。往后第 21 课修测试的形状，让它只测行为、不测实现；第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界；第 23 课的 <code>@implement</code> 命令在内部就调用 <code>tdd</code> 技能跑这个循环；第 24 课让 CI（Continuous Integration，持续集成）自动跑。你在第 15 课定下的 <code>Store</code> port（端口）依然是这一课的测试面：测试只认 <code>add</code>、<code>search</code>，今天再加一个 <code>delete</code>，两个 adapter（适配器）都照契约实现。</p>
 </section>
 
 <section>
@@ -81,7 +81,7 @@
 
 <section>
   <h2>AI + Matt 怎么落地：agent 跑循环，人管证据</h2>
-  <p>落地的技能是 <code>tdd</code>，地图第 20 课技能栏里写的那个。它的调用类型要写清楚：技能的 frontmatter 没有 <code>disable-model-invocation</code>，所以模型可以在相关流程里拉起它，你也可以手动输入调用。什么时候会被拉起？它的触发条件是「想测试先行地做功能或修 bug」、提到 red-green-refactor、或者想写 integration tests（集成测试）。还有一条更实际的路径：第 23 课的 <code>/implement</code> 是用户调用的命令，它的流程里写着「Call the Skill tool with "tdd" where possible, at pre-agreed seams」——工单做到哪，循环就跟到哪。</p>
+  <p>落地的技能是 <code>tdd</code>，地图第 20 课技能栏里写的那个。它的调用类型要写清楚：技能的 frontmatter 没有 <code>disable-model-invocation</code>，所以模型可以在相关流程里拉起它，你也可以手动输入调用。什么时候会被拉起？它的触发条件是「想测试先行地做功能或修 bug」、提到 red-green-refactor、或者想写 integration tests（集成测试）。还有一条更实际的路径：第 23 课的 <code>@implement</code> 是用户调用的命令，它的流程里写着「Call the Skill tool with "tdd" where possible, at pre-agreed seams」——工单做到哪，循环就跟到哪。</p>
   <p>技能开工前的第一件事不是写测试，是定缝。它的原话是「Test only at pre-agreed seams. Before writing any test, write down the seams under test and confirm them with the user」——先把要测的缝写下来，跟你确认，没确认的缝上不许写测试（<code>tdd/SKILL.md</code>「Seams」）。这一课的缝只有一个：<code>Store</code> 的公开方法。这条纪律比常见的 TDD 说法严，它是给 agent 定的：agent 能测的地方无穷多，事先圈定测试落点，测试力气才花在关键路径上。如果接口形状本身存疑——方法该多深、缝该开在哪——技能会转去 <code>codebase-design</code> 借词汇，那是第 14 到 16 课讲过的东西。测试名和接口用词也有要求：技能会让 agent 先读项目的 <code>GLOSSARY.md</code>，让测试名对齐领域语言，并尊重要动区域里的 ADR；沙盒还没有 <code>GLOSSARY.md</code>，就以 <code>Store</code> docstring 里的词为准。</p>
   <p>循环里的规矩，技能写了三条，跟这一课的走法一致。<strong>Red before green（先红后绿）</strong>：先写失败的测试，再写刚好通过的实现，不为未来的测试做猜测性铺垫。<strong>One slice at a time（一轮一片）</strong>：每轮一个缝、一个测试、一份最小实现。<strong>重构不在循环里</strong>：就是上面那张三口径表的第三行。反模式也是三条：绑实现的测试（mock 内部协作者、测私有方法、绕过接口去查数据库）、同义反复的测试、横向切片。同义反复那条在上一课见过它的近亲 golden master（黄金基准），技能在反模式里给了正面规矩：预期值必须来自独立的真相来源——一个已知的字面量、一个手算过的例子、或者规格，不能用被测代码算出来（<code>tdd/SKILL.md</code>「Anti-patterns」的 Tautological 条；<code>tests.md</code> 里的正反例子就是照这条判的）。</p>
   <p>具体到人机分工，你要做四件判断。<strong>契约</strong>：<code>delete</code> 的三处空洞——删不存在的 id 返回什么、返回值是布尔还是被删条目的副本、id 删掉后复不复用——每处都要你拍板写进 docstring，两个 adapter 照着实现。<strong>预期值</strong>：每条断言的期望值从契约或手算例子来，不要让 agent 调 <code>delete</code> 算一个数填进去。<strong>节奏</strong>：一轮一步——agent 写完测试就停，你跑一次看红，再放行实现。这是防「一口气写完测试和实现」的最笨也最有效的办法。<strong>重构</strong>：循环全绿之后整理重复代码，改动不许碰行为，测试文件一行不改，这是重构步的验收标准。</p>

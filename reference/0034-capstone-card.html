@@ -27,14 +27,14 @@
   <table>
     <thead><tr><th>站</th><th>活动</th><th>入口</th><th>你拍什么</th><th>产物</th><th>没做对应课就…</th></tr></thead>
     <tbody>
-      <tr><td class="what">1 需求</td><td>Requirements</td><td><code>/grill-with-docs</code>（用户，第 5 课）</td><td>端点、错误映射、监听地址、匹配语义、并发、依赖</td><td><code>GLOSSARY.md</code> 词条（ADR sparingly）</td><td>卡 0005、0004</td></tr>
-      <tr><td class="what">2 规格</td><td>Requirements + Design &amp; Arch</td><td><code>/to-spec</code>（用户，第 8 课）</td><td>spec 验收、范围边界</td><td><code>.scratch/http-adapter/spec.md</code></td><td>卡 0008</td></tr>
-      <tr><td class="what">3 工单</td><td>Process &amp; Mgmt</td><td><code>/to-tickets</code>（用户，第 10 课）</td><td>粒度、阻塞边、合并拆分</td><td><code>.scratch/http-adapter/issues/</code></td><td>卡 0010</td></tr>
-      <tr><td class="what">4 实现</td><td>Construction</td><td><code>/implement</code>（用户，第 23 课；红绿第 20 课）</td><td>seam、节奏、每轮一个行为</td><td>分支上的提交与测试</td><td>卡 0023</td></tr>
+      <tr><td class="what">1 需求</td><td>Requirements</td><td><code>@grill-with-docs</code>（用户，第 5 课）</td><td>端点、错误映射、监听地址、匹配语义、并发、依赖</td><td><code>GLOSSARY.md</code> 词条（ADR sparingly）</td><td>卡 0005、0004</td></tr>
+      <tr><td class="what">2 规格</td><td>Requirements + Design &amp; Arch</td><td><code>@to-spec</code>（用户，第 8 课）</td><td>spec 验收、范围边界</td><td><code>.scratch/http-adapter/spec.md</code></td><td>卡 0008</td></tr>
+      <tr><td class="what">3 工单</td><td>Process &amp; Mgmt</td><td><code>@to-tickets</code>（用户，第 10 课）</td><td>粒度、阻塞边、合并拆分</td><td><code>.scratch/http-adapter/issues/</code></td><td>卡 0010</td></tr>
+      <tr><td class="what">4 实现</td><td>Construction</td><td><code>@implement</code>（用户，第 23 课；红绿第 20 课）</td><td>seam、节奏、每轮一个行为</td><td>分支上的提交与测试</td><td>卡 0023</td></tr>
       <tr><td class="what">5 测试盘点</td><td>Testing &amp; Quality</td><td>按第 19、21、22 课判据自查</td><td>断言落在哪、替身分工</td><td>结论进 <code>notes.md</code></td><td>卡 0019、0021、0022</td></tr>
       <tr><td class="what">6 CI</td><td>Config &amp; Ops</td><td>链或本地三条命令（第 24 课）</td><td>红了算谁的、什么不进链</td><td>绿的运行或退出码 0</td><td>卡 0024</td></tr>
-      <tr><td class="what">7 审查</td><td>Testing &amp; Quality</td><td><code>/code-review</code>（模型，也可手动，第 25 课）</td><td>分档、裁决、放行</td><td><code>review-report.md</code></td><td>卡 0025</td></tr>
-      <tr><td class="what">8 上线与复盘</td><td>Config &amp; Ops（发布）；retro 过程改进</td><td><code>/retro</code>（用户，第 24 课；分界第 29 课）</td><td>发布口径、建议落哪</td><td>发布说明加可选标签</td><td>卡 0029</td></tr>
+      <tr><td class="what">7 审查</td><td>Testing &amp; Quality</td><td><code>@code-review</code>（模型，也可手动，第 25 课）</td><td>分档、裁决、放行</td><td><code>review-report.md</code></td><td>卡 0025</td></tr>
+      <tr><td class="what">8 上线与复盘</td><td>Config &amp; Ops（发布）；retro 过程改进</td><td><code>@retro</code>（用户，第 24 课；分界第 29 课）</td><td>发布口径、建议落哪</td><td>发布说明加可选标签</td><td>卡 0029</td></tr>
     </tbody>
   </table>
 </div>
@@ -62,10 +62,10 @@
     <tbody>
       <tr><td class="what">1 现状与目标</td><td>knowledge-pet 已有/没有的东西，逐条给路径；目标一句话：第一张真工单起，八站跑起来</td><td>差异盘点表、<code>docs/research/</code></td></tr>
       <tr><td class="what">2 迁移范围与非目标</td><td>词表文件名拍板（<code>CONTEXT.md</code> → <code>GLOSSARY.md</code> 或保留）、第一张工单走完整链、测试与 CI 随第一张进；非目标：不搬沙盒代码、不重写已定决策、不动产品架构</td><td>盘点表、<code>docs/architecture.md</code></td></tr>
-      <tr><td class="what">3 按活动的迁移顺序</td><td>测试与 CI 通常前置（沙盒卡点立据）；已在用的不动；实现站从 <code>/implement</code> 接 spec #11 的第一张工单开始</td><td>八站表、<code>notes.md</code></td></tr>
+      <tr><td class="what">3 按活动的迁移顺序</td><td>测试与 CI 通常前置（沙盒卡点立据）；已在用的不动；实现站从 <code>@implement</code> 接 spec #11 的第一张工单开始</td><td>八站表、<code>notes.md</code></td></tr>
       <tr><td class="what">4 交 agent / 人做 / 必须验</td><td>第 33 课委托清单打底，加特有行：API Key 人输值、<code>.env</code> 进 <code>.gitignore</code>、占位符；两套语言检查进验收；SSE 先替身后真件</td><td><code>delegation-ledger.md</code>（或卡 0033 样例）</td></tr>
       <tr><td class="what">5 风险与回滚</td><td>差异 → 风险 → 对策；gh 命令人确认后跑；密钥通道留给人；集成测试先替身后真件；每步单独提交、能单独撤</td><td>盘点表第三列、第 33 课三问</td></tr>
-      <tr><td class="what">6 验收与时间盒</td><td>第一张工单上线后八站产物齐全可查；第一个时间盒只搬前几站，<code>/retro</code> 后再决定</td><td>生效判据两条</td></tr>
+      <tr><td class="what">6 验收与时间盒</td><td>第一张工单上线后八站产物齐全可查；第一个时间盒只搬前几站，<code>@retro</code> 后再决定</td><td>生效判据两条</td></tr>
     </tbody>
   </table>
 </div>

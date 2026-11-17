@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>/implement 参考卡 · 把一个工单真正做完</title>
+<title>@implement 参考卡 · 把一个工单真正做完</title>
 <link rel="stylesheet" href="../assets/course.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
 
 <header class="masthead">
   <p class="eyebrow">参考卡 · 第 23 课</p>
-  <h1>/implement 参考卡</h1>
-  <p class="lede">工单做完不是「测试绿」一个信号，是一组判据：验收标准逐条有证据、测试绿、静态检查过、review 有裁决、提交落盘。测试绿只回答 verification（验证），validation（确认）要靠验收标准；完成判据没有统一标准，配法跟着风险走。<code>/implement</code> 把判据排成一条龙，四个拍板点在人。</p>
+  <h1>@implement 参考卡</h1>
+  <p class="lede">工单做完不是「测试绿」一个信号，是一组判据：验收标准逐条有证据、测试绿、静态检查过、review 有裁决、提交落盘。测试绿只回答 verification（验证），validation（确认）要靠验收标准；完成判据没有统一标准，配法跟着风险走。<code>@implement</code> 把判据排成一条龙，四个拍板点在人。</p>
 </header>
 
 <h2>位置：它属于哪个活动</h2>
 <div class="table-wrap">
   <table>
-    <thead><tr><th>活动</th><th>/implement 在这里做什么</th></tr></thead>
+    <thead><tr><th>活动</th><th>@implement 在这里做什么</th></tr></thead>
     <tbody>
       <tr><td class="skill">Construction（构造）</td><td>第 19 课选样本、20 定时机、21 立形状、22 处理隔离，四课攒的是测试判据；这一课把判据装进一张工单的生命周期：红绿循环走到 review。</td></tr>
       <tr><td class="skill">输入从哪来</td><td>第 10 课 <code>to-tickets</code> 的工单（<code>.scratch/&lt;feature&gt;/issues/&lt;NN&gt;-&lt;slug&gt;.md</code>，含 Acceptance criteria）；一次做一张 frontier（前沿，阻塞全解的工单）。</td></tr>
@@ -47,7 +47,7 @@
 
 <h2>AI + Matt：流水线在技能里，判断在人</h2>
 <ul>
-  <li><strong><code>implement</code> 的调用类型</strong>：用户调用（frontmatter 有 <code>disable-model-invocation: true</code>，模型不会自己拉起，你输入 <code>/implement</code>）。输入是 spec 或工单；传工单引用它先 fetch、报标题再开工，模糊就问。</li>
+  <li><strong><code>implement</code> 的调用类型</strong>：用户调用（frontmatter 有 <code>disable-model-invocation: true</code>，模型不会自己拉起，你输入 <code>@implement</code>）。输入是 spec 或工单；传工单引用它先 fetch、报标题再开工，模糊就问。</li>
   <li><strong>流程五句</strong>：报工单标题（对准工单）→「Call the Skill tool with "tdd" where possible, at pre-agreed seams」（红绿循环，seam 事先确认；where possible 留口子，纯重构 / 文档 / 配置工单不硬套）→「typechecking regularly, single test files regularly, full test suite once at the end」（快信号高频、全量兜回归）→「call the Skill tool with "code-review"」（评审收尾）→「Commit your work to the current branch」。</li>
   <li><strong>人拍板四件</strong>：工单边界与验收标准（边界在 to-tickets 的 quiz 拍板，验收标准写进模板、发布前过目）、seam（<code>tdd</code> 会来问）、节奏与例外（步幅、这单走不走红绿）、review 裁决（意见怎么处置，第 25 课展开读法）。</li>
   <li><strong>怎么判断生效</strong>：验收标准逐条有证据、全量绿、两轴报告每条有裁决、git log 一段工单一段记录。</li>
@@ -103,7 +103,7 @@ tests/、git log 和 .scratch/error-handling/review-report.md（两轴报告）�
 </div>
 
 <footer class="colophon">
-  <p><a href="../lessons/0023-implement-ticket-done.html">第 23 课：/implement：把一个工单真正做完</a> · <a href="course-map.html">课程地图</a> · <a href="0022-test-doubles-card.html">第 22 课：测试替身参考卡</a></p>
+  <p><a href="../lessons/0023-implement-ticket-done.html">第 23 课：@implement：把一个工单真正做完</a> · <a href="course-map.html">课程地图</a> · <a href="0022-test-doubles-card.html">第 22 课：测试替身参考卡</a></p>
 </footer>
 
 </main>

@@ -65,7 +65,7 @@
 <section>
   <h2>AI + Matt 怎么落地：把判断放进一棵按顺序问的树</h2>
   <p>这一课在地图上的技能是 <code>handoff</code>。它是用户调用的（frontmatter 里有 <code>disable-model-invocation: true</code>，模型不会自己拉起它），也很短，六个要点交代完整个做法：把当前对话压成一份交接文档，让一个新 agent 接着干；存到操作系统的临时目录（<code>$TMPDIR</code>，没有就用 <code>/tmp</code>，Windows 上是 <code>%TEMP%</code>），<strong>不存当前工作区</strong>；文档里要有一节 “suggested skills”，点名下一个 agent 该调哪些技能；「Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.（不要重复已经存在于其他产物里的内容——spec、计划、ADR、issue、提交、diff——引用它们的路径或 URL。）」；敏感信息（API key、密码、个人信息）要先脱敏；你传的参数则当作「下一次会话聚焦什么」的说明来调整文档。</p>
-  <p>技能只管怎么写这份文档，不管什么时候该用它。判断在 <code>ask-matt</code>（路由器，同样是用户调用）的 Phase boundaries 一节和它指向的 <code>PHASE-BOUNDARIES.md</code> 里。第 3 课正文给过一行版的五个选项——继续、<code>/clear</code>、<code>/handoff</code>、subagent、<code>/compact</code>——它的参考卡又把每个选项的条件列成了一张表，但两处都没给先后。这里给的是顺序：五个问题从上往下问，「The first <em>yes</em> wins（第一个 yes 就赢）」。</p>
+  <p>技能只管怎么写这份文档，不管什么时候该用它。判断在 <code>ask-matt</code>（路由器，同样是用户调用）的 Phase boundaries 一节和它指向的 <code>PHASE-BOUNDARIES.md</code> 里。第 3 课正文给过一行版的五个选项——继续、<code>/clear</code>、<code>@handoff</code>、subagent、<code>/compact</code>——它的参考卡又把每个选项的条件列成了一张表，但两处都没给先后。这里给的是顺序：五个问题从上往下问，「The first <em>yes</em> wins（第一个 yes 就赢）」。</p>
   <p>按顺序问的五个问题是：</p>
   <ol>
     <li><strong>能在当前会话继续吗？</strong>两个条件满足一个就行：下一阶段需要这一阶段的原文，或者剩下的 smart zone 够下一阶段用（技能文档给的量级是大约 15 万 token 的余量；实际就看当前会话已经用了多少、下一阶段还要读多少，算不准时按后者估）。逼问之后接实现是标准的「要继续」——实现想要的是当时的推理原文，不是它的摘要。继续不花时间也不丢东西，所以先排除它。</li>
@@ -76,14 +76,14 @@
   </ol>
   <p>判断之外还有一件事要分清：这份交接文档的寿命和第 18 课的 design doc 不一样。两者都叫交接，<code>handoff</code> 是会话级的，存临时目录，活不过一次会话的范围；design doc 是作品级的，进仓库，跟这个功能一起活到被重写。第 18 课说过它们常一起用——换会话开工时 handoff 管开局，design doc 管长期——本课只补它在边界决策里的位置：交接文档是这次换容器的载体，写的是「下一段活从哪起步」，需要长期留的东西（决定、判据、brief）照旧落回仓库。</p>
   <p>这棵树把最后一问答落在 <code>/compact</code>，是有意的：它是默认，不是第一反应。「The failure mode when people start here is a fresh session that is confidently wrong about a decision the summary flattened.（从这里开始的失败模式是：一个新会话，对一个被摘要抹平的决定，自信地理解错了。）」（<code>ask-matt/PHASE-BOUNDARIES.md</code>）。顺序本身就是判断的一部分：前四个问题要么更便宜，要么更准。</p>
-  <p>命令点到为止。技能文档按斜杠命令来写（<code>/clear</code>、<code>/compact</code>、<code>/handoff</code>），同一个判断在 OpenCode 里怎么触发，下面这张对照表列出来；斜杠名字在不同版本里可能有别名，以你装到的版本为准：</p>
+  <p>命令点到为止。技能文档按斜杠命令来写（<code>/clear</code>、<code>/compact</code>），交棒那一项在技能文档里记作 <code>/handoff</code>；同一个判断在 OpenCode 里怎么触发，下面这张对照表列出来。斜杠名字在不同版本里可能有别名，以你装到的版本为准：</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>判断</th><th>技能文档的写法</th><th>OpenCode 里的对应动作</th></tr></thead>
       <tbody>
         <tr><td class="what">清空上下文</td><td><code>/clear</code></td><td>开一个新会话：<code>/new</code>，默认快捷键 Ctrl+X 再按 N；旧会话保留，随时切回</td></tr>
         <tr><td class="what">压缩当前上下文</td><td><code>/compact</code></td><td><code>session.compact</code>，默认快捷键 Ctrl+X 再按 C；默认还开着自动压缩（<code>compaction.auto</code>），接近上限时自己压，保留最近约 15000 token 的原文</td></tr>
-        <tr><td class="what">交棒</td><td><code>/handoff</code></td><td>同一个 <code>handoff</code> 技能——前面各课写的 <code>/handoff</code> 指的就是它（用户调用，它不在模型可拉起的技能清单里）。OpenCode 里技能按 ID 加载：在消息里写 <code>@handoff 下一次会话……</code>，或用技能选择器挑 <code>handoff</code>；产物落在 <code>%TEMP%</code></td></tr>
+        <tr><td class="what">交棒</td><td><code>/handoff</code></td><td>同一个 <code>handoff</code> 技能，OpenCode 里按 ID 加载：在消息里写 <code>@handoff 下一次会话……</code>，或用技能选择器挑 <code>handoff</code>（用户调用，它不在模型可拉起的技能清单里）；产物落在 <code>%TEMP%</code></td></tr>
         <tr><td class="what">拆给子代理</td><td>subagent</td><td>子会话，新上下文，可前台可后台；内置的 <code>general</code>（能干多步的活）与 <code>explore</code>（只读搜索）都是这类</td></tr>
       </tbody>
     </table>

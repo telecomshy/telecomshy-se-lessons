@@ -67,7 +67,7 @@
 
 <section>
   <h2>AI + Matt 怎么落地：code-review 的双轴流水线</h2>
-  <p>落地的技能是 <code>code-review</code>，地图第 25 课技能栏里那个。先写清它的调用类型：frontmatter 里没有 <code>disable-model-invocation</code>，所以模型可以自己拉起它——最常见的是 <code>implement</code> 收尾那句「Once done, call the Skill tool with "code-review" to review the work.（做完后调用 code-review 技能评审这份工作。）」，第 23 课的收尾 review 就是这么来的；你也可以手动点名，它的描述里写着「review since X」这类说法都算入口。它有个前置：「The issue tracker should have been provided to you. If not, tell the user to run <code>/setup-matt-pocock-skills</code>.（issue tracker 应该已经提供给你了。没有的话，让用户跑 /setup-matt-pocock-skills。）」沙盒的 tracker 是 local-markdown（本地文件）约定，写在 <code>docs/agents/issue-tracker.md</code>：工单文件本身就是 tracker 里的 issue，spec 源指它就行，不依赖任何远端服务，下面会讲。技能的流程五步，对着本课的概念逐行看：</p>
+  <p>落地的技能是 <code>code-review</code>，地图第 25 课技能栏里那个。先写清它的调用类型：frontmatter 里没有 <code>disable-model-invocation</code>，所以模型可以自己拉起它——最常见的是 <code>implement</code> 收尾那句「Once done, call the Skill tool with "code-review" to review the work.（做完后调用 code-review 技能评审这份工作。）」，第 23 课的收尾 review 就是这么来的；你也可以手动点名，它的描述里写着「review since X」这类说法都算入口。它有个前置：「The issue tracker should have been provided to you. If not, tell the user to run <code>@setup-matt-pocock-skills</code>.（issue tracker 应该已经提供给你了。没有的话，让用户跑 @setup-matt-pocock-skills。）」沙盒的 tracker 是 local-markdown（本地文件）约定，写在 <code>docs/agents/issue-tracker.md</code>：工单文件本身就是 tracker 里的 issue，spec 源指它就行，不依赖任何远端服务，下面会讲。技能的流程五步，对着本课的概念逐行看：</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>技能原文</th><th>它在读法和裁决上管哪段</th><th>谁在做</th></tr></thead>

@@ -39,7 +39,7 @@
   <h2>位置：设计产物第一次被证据检验</h2>
   <p>第 2 课把软件工程拆成八个活动，这一课进入 <strong>Testing &amp; Quality（测试与质量）</strong>，也是模块 4「实现与测试」的开篇。走到这里，你手里有一叠设计产物：第 14 课的接口草图和不变量，第 15 课的 <code>Store</code> port（端口）和两个 adapter（适配器），第 17 课的组件职责，第 18 课的 design doc。它们都在回答「应该怎么造」；测试是第一次拿证据回答「造出来的东西真的按合同工作吗」。这两件事不是一回事。设计说得再清楚，代码仍可能在某个边界上写错一个比较符。</p>
   <p>测试站在哪一侧，第 15 课已经定过：站在 port 上。调用者只认 <code>Store</code> 的 <code>add</code> 和 <code>search</code>，测试也应该只认这两个方法。这样同一批断言可以对 <code>JsonlStore</code> 和 <code>InMemoryStore</code> 两个 adapter 各跑一遍——第 15 课说的 contract test（契约测试），这一课把它写出来。测试不该读 <code>kb.jsonl</code> 里 JSONL（JSON Lines）的行格式，也不该摸 <code>store._entries</code>；一旦这么做，测试就绑死在某个 adapter 的实现上，换存储格式时测试会跟着碎一地。第 14 课还留了一条线：不变量要能在测试里守住。这一课就是把「守住」写成断言。</p>
-  <p>模块 4 的路线也在这里排定。第 19 课先做循环之前的案头工作：测什么、用哪些输入、预期结果从哪来。第 20 课把这份用例表放进 TDD（Test-Driven Development，测试驱动开发）的红绿循环；第 21 课修测试的形状，让它只测行为、不测实现；第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界；第 23 课用 <code>/implement</code> 把一个工单真正做完；第 24 课才让 CI（Continuous Integration，持续集成）自动跑。这一课不写红绿循环，也不提前上 CI；先把「一组测试该长什么样」想清楚。</p>
+  <p>模块 4 的路线也在这里排定。第 19 课先做循环之前的案头工作：测什么、用哪些输入、预期结果从哪来。第 20 课把这份用例表放进 TDD（Test-Driven Development，测试驱动开发）的红绿循环；第 21 课修测试的形状，让它只测行为、不测实现；第 22 课处理 fake（假件）、stub（桩件）、mock（模拟对象）的边界；第 23 课用 <code>@implement</code> 把一个工单真正做完；第 24 课才让 CI（Continuous Integration，持续集成）自动跑。这一课不写红绿循环，也不提前上 CI；先把「一组测试该长什么样」想清楚。</p>
 </section>
 
 <section>

@@ -22,7 +22,7 @@
     <tbody>
       <tr><td class="skill">Construction（构造）</td><td>第 19 课在 Testing &amp; Quality 里设计样本，这一课把用例表按轮次变成代码。SWEBOK 把 test-first programming 收在 Construction 章（ch.4 §4.16）。</td></tr>
       <tr><td class="skill">站在 port 上</td><td>测试仍只认 <code>Store</code> 的公开方法（<code>add</code> / <code>search</code> / <code>delete</code>），缝要先写下来、跟用户确认，没确认的缝上不许写测试。</td></tr>
-      <tr><td class="skill">给下一课的起点</td><td>循环管时机，第 21 课管形状（只测行为、不测实现）；第 23 课 <code>/implement</code> 在工单里内部调用 <code>tdd</code>。</td></tr>
+      <tr><td class="skill">给下一课的起点</td><td>循环管时机，第 21 课管形状（只测行为、不测实现）；第 23 课 <code>@implement</code> 在工单里内部调用 <code>tdd</code>。</td></tr>
     </tbody>
   </table>
 </div>
@@ -105,7 +105,7 @@ def test_delete_does_not_reuse_ids(store):
 
 <h2>AI + Matt：agent 跑循环，人管证据</h2>
 <ul>
-  <li><strong><code>tdd</code> 的调用类型</strong>：frontmatter 无 <code>disable-model-invocation</code>，模型可拉起（<code>/implement</code> 内部就调它），用户也可手动调用；触发词包括 red-green-refactor。</li>
+  <li><strong><code>tdd</code> 的调用类型</strong>：frontmatter 无 <code>disable-model-invocation</code>，模型可拉起（<code>@implement</code> 内部就调它），用户也可手动调用；触发词包括 red-green-refactor。</li>
   <li><strong>先定缝</strong>：「Test only at pre-agreed seams」，缝写下来、跟用户确认；接口形状存疑转 <code>codebase-design</code> 借词汇。测试名读 <code>GLOSSARY.md</code> 对齐领域语言（沙盒没有就用契约词）。</li>
   <li><strong>人拍板四件</strong>：delete 的三处契约空洞、每条断言的预期值（从契约或手算来，不让 agent 调被测代码算）、每轮节奏（写完测试停下看红再放行）、重构的验收（测试一行不改、全绿）。</li>
   <li><strong>agent 干三件</strong>：清单一条写成红测试、写刚好绿的实现、跑 <code>python -m pytest -q</code> 报红绿。</li>

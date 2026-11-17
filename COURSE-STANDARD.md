@@ -62,8 +62,8 @@
 
 - 每个概念要写明由哪个技能落地，例如领域语言由 `domain-modeling` 落地。
 - 写清技能的调用类型：
-  - **用户调用**：`/grill-with-docs`、`/to-spec`、`/implement` 等，开发者输入命令。
-  - **模型调用**：`domain-modeling`、`codebase-design` 等，通常由 agent 在相关流程里拉起；你也可以手动输入，具体以技能包的 `SKILL.md` 为准。
+  - **用户调用**：`@grill-with-docs`、`@to-spec`、`@implement` 等，开发者在消息里写 `@技能名` 加载。
+  - **模型调用**：`domain-modeling`、`codebase-design` 等，通常由 agent 在相关流程里拉起；你也可以用 `@技能名` 手动加载，具体以技能包的 `SKILL.md` 为准。
   - **前置配置**：`setup-matt-pocock-skills`，一次性配置。
   - **路由器**：`ask-matt`，不确定时问它。
 - 写清开发者具体做什么：提供什么输入、做哪些决定、审查什么产物、怎么判断生效。

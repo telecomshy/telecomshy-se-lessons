@@ -37,7 +37,7 @@
 <section>
   <h2>位置：形状立完了，轮到隔离的代价</h2>
   <p>第 2 课把软件工程拆成八个活动。模块 4 一直在 Testing &amp; Quality（测试与质量）和 Construction（构造）之间来回：第 19 课在 Testing &amp; Quality 里选样本，第 20 课在 Construction 里定时机，第 21 课回到 Testing &amp; Quality 立形状的标准——测试是规格的客户端，行为、边界、可读性三把尺子，外加两个证据（变异检查证明该红的会红，重构实验证明不该碎的不碎）。这一课还在这个来回里，但问题换了一个：测试要隔离，隔离就要把协作者（collaborator，被测代码要打交道的对象）替掉，而替身本身就是一段「假装是协作者」的实现。三把尺子说「不测实现」，替身却把实现的一个侧面搬进了测试。替到什么程度算越界，是这一课要回答的。</p>
-  <p>测试面还是那套 <code>kb</code>：第 15 课立的 <code>Store</code> port（端口）加两个 adapter（适配器），今天多测一个 <code>kb/cli.py</code>。往后第 23 课的 <code>/implement</code> 在工单里跑红绿循环，替身判断会跟着循环走；第 24 课让 CI（Continuous Integration，持续集成）自动跑整张网。今天留下的注入缝和「不该 mock」判断，到时候直接用。</p>
+  <p>测试面还是那套 <code>kb</code>：第 15 课立的 <code>Store</code> port（端口）加两个 adapter（适配器），今天多测一个 <code>kb/cli.py</code>。往后第 23 课的 <code>@implement</code> 在工单里跑红绿循环，替身判断会跟着循环走；第 24 课让 CI（Continuous Integration，持续集成）自动跑整张网。今天留下的注入缝和「不该 mock」判断，到时候直接用。</p>
 </section>
 
 <section>
@@ -167,7 +167,7 @@ def test_add_calls_store_add():
 </div>
 
 <div class="next">
-  <p><strong>下一课：</strong>第 23 课「<code>/implement</code>：把一个工单真正做完」。这一课留下的判断到时候直接用：<code>/implement</code> 在工单里跑红绿循环，跑到要隔离的地方就面临今天的选择——替谁、替成什么、断言断在哪。你留下的注入缝、fake 测试和「不该 mock」的判断，就是循环里的默认答案。</p>
+  <p><strong>下一课：</strong>第 23 课「<code>@implement</code>：把一个工单真正做完」。这一课留下的判断到时候直接用：<code>@implement</code> 在工单里跑红绿循环，跑到要隔离的地方就面临今天的选择——替谁、替成什么、断言断在哪。你留下的注入缝、fake 测试和「不该 mock」的判断，就是循环里的默认答案。</p>
   <p>练习里拿不准的替身判断，照老规矩落盘：写进 <code>.scratch/double-notes.md</code> 或 design doc 的「风险与未决问题」。判断悬着，测试就会替你选边。</p>
 </div>
 
