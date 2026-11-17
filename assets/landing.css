@@ -179,7 +179,7 @@ code {
   font-style: normal;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(241, 239, 232, 0.45);
+  color: rgba(241, 239, 232, 0.62);
   white-space: nowrap;
 }
 
@@ -219,7 +219,7 @@ code {
   font-family: var(--cond);
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: rgba(241, 239, 232, 0.5);
+  color: rgba(241, 239, 232, 0.58);
   padding-bottom: 2px;
   transition: color 140ms ease;
 }
