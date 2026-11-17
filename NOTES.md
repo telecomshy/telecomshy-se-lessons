@@ -773,4 +773,13 @@
 - 文档同步：`SOURCE-MAP.md` 两行（Fowler 行补抓取日期、Meszaros 行把「两页 + 其余限速未取到」改成六页清单）、经典来源段、`RESOURCES.md` 两处「martinfowler 未下载」、`courseware/README.md` 目录表与「仍未拿到」、第 22 课课件与参考卡的「经典说明」。
 - 校验：课程地图里 `../courseware/fowler/mocks-arent-stubs.html` 的死链消失，全课程相对链接零缺失。
 
+## 课程首页与 GitHub Pages（2026-11-17）
+
+- 新建 `index.html` 与 `assets/landing.css`，定位是一本手册的封面与目录页，不是招生页：墨色封面讲清这门课是什么、给谁看，纸色正文是八个活动、三十四节目录、练习方式、开课入口。
+- 设计决定：四色——纸 `#F1EFE8`、墨 `#1B1A17`、朱 `#A6402C`、青 `#0E5A56`（青沿用 `assets/course.css` 的主色，点进课件不跳戏；朱只用于模块编号、第一节和主导链接）。两种字——正文与标题用思源宋体（Noto Serif SC），编号与模块数字用 Barlow Condensed。唯一抢眼的元素是封面底部那条三十四刻度的尺：七段按课数分配宽度，第一节用朱色标出；其余一律细线与留白。
+- 内容全部取自仓库：三十四个 `h1` 标题逐课生成，八个活动与各自要回答的问题取自第 2 课的表，时长与周数取自 `README.md`，没有新造说法。
+- 自查：1440×1000 与 390×844 两个视口都截图看过。改了两处——八活动两列加 `grid-auto-rows: 1fr`，让同一排的细线对齐；封面正文收窄到 34em，中文一行不再过长。窄屏隐藏刻度尺，导航交给目录。
+- 发布：Pages 用 branch 源（`main` / 根目录），加 `.nojekyll` 跳过 Jekyll，页面按原样输出。`lessons/`、`reference/`、`assets/` 与首页同站，课件里的 `../assets/course.css`、`../reference/...` 相对链接照常可用。**已知限制**：`courseware/` 按版权不进仓库，课件里指向本地课件的链接在线上会 404；`courseware/` 只在本机。
+- `README.md` 顶部补了在线地址；站点入口就是 `<https://telecomshy.github.io/telecomshy-se-lessons/>`。
+
 > AI生成

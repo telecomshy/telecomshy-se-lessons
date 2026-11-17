@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>软件工程，从术语到落地 · 34 节</title>
+<meta name="description" content="一门 34 节的软件工程课：八个活动、一个沙盒、一套 AI 技能包，写给有编程经验但没系统学过软件工程的开发者。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/landing.css">
+</head>
+<body>
+<a class="skip" href="#content">跳到正文</a>
+
+<header class="cover">
+  <div class="cover-inner">
+    <p class="audience">写给有编程经验、没有系统学过软件工程的开发者</p>
+
+    <h1>软件工程，<br>从术语到落地</h1>
+
+    <div class="cover-copy">
+      <p>同一个需求，会写代码的人很多，能说清该做什么、做到什么程度算够的人不多。这门课把软件工程的八个活动逐个走一遍：每节先讲清一个判断，再在沙盒里用 AI 和技能包把它做出来。</p>
+      <p class="cover-meta">三十四节分七个模块，约五十二小时。每周五到八小时，八到十周走完。</p>
+    </div>
+
+    <nav class="cover-links" aria-label="开始阅读">
+      <a class="lead-link" href="lessons/0001-what-is-software-engineering.html">从第 1 课开始</a>
+      <a href="reference/course-map.html">课程地图</a>
+      <a href="https://github.com/telecomshy/telecomshy-se-lessons">GitHub 仓库</a>
+    </nav>
+  </div>
+
+  <nav class="scale" aria-label="三十四节一览，七个模块">
+    <div class="seg" style="flex:3">
+      <p class="seg-name"><span>0</span><i>3 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0001-what-is-software-engineering.html" aria-label="第 1 课，软件工程不是把代码写出来" class="first"><span>01</span></a>
+        <a href="lessons/0002-what-software-engineering-covers.html" aria-label="第 2 课，软件工程到底包含什么"><span>02</span></a>
+        <a href="lessons/0003-ai-practice-and-workbench.html" aria-label="第 3 课，为什么用这套技能包，以及怎么用"><span>03</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:5">
+      <p class="seg-name"><span>1</span><i>5 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0004-domain-language-and-context.html" aria-label="第 4 课，领域语言：需求的前置条件"><span>04</span></a>
+        <a href="lessons/0005-grilling.html" aria-label="第 5 课，逼问：把模糊想法问成决定"><span>05</span></a>
+        <a href="lessons/0006-requirements.html" aria-label="第 6 课，需求工程：来源、验收标准与非功能需求"><span>06</span></a>
+        <a href="lessons/0007-adr.html" aria-label="第 7 课，ADR：什么决定值得记下来"><span>07</span></a>
+        <a href="lessons/0008-spec.html" aria-label="第 8 课，Spec：从共识到可执行"><span>08</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:5">
+      <p class="seg-name"><span>2</span><i>5 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0009-process-models.html" aria-label="第 9 课，过程模型：瀑布、迭代、敏捷"><span>09</span></a>
+        <a href="lessons/0010-vertical-slice.html" aria-label="第 10 课，纵向切片与阻塞边：先做哪个"><span>10</span></a>
+        <a href="lessons/0011-estimation.html" aria-label="第 11 课，计划、估算与度量"><span>11</span></a>
+        <a href="lessons/0012-wayfinder.html" aria-label="第 12 课，模糊的大项目：wayfinder 与决策单"><span>12</span></a>
+        <a href="lessons/0013-triage.html" aria-label="第 13 课，外部输入：triage 与 agent-ready"><span>13</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:5">
+      <p class="seg-name"><span>3</span><i>5 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0014-deep-modules.html" aria-label="第 14 课，深模块、信息隐藏与不变量"><span>14</span></a>
+        <a href="lessons/0015-seams-adapters.html" aria-label="第 15 课，接缝与适配器：测试的地基"><span>15</span></a>
+        <a href="lessons/0016-design-it-twice.html" aria-label="第 16 课，设计两次：先造两个候选再选"><span>16</span></a>
+        <a href="lessons/0017-architecture-tradeoffs.html" aria-label="第 17 课，架构：质量属性、视图与取舍"><span>17</span></a>
+        <a href="lessons/0018-design-doc.html" aria-label="第 18 课，设计文档：让下一个人或 agent 能接手"><span>18</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:6">
+      <p class="seg-name"><span>4</span><i>6 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0019-pytest-test-design.html" aria-label="第 19 课，pytest 与测试设计"><span>19</span></a>
+        <a href="lessons/0020-tdd-red-green.html" aria-label="第 20 课，TDD 红绿重构"><span>20</span></a>
+        <a href="lessons/0021-test-shape.html" aria-label="第 21 课，好测试的形状"><span>21</span></a>
+        <a href="lessons/0022-test-doubles.html" aria-label="第 22 课，测试替身：fake、stub、mock 的边界"><span>22</span></a>
+        <a href="lessons/0023-implement-ticket-done.html" aria-label="第 23 课，@implement：把一个工单真正做完"><span>23</span></a>
+        <a href="lessons/0024-ci-auto-checks.html" aria-label="第 24 课，CI：让检查自动跑"><span>24</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:5">
+      <p class="seg-name"><span>5</span><i>5 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0025-two-axis-review.html" aria-label="第 25 课，双轴审查与读 diff"><span>25</span></a>
+        <a href="lessons/0026-tight-feedback-loop.html" aria-label="第 26 课，紧反馈回路：先要一条会红的命令"><span>26</span></a>
+        <a href="lessons/0027-regression-root-cause.html" aria-label="第 27 课，回归测试与根因"><span>27</span></a>
+        <a href="lessons/0028-architecture-improvement.html" aria-label="第 28 课，架构改良与遗留代码"><span>28</span></a>
+        <a href="lessons/0029-operations-incidents.html" aria-label="第 29 课，运维与事故：从 SRE 到 postmortem"><span>29</span></a>
+      </div>
+    </div>
+
+    <div class="seg" style="flex:5">
+      <p class="seg-name"><span>6</span><i>5 节</i></p>
+      <div class="ticks">
+        <a href="lessons/0030-prototype.html" aria-label="第 30 课，原型：可丢弃代码回答一个设计问题"><span>30</span></a>
+        <a href="lessons/0031-research-notes.html" aria-label="第 31 课，研究：把阅读外包，把引用留下"><span>31</span></a>
+        <a href="lessons/0032-phase-boundaries.html" aria-label="第 32 课，阶段边界：clear、compact、handoff、subagent"><span>32</span></a>
+        <a href="lessons/0033-responsibility-ethics-ai.html" aria-label="第 33 课，责任：安全、伦理与 AI 的边界"><span>33</span></a>
+        <a href="lessons/0034-capstone-migration.html" aria-label="第 34 课，综合演练与迁移到真实项目"><span>34</span></a>
+      </div>
+    </div>
+  </nav>
+  <p class="scale-caption">刻度上的数字就是课号，红色那一道是第 1 课。模块 0 到 6 依次排开，名字在下面的目录里。</p>
+</header>
+
+<main class="wrap" id="content">
+
+  <section class="intro">
+    <h2>术语记不住，是没把它绑到动作上</h2>
+    <p class="prose">每个软件工程的词都查得到定义。难的是另一件事：它落在开发的哪一步、解决谁的痛、做到什么程度算够。知道要写测试，却不知道什么时候写、写到哪算停；知道要做设计，却说不清这次设计到底在换什么代价。</p>
+    <p class="prose">AI 让这件事更明显。能叫 agent 改代码的人越来越多，改完靠感觉验收的人也越来越多。返工之后说不清哪里错了，因为当初就没有判据。</p>
+    <p class="prose">这门课的办法只有一条：把每个词绑到一个动作，在沙盒里真做一遍，做完由 agent 按技能包和经典清单复核。判断先立起来，工具才有地方用。</p>
+  </section>
+
+  <section class="acts-section">
+    <h2>八个活动，得同时照顾</h2>
+    <p class="prose">围绕代码的工作可以拆成八类。它们不是瀑布模型的八个阶段，真实项目里来回跳；把它们排开，是为了数得清、看得见牵制。</p>
+    <div class="acts">
+      <div class="act"><h3>需求<span>Requirements</span></h3><p>谁用、解决什么问题、什么算做完、有哪些非功能约束。</p></div>
+      <div class="act"><h3>设计与架构<span>Design &amp; Architecture</span></h3><p>系统怎么分、接口是什么、哪些质量属性优先、代价是什么。</p></div>
+      <div class="act"><h3>构造<span>Construction</span></h3><p>怎么写出一段可验证的代码、依赖怎么管、构建怎么重复。</p></div>
+      <div class="act"><h3>测试与质量<span>Testing &amp; Quality</span></h3><p>怎么知道它真的对、该测哪些、覆盖到什么程度算够。</p></div>
+      <div class="act"><h3>维护与演进<span>Maintenance &amp; Evolution</span></h3><p>怎么修、怎么改、怎么迁移、什么时候该退役。</p></div>
+      <div class="act"><h3>过程与管理<span>Process &amp; Management</span></h3><p>先做什么、要多久、风险在哪、怎么知道进度是真的。</p></div>
+      <div class="act"><h3>配置与运维<span>Configuration &amp; Operations</span></h3><p>怎么版本化、怎么发布、出事怎么发现和恢复。</p></div>
+      <div class="act"><h3>专业实践<span>Professional Practice</span></h3><p>安全、伦理、沟通、责任：哪些事不能只图快。</p></div>
+    </div>
+    <p class="prose">一个需求改动常常同时牵动好几层。这门课反复回到这张表，因为它解释了一件容易被忽略的事：牵制不是流程拖慢了你，而是你还没看见的地方正在长成本。</p>
+  </section>
+
+  <section class="toc">
+    <h2>三十四节的目录</h2>
+    <p class="prose">每节读二十五到四十分钟，另配一张可打印的参考卡。模块一到六开篇有一次十分钟的模块导读：一篇主读物、三个问题，不产出练习。</p>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">0</span><h3>地图与工作台</h3><span class="mod-note">先看清八个活动，再把工作台装起来</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0001-what-is-software-engineering.html"><span class="num">01</span>软件工程不是把代码写出来</a></li>
+        <li><a href="lessons/0002-what-software-engineering-covers.html"><span class="num">02</span>软件工程到底包含什么</a></li>
+        <li><a href="lessons/0003-ai-practice-and-workbench.html"><span class="num">03</span>为什么用这套技能包，以及怎么用</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">1</span><h3>需求与语言</h3><span class="mod-note">从一句模糊的话到一份能开工的 spec</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0004-domain-language-and-context.html"><span class="num">04</span>领域语言：需求的前置条件</a></li>
+        <li><a href="lessons/0005-grilling.html"><span class="num">05</span>逼问：把模糊想法问成决定</a></li>
+        <li><a href="lessons/0006-requirements.html"><span class="num">06</span>需求工程：来源、验收标准与非功能需求</a></li>
+        <li><a href="lessons/0007-adr.html"><span class="num">07</span>ADR：什么决定值得记下来</a></li>
+        <li><a href="lessons/0008-spec.html"><span class="num">08</span>Spec：从共识到可执行</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">2</span><h3>计划与过程</h3><span class="mod-note">把要做的事拆开、排好、估个能交代的数</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0009-process-models.html"><span class="num">09</span>过程模型：瀑布、迭代、敏捷，以及这套流程的位置</a></li>
+        <li><a href="lessons/0010-vertical-slice.html"><span class="num">10</span>纵向切片与阻塞边：先做哪个</a></li>
+        <li><a href="lessons/0011-estimation.html"><span class="num">11</span>计划、估算与度量：为什么工时估算总是不准</a></li>
+        <li><a href="lessons/0012-wayfinder.html"><span class="num">12</span>模糊的大项目：wayfinder 与决策单</a></li>
+        <li><a href="lessons/0013-triage.html"><span class="num">13</span>外部输入：triage 与 agent-ready</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">3</span><h3>设计与架构</h3><span class="mod-note">把接口、接缝和取舍先定下来</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0014-deep-modules.html"><span class="num">14</span>深模块、信息隐藏与不变量</a></li>
+        <li><a href="lessons/0015-seams-adapters.html"><span class="num">15</span>接缝与适配器：测试的地基</a></li>
+        <li><a href="lessons/0016-design-it-twice.html"><span class="num">16</span>设计两次：先造两个候选再选</a></li>
+        <li><a href="lessons/0017-architecture-tradeoffs.html"><span class="num">17</span>架构：质量属性、视图与取舍</a></li>
+        <li><a href="lessons/0018-design-doc.html"><span class="num">18</span>设计文档：让下一个人（或 agent）能接手</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">4</span><h3>实现与测试</h3><span class="mod-note">先写会红的测试，再让代码变绿</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0019-pytest-test-design.html"><span class="num">19</span>pytest 与测试设计：划分、边界、覆盖率</a></li>
+        <li><a href="lessons/0020-tdd-red-green.html"><span class="num">20</span>TDD 红绿重构：先写失败测试买到了什么</a></li>
+        <li><a href="lessons/0021-test-shape.html"><span class="num">21</span>好测试的形状：行为、边界、可读性</a></li>
+        <li><a href="lessons/0022-test-doubles.html"><span class="num">22</span>测试替身：fake、stub、mock 的边界</a></li>
+        <li><a href="lessons/0023-implement-ticket-done.html"><span class="num">23</span>@implement：把一个工单真正做完</a></li>
+        <li><a href="lessons/0024-ci-auto-checks.html"><span class="num">24</span>CI：让检查自动跑</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">5</span><h3>验收与维护</h3><span class="mod-note">审查、诊断、复盘，把系统养下去</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0025-two-axis-review.html"><span class="num">25</span>双轴审查与读 diff</a></li>
+        <li><a href="lessons/0026-tight-feedback-loop.html"><span class="num">26</span>紧反馈回路：先要一条会红的命令</a></li>
+        <li><a href="lessons/0027-regression-root-cause.html"><span class="num">27</span>回归测试与根因：修的是哪一层</a></li>
+        <li><a href="lessons/0028-architecture-improvement.html"><span class="num">28</span>架构改良与遗留代码</a></li>
+        <li><a href="lessons/0029-operations-incidents.html"><span class="num">29</span>运维与事故：从 SRE 到 postmortem</a></li>
+      </ul>
+    </div>
+
+    <div class="module">
+      <div class="module-head"><span class="mod-num">6</span><h3>专业实践与 AI</h3><span class="mod-note">交接、研究、责任，最后把整条链走一遍</span></div>
+      <ul class="lessons">
+        <li><a href="lessons/0030-prototype.html"><span class="num">30</span>原型：可丢弃代码回答一个设计问题</a></li>
+        <li><a href="lessons/0031-research-notes.html"><span class="num">31</span>研究：把阅读外包，把引用留下</a></li>
+        <li><a href="lessons/0032-phase-boundaries.html"><span class="num">32</span>阶段边界：clear、compact、handoff、subagent</a></li>
+        <li><a href="lessons/0033-responsibility-ethics-ai.html"><span class="num">33</span>责任：安全、伦理与 AI 的边界</a></li>
+        <li><a href="lessons/0034-capstone-migration.html"><span class="num">34</span>综合演练 + 迁移到真实项目</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="practice">
+    <h2>怎么练</h2>
+    <p class="prose">练习都做在同一个沙盒里：一个迷你知识库，从两个命令开始，长成 CLI 加一层薄 HTTP adapter。它够小，一天能看懂；也够真，有存储、有接缝、有 CI、能制造一次事故。最后一课不写它的代码，只给一个真实项目写迁移计划。</p>
+    <p class="prose">技能包负责把流程固定下来：逼问、拆工单、实现、审查、复盘，各有固定的动作和产物。但流程本身不是答案。每节课都要说清哪几个判断只能由人拍板、哪些输出必须回头验证，因为把「让 agent 写完」当成 AI 实践，是这个时代最容易犯的错。</p>
+    <p class="prose">每节课的落点是一件能留下的东西：词表、ADR、spec、工单、两轴审查报告、诊断记录、事故复盘。这些产物比笔记耐用，它们会在下一节课等着你。</p>
+  </section>
+
+  <section class="start">
+    <h2>从第 1 课开始</h2>
+    <p class="prose">第 1 课不讲工具，也不讲技能包。它讲软件工程到底在管什么：同一段代码，为什么有的只是一次运行，有的要为它负责十年。</p>
+    <nav class="cover-links end-links" aria-label="开始阅读">
+      <a class="lead-link" href="lessons/0001-what-is-software-engineering.html">读第 1 课</a>
+      <a href="reference/course-map.html">先看课程地图</a>
+    </nav>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="wrap">
+    <p>理论来源取自 SWEBOK v4、CMU 17-313、MIT 6.031、SE-EDU、Google SRE、Ousterhout 与 Brooks；每节的出处写在课程末尾，汇总在仓库的 <code>SOURCE-MAP.md</code>。</p>
+    <p>课程文本由 AI 起草，逐课按审计流程人工复核；技能包的规则以其 <code>SKILL.md</code> 为准，不另造流程。</p>
+    <p class="links"><a href="https://github.com/telecomshy/telecomshy-se-lessons">github.com/telecomshy/telecomshy-se-lessons</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
