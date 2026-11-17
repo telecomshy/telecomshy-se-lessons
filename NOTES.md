@@ -21,7 +21,7 @@
 ## 已定
 
 - 课程骨架：34 节 / 7 模块（见 `reference/course-map.html` v3 与 `CURRICULUM-REVIEW.md`）。
-- 沙盒：`D:\code\my_projects\se-course-sandbox`，迷你知识库，先 CLI，后加薄 HTTP adapter。
+- 沙盒：`E:\code\my_projects\se-course-sandbox`，迷你知识库，先 CLI，后加薄 HTTP adapter。
 - 单人开发者版：团队概念保留，活动改写为与 agent / 未来维护者的协作。
 - 最后一课：迁移到 `knowledge-pet`，只写迁移计划，不改它的代码。
 - 课程材料是否公开发布：暂不发布，先按「自己学 + 沉淀教材」处理。
@@ -227,7 +227,7 @@
 - 第 1 课与三问卡已完成：`lessons/0001-what-is-software-engineering.html`、`reference/0001-three-questions.html`；六个模块导读已排进课程地图 v3。
 - 第 2 课（SE 全貌）与第 3 课（AI 实践 + 工作台）已完成：`lessons/0002-what-software-engineering-covers.html`、`lessons/0003-ai-practice-and-workbench.html`；参考卡 `reference/0002-se-landscape.html`、`reference/0003-skill-map.html`。
 - 第 4 课（领域语言）已完成：`lessons/0004-domain-language-and-context.html`、`reference/0004-glossary-card.html`。三个新术语：ubiquitous language、glossary / `GLOSSARY.md`、Avoid list。主来源：Evans 第 2 章、Fowler 的 bliki、本机 `domain-modeling/SKILL.md` + `GLOSSARY-FORMAT.md`。下一步第 5 课「逼问」。`GLOSSARY.md` 在 2026-10 之前叫 `CONTEXT.md`，旧版安装仍用旧名。
-- 沙盒核验（2026-10-20，写第 4 课时）：`D:\code\my_projects\se-course-sandbox` 存在 `AGENTS.md`、`docs/agents/domain.md`、`docs/agents/issue-tracker.md`，**缺** `docs/agents/triage-labels.md`（标签本身写进了 `issue-tracker.md`）。第 13 课（triage）之前要么补文件，要么改第 3 课的产物清单。尚无 `GLOSSARY.md`、`docs/adr/`、`.scratch/`，符合懒创建。注意：`docs/agents/domain.md` 还是旧版 `CONTEXT.md` 写法；装完最新版后，重跑 `/setup-matt-pocock-skills` 或手动同步为 `GLOSSARY.md`。
+- 沙盒核验（2026-10-20，写第 4 课时）：`E:\code\my_projects\se-course-sandbox` 存在 `AGENTS.md`、`docs/agents/domain.md`、`docs/agents/issue-tracker.md`，**缺** `docs/agents/triage-labels.md`（标签本身写进了 `issue-tracker.md`）。第 13 课（triage）之前要么补文件，要么改第 3 课的产物清单。尚无 `GLOSSARY.md`、`docs/adr/`、`.scratch/`，符合懒创建。注意：`docs/agents/domain.md` 还是旧版 `CONTEXT.md` 写法；装完最新版后，重跑 `/setup-matt-pocock-skills` 或手动同步为 `GLOSSARY.md`。
 
 ## 环境与网络（2026-10-20 核查）
 
@@ -266,7 +266,7 @@
 
 ## 第二十六次调整（2026-10-26）
 
-- 写第 14 课前按交接文档问用户「现在立骨架还是先纸面」，用户拍板**先立最小骨架**。沙盒 `D:\code\my_projects\se-course-sandbox` 新增 `kb/` 包：`python -m kb add "标题" "正文"` / `python -m kb search "关键词"` 两个命令（`cli.py` + `__main__.py`），存储模块 `KnowledgeStore`（`storage.py`，JSONL 文件 `kb.jsonl`，`add` / `search` 两方法），另有 `README.md`、`.gitignore`（忽略 `__pycache__/` 与 `kb.jsonl`；`.scratch/` 是练习产物不忽略）。根提交 `b2162ce`（仓库此前无提交），`__pycache__` 误入后已 amend 修掉。刻意无测试、无 CI，不抢模块 4 的活。骨架带「第一版」味道：`add()`/`search()` 返回内部 dict（rep exposure）、接口无契约文档——留给第 14 课练习当对照物。
+- 写第 14 课前按交接文档问用户「现在立骨架还是先纸面」，用户拍板**先立最小骨架**。沙盒 `E:\code\my_projects\se-course-sandbox` 新增 `kb/` 包：`python -m kb add "标题" "正文"` / `python -m kb search "关键词"` 两个命令（`cli.py` + `__main__.py`），存储模块 `KnowledgeStore`（`storage.py`，JSONL 文件 `kb.jsonl`，`add` / `search` 两方法），另有 `README.md`、`.gitignore`（忽略 `__pycache__/` 与 `kb.jsonl`；`.scratch/` 是练习产物不忽略）。根提交 `b2162ce`（仓库此前无提交），`__pycache__` 误入后已 amend 修掉。刻意无测试、无 CI，不抢模块 4 的活。骨架带「第一版」味道：`add()`/`search()` 返回内部 dict（rep exposure）、接口无契约文档——留给第 14 课练习当对照物。
 - 第 14 课「深模块、信息隐藏与不变量」已完成：`lessons/0014-deep-modules.html`、`reference/0014-deep-modules-card.html`。标题与地图一致（未改名）。模块 3 开篇：从「怎么想」（M0–M2：需求/过程/计划）转入「怎么造」。
 - 按五段结构写：位置（Design & Architecture 第一站——模块形状；第 15 接缝、16 设计两次、17 架构、18 设计文档；给第 15 课留接口草图当原料）→ 问题与概念（反面教材：JSONL 读写散在每个命令里；module = interface + implementation，interface 是「调用者必须知道的一切」；deep module 判据是 leverage，Ousterhout ch.21 p172；通用 vs 特化的编辑器例子 ch.6 p41–43；information hiding 按「什么会变」拆模块，Parnas 1972 + MIT 6.031 定义；obscurity 反警告 ch.6 p44；invariant「任何时刻都为真」、ADT invariants replace preconditions、rep invariant / AF、representation exposure）→ 行业做法（明说无统一标准；主流四条：接口草图先行（CMU 08-design-docs）、deletion test、不变量单点强制、接口即测试面；取舍一条：general-purpose vs special-purpose，somewhat 是原词）→ AI + Matt（`codebase-design` 模型调用；三件工具：深浅三问 / 删除测试 / 接口即测试面 + 可测三形状；人拍板三件：什么算秘密、不变量选哪条、深到什么程度；差异明说：技能拒绝行数比度量深度、改用 depth-as-leverage，与书的判据重心不同标注「经验判断」；分工：domain-modeling 管词、codebase-design 管形状，先词后形）→ 三个常见误区（接口＝签名 / 藏太多＝obscurity / 不变量＝愿望）→ 练习（给 `kb/storage.py` 画接口草图 + 写一条不变量 + pytest 断言草图，断言伸手进 `store.entries` 就标「接口缺口」，顺手把不变量写进 rep 旁 docstring）→ 反馈回路（「这张草图够开工吗」检查单，意见分「草图漏了必须知道的事」vs「不变量守不住＝接口形状问题」两类）。
 - 理论来源：MIT 6.031 Reading 10（“What abstraction means” 信息隐藏定义与 Parnas 出处、“Representation independence”）与 Reading 11（“Invariants”、RI : R → boolean / AF : R → A 写在 rep 旁、“ADT invariants replace preconditions”、representation exposure）；SWEBOK v4 第 3 章 p86（PDF 第 86 页＝printed 3-4：modularization、encapsulation = information hiding、separation of interface and implementation；章范围 p83–98）；Ousterhout 摘录 ch.6 p39–44、ch.21 p172；Parnas 1972 经 SWEBOK ch.3 文献 [32] 与 MIT 6.031 转引（本地无全文，照第 7 课 Nygard 办法标注）。实践：`codebase-design/SKILL.md`（含 DEEPENING.md、DESIGN-IT-TWICE.md），只作实践方式。
@@ -347,7 +347,7 @@
 - 课程地图：第 18 课补链接；术语家谱加「design doc 设计文档 / architecture description 架构描述 / design review 设计评审」（SWEBOK ch.2 §2、ch.3 §4、§6.1；CMU 08-design-docs，第 18 课）一行；进度段更新为第 1–18 课已写完、模块 3 写满、下一步写第 19 课。
 - 第 19 课大纲已在 `NEXT-SESSION.md` 备好（pytest 与测试设计：划分、边界、覆盖率，M4 开篇；MIT 6.031《Testing》为主读物候选；注意「测试从零教起」约束与 fake/stub/mock 留给第 22 课的缺口），只差写正文。
 ## 第三十七次调整（2026-10-28）
-- 用户问「15 课的迁移是啥」并拍板**把这次迁移补上**。已在沙盒 `D:\code\my_projects\se-course-sandbox` 完成（提交 `335b4bf`）：`kb/storage.py` 从单个 `KnowledgeStore` 迁成 `Store` port（`typing.Protocol`，契约写在 docstring：条目恰好四键 id/title/text/created_at、id 形如 `e0001` 按加入顺序递增、created_at 为 UTC ISO 8601 精确到秒、search 大小写不敏感且顺序与加入顺序一致、所有返回 dict 是副本）+ `JsonlStore`（唯一碰文件的 adapter）+ `InMemoryStore`（纯内存，无文件逻辑）；`kb/cli.py` 单点装配（`store: Store = JsonlStore(STORE_PATH)`）；`__init__.py`、`README.md` 同步。顺手补掉第 14 课练习标出的 rep exposure 缺口（`add`/`search` 返回副本）。走缝验证（同一组断言在两 adapter 含重开仓库上都绿）以临时脚本跑过，**未落测试文件**（测试设计是第 19 课的活）。
+- 用户问「15 课的迁移是啥」并拍板**把这次迁移补上**。已在沙盒 `E:\code\my_projects\se-course-sandbox` 完成（提交 `335b4bf`）：`kb/storage.py` 从单个 `KnowledgeStore` 迁成 `Store` port（`typing.Protocol`，契约写在 docstring：条目恰好四键 id/title/text/created_at、id 形如 `e0001` 按加入顺序递增、created_at 为 UTC ISO 8601 精确到秒、search 大小写不敏感且顺序与加入顺序一致、所有返回 dict 是副本）+ `JsonlStore`（唯一碰文件的 adapter）+ `InMemoryStore`（纯内存，无文件逻辑）；`kb/cli.py` 单点装配（`store: Store = JsonlStore(STORE_PATH)`）；`__init__.py`、`README.md` 同步。顺手补掉第 14 课练习标出的 rep exposure 缺口（`add`/`search` 返回副本）。走缝验证（同一组断言在两 adapter 含重开仓库上都绿）以临时脚本跑过，**未落测试文件**（测试设计是第 19 课的活）。
 - 迁移中验证脚本自己错了三轮（重开仓库 id 接着排、重开后 search 命中累积、hello 内容跨轮撞车），均是断言预期错、不是代码错——「走缝验证」这一步本来就该对契约抠细节，这三轮正是契约被逼现形的过程（第 15 课练习提示里「id 规则其实是契约」的现实版）。
 - 后面几课练习核过**课件一行不用改**：第 15 课练习即此次迁移（教材起点仍是第一版骨架，不动）；第 16 课练习写明两个分支（「没做迁移就用现在 `KnowledgeStore` 的两个方法」），现在走迁移后分支；第 17 课组件清单本就按 `JsonlStore` / `InMemoryStore` 写；第 18 课「做没做都能来」，迁移后「引用清单」可直接指 `kb/storage.py` 真实路径，更强不用改。第 19 课（未写）「先补迁移还是直接测」的问题消失，直接对 `Store` port 写测试。
 - `NEXT-SESSION.md` 沙盒状态、知识库教学定位、第 19 课教学注意、待确认四处已同步。
@@ -587,7 +587,7 @@
 - 必须改：「把本质复杂度提前解决掉」与前文「本质复杂度没有消失」自相矛盾（也违背 Brooks 原意「no silver bullet」）→ 改「先让问题有答案，再让 AI 动手」。核心概念一句话改错会教出错误的 Brooks 模型。
 - 建议改 12 条全落实，值得记的三条：① **卡片第二问漏「、依赖它」会让学习者在第一个真实项目上判错档**（练习 4 的库只由一人维护、被 12 个服务依赖，旧卡按「只有你」落到编程问题档）——卡片补回「、依赖它」并加「多个团队」档，课文三问选项同步；② **两课对主读物的指引不一致**（第 1 课「重点读两节」、第 2 课「读三节」）→ 第 1 课补 *Scale and Efficiency*，三问里的「规模」才有着落；③ **目标承诺「用到自己手上的项目」正文没接** → 练习加第 7 题（无标准答案，判自己的项目），结尾「我是你的老师，不是这本书的朗读器」改成指回第 7 题的有用一句。
 - 其余落实：第二处引文标注「意译」；「不是 A，而是 B」5 处削到 2 处（标题与承重句保留）；「判断的成本抬了上来」改「判断的量跟着产出涨了上去」（与前文「负担集中」一致）；「AI 把偶然复杂度压得很低」收窄为「大头」并给配环境半句（与 bullet 列举范围对齐）；agent（智能体）首见补中文、节标题「难度」改「复杂度」（与目标栏用词统一）；卡片「一个会失败的测试」消歧为「一个在行为被改坏时会失败的测试」；课文处方补「文档」与卡片对齐；recap 第二句补「规模」；课文二元判据补中间档去向（按三问卡中间档走、拿不准按更重的算）。
-- **路径通用化（2026-11-07 与用户确认，影响后续所有审计）**：开发在两台机器上进行（admin 机 / 18907 机），路径差异不是写错。约定：① 课件与参考卡里的技能包路径统一写 `%USERPROFILE%\.agents\skills\`（44 个课件与参考卡批量替换完成，两台机器各自解析）；② 课程地图页脚的工作区改「本仓库」，不再写死盘符；③ 沙盒两台机器约定同一路径 `D:\code\my_projects\se-course-sandbox`（课件不动；18907 机尚未建沙盒，建时放同一路径）；④ `COURSE-STANDARD.md` 与 `NEXT-SESSION.md` 的审计提示词要求改为「当前用户主目录的 `.agents\skills\`，派子代理时由主代理现场解析成当次机器的具体路径」。两台机器技能目录数不一致（admin 机 51、18907 机 40），第 3 课「38 技能三层全表」等按旧机清点写的内容暂不动，审计到第 3 课时按当次机器实际目录核对再定。本会话的审计子代理靠自找路径完成了核对，通用化正是为了以后不再发生这种事。
+- **路径通用化（2026-11-07 与用户确认，影响后续所有审计）**：开发在两台机器上进行（admin 机 / 18907 机），路径差异不是写错。约定：① 课件与参考卡里的技能包路径统一写 `%USERPROFILE%\.agents\skills\`（44 个课件与参考卡批量替换完成，两台机器各自解析）；② 课程地图页脚的工作区改「本仓库」，不再写死盘符；③ 沙盒两台机器约定同一路径 `E:\code\my_projects\se-course-sandbox`（课件不动；18907 机尚未建沙盒，建时放同一路径）；④ `COURSE-STANDARD.md` 与 `NEXT-SESSION.md` 的审计提示词要求改为「当前用户主目录的 `.agents\skills\`，派子代理时由主代理现场解析成当次机器的具体路径」。两台机器技能目录数不一致（admin 机 51、18907 机 40），第 3 课「38 技能三层全表」等按旧机清点写的内容暂不动，审计到第 3 课时按当次机器实际目录核对再定。本会话的审计子代理靠自找路径完成了核对，通用化正是为了以后不再发生这种事。
 - 改动文件：`lessons/0001-what-is-software-engineering.html`、`reference/0001-three-questions.html`、`reference/course-map.html`（页脚两条路径）。改后按规范通读验收：遮小标题因果链成立，与第 2 课开头回指、结尾预告均无冲突，卡片与正文判据、档位、处方完全对齐。
 
 ## 第五十六次调整（2026-11-11）
@@ -781,5 +781,15 @@
 - 自查：1440×1000 与 390×844 两个视口都截图看过。改了两处——八活动两列加 `grid-auto-rows: 1fr`，让同一排的细线对齐；封面正文收窄到 34em，中文一行不再过长。窄屏隐藏刻度尺，导航交给目录。
 - 发布：Pages 用 branch 源（`main` / 根目录），加 `.nojekyll` 跳过 Jekyll，页面按原样输出。`lessons/`、`reference/`、`assets/` 与首页同站，课件里的 `../assets/course.css`、`../reference/...` 相对链接照常可用。**已知限制**：`courseware/` 按版权不进仓库，课件里指向本地课件的链接在线上会 404；`courseware/` 只在本机。
 - `README.md` 顶部补了在线地址；站点入口就是 `<https://telecomshy.github.io/telecomshy-se-lessons/>`。
+
+## 沙盒重建与同步（2026-11-17）
+
+- 用户决定：沙盒不放进课程目录。理由写清——仓库套仓库要么走 submodule（换机器要额外一步、学习时容易踩坑）要么丢 `.git`（第 14 课 `git switch -c lesson14-practice lesson-14-start` 直接做不了）；课程仓库是 public，沙盒会积累练习提交与实验分支；课件里 34 处写死沙盒路径。同步改由**沙盒自己的私有远端**解决。
+- 新建 `E:\code\my_projects\se-course-sandbox`，私有仓库 `telecomshy/se-course-sandbox`，主干 `master`，根提交 `1aca91b`。路径从 `D:\` 改到 `E:\`，课件与参考卡共 34 处引用批量替换（18 个课件、2 张参考卡、`README.md`、`NEXT-SESSION.md`、`NOTES.md`）。
+- 内容是最小版：`AGENTS.md`（含 `## Agent skills` 三段）、`docs/agents/issue-tracker.md`（本地 markdown tracker，含 wayfinding 约定）、`docs/agents/domain.md`（单上下文，`GLOSSARY.md` + `docs/adr/`）、`docs/agents/triage-labels.md`（五个默认角色）、`README.md`、`.gitignore`。三份 docs 按 `setup-matt-pocock-skills` 的模板写，模板里的 `/技能名` 改成课程口径的 `@技能名`。
+- **没有 `kb/` 代码**，这是有意的取舍：真实骨架的每个类、每条 docstring、`eNNNN` 的 id 约定、`_check_rep()` 都被第 14、15、19–23、34 课引用过，重建必然换 hash；而 admin 机那套含 `.git` 的历史拷不过来。所以先只做工作台（够第 3–13 课），模块 3 之前再补代码骨架并打 `lesson-14-start`。
+- 第 24 课「沙盒还没有远端，这一步由你动手」改成「远端已经配好了，先 `git remote -v` 确认，没有的话再补」——否则那句话与事实相反。
+- 课程地图的沙盒状态条目、`NEXT-SESSION.md` 的路径与待确认条目同步改口；旧 hash（`b2162ce`、`335b4bf`、`49f4388` 等）不再当作基线，只在审计记录里保留。
+- 已知缺口一条：第 14 课开头的 `lesson-14-start` 标签现在不存在，做到那里之前必须补上，否则练习第一步就断。
 
 > AI生成

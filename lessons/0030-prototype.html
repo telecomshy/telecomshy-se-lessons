@@ -138,7 +138,7 @@
 
 <section>
   <h2>练习与带走：把「中断续跑」做成一个可按的状态模型</h2>
-  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做，原型文件放在仓库根目录的 <code>prototypes/</code> 下，不放进 <code>kb/</code>。这次要回答的主问题是：中断后恢复的进度，应该由文件行数推算，还是由本次导入自己记的检查点决定？要看的三个方面是：状态里记什么、状态面板露出什么、哪些动作在哪些状态下合法。做过第 29 课练习的人，从自己的动作表里取出那条缓解动作；没做过的人，用下面给的场景直接开始。</p>
+  <p>练习在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 上做，原型文件放在仓库根目录的 <code>prototypes/</code> 下，不放进 <code>kb/</code>。这次要回答的主问题是：中断后恢复的进度，应该由文件行数推算，还是由本次导入自己记的检查点决定？要看的三个方面是：状态里记什么、状态面板露出什么、哪些动作在哪些状态下合法。做过第 29 课练习的人，从自己的动作表里取出那条缓解动作；没做过的人，用下面给的场景直接开始。</p>
   <ol>
     <li><strong>把问题写成一句话。</strong>建 <code>.scratch/prototype-3001/</code>，在里面写 <code>question.md</code>：一句主问题，再用一小段说明这个原型在模拟什么状态模型、该看哪几个场景。四个尴尬场景先列出来：中断恢复、外部追加、连续恢复两次、取消后恢复。写不出这句主问题，就先别写代码。</li>
     <li><strong>先列状态、字段和动作。</strong>状态至少五种：未开始、导入中、已中断、已完成、已取消。动作至少六个：开始、写入一条、中断、恢复、完成、取消。状态里至少记这些字段：<code>status</code>、<code>total</code>（这次要导入多少条）、<code>start_line</code>（开始时文件里有多少行）、<code>written</code>（本次会话成功写入多少条）、<code>last_written_id</code>（最后一条写成功的 id，如 <code>e0005</code>）、<code>last_written_seq</code>（id 里的数字，如 <code>e0005</code> → 5）、<code>file_length</code>（当前文件里有多少行）。另设一个 <code>checkpoint</code> 对象模拟磁盘，至少放能重建 <code>next_index</code> 的字段：<code>start_line + written</code>（会话计数派），或 <code>last_written_seq</code>（最后 id 派），或中断前的 <code>file_length</code>（文件行数派）。<code>next_index</code> 不要直接存，定义成「下一条要写的第几条」（1-based），按你选的进度来源算：文件行数派是 <code>file_length + 1</code>（会把外部追加算进来）；会话计数派是 <code>start_line + written + 1</code>；最后 id 派是 <code>last_written_seq + 1</code>。不要拿 <code>last_written_id</code> 字符串直接加 1：在 JavaScript 里会变成 <code>"e00051"</code>，在 Python 里会报错。画两张表：一张状态 × 动作，标出哪些合法；一张字段表，标出每个字段从哪来、什么时候变。两张表合起来才是纯模块的骨架。</li>

@@ -109,7 +109,7 @@ def test_add_calls_store_add():
 
 <section>
   <h2>练习：给 CLI 造缝、写一个 fake，判一个「不该 mock」</h2>
-  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>。产出三样：生产代码里一条注入缝（<code>kb/cli.py</code>，本课唯一的生产代码改动）、<code>tests/test_cli.py</code> 里 fake 支撑的 CLI 测试、<code>.scratch/double-notes.md</code> 里替身归类和「不该 mock」的判断。做过第 19–21 课练习的，<code>tests/test_storage.py</code> 是现成的回归网，全程当裁判；没做过的也不缺素材——这课的测试面是 <code>add</code> 和 <code>search</code>，不依赖 <code>delete</code>。</p>
+  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code>。产出三样：生产代码里一条注入缝（<code>kb/cli.py</code>，本课唯一的生产代码改动）、<code>tests/test_cli.py</code> 里 fake 支撑的 CLI 测试、<code>.scratch/double-notes.md</code> 里替身归类和「不该 mock」的判断。做过第 19–21 课练习的，<code>tests/test_storage.py</code> 是现成的回归网，全程当裁判；没做过的也不缺素材——这课的测试面是 <code>add</code> 和 <code>search</code>，不依赖 <code>delete</code>。</p>
 
   <ol class="steps">
     <li><strong>造注入缝，默认行为一点不变。</strong>打开 <code>kb/cli.py</code>，把 <code>main</code> 的签名改成 <code>def main(argv: list[str] | None = None, store: Store | None = None) -> int:</code>，装配那行改成 <code>if store is None: store = JsonlStore(STORE_PATH)</code>。这就是依赖注入在 Python 里的常见形态：调用方什么都不用改，测试想换就换。改完手敲冒烟：<code>python -m kb add "PyTest 入门" "正文"</code>、<code>python -m kb search 入门</code>，行为跟改之前一模一样才算过。<code>__main__.py</code> 不用动。</li>

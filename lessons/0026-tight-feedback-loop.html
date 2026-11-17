@@ -111,7 +111,7 @@
 
 <section>
   <h2>练习与带走：给一条 bug 报告造出会红的命令</h2>
-  <p>练习是一次盲诊断：bug 由一个注入 agent 埋进沙盒，你不看它埋了什么，只拿「用户报告」当输入，走完这课教的流程，产出一条会红的命令。诊断全程在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做，产物记在 <code>.scratch/diagnosis/</code>。盲诊断的纪律有三条：不看 diff（<code>git diff</code>、<code>git show</code> 都算）、不问注入 agent 答案、诊断完成前不打开它留下的说明文件。读当前工作区的代码不算违规——真实诊断里你也读代码；纪律管的是另一件事：命令没红之前不做假设。做完不要修复，分支留给第 27 课接着用。</p>
+  <p>练习是一次盲诊断：bug 由一个注入 agent 埋进沙盒，你不看它埋了什么，只拿「用户报告」当输入，走完这课教的流程，产出一条会红的命令。诊断全程在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 做，产物记在 <code>.scratch/diagnosis/</code>。盲诊断的纪律有三条：不看 diff（<code>git diff</code>、<code>git show</code> 都算）、不问注入 agent 答案、诊断完成前不打开它留下的说明文件。读当前工作区的代码不算违规——真实诊断里你也读代码；纪律管的是另一件事：命令没红之前不做假设。做完不要修复，分支留给第 27 课接着用。</p>
   <ol>
     <li><strong>让 agent 注入 bug。</strong>按参考卡上的注入指令原文，另开一个会话或者派一个子代理执行（在本会话跑，它的输出可能把答案带出来）。指令会让它开分支 <code>bug-report</code>、注入一个数据量型偶发 bug、自验「几百条不显现、一万条（含）起显现」，把准确说明写进 <code>.scratch/injected-bug.md</code> 并留在工作区不提交，然后只回你一句「已注入」。它 commit 的只有代码改动。</li>
     <li><strong>拿报告写触发条件清单。</strong>报告原文在上面的「问题与概念」一节，照「现象、环境、数据、频率」四栏拆它，缺的标问号。然后用几十条的小数据先试复现：<code>python -m kb add</code> 加三十条，全带同一个词，再 <code>python -m kb search</code> 那个词。多半是绿的。把「复现失败」记进清单，它是负证据：小数据下不坏。</li>

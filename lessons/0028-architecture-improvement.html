@@ -93,7 +93,7 @@
 
 <section>
   <h2>练习与带走：出一份过 deletion test 的改良提案</h2>
-  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做，产出两样：一份能过 deletion test 的改良提案，加一条 characterization test——正是地图上这课的产出。分支口径：在 <code>master</code> 上做，写命令前先 <code>git branch --show-current</code> 确认（沙盒的主干叫 master，别想当然写 main）。测试网看做没做前面的练习：做过 19–27 课练习的，<code>tests/</code> 里已有回归网，开工前先全量跑绿；没做过的，本课的特征测试落 <code>tests/</code> 时顺手建目录。入口线索同样分叉：做过 27 课练习的，先读 <code>.scratch/diagnosis/fix-layer.md</code> 和「不存在正确的缝」那笔账；没做过的，入口就是自己列的摩擦清单。</p>
+  <p>练习在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 做，产出两样：一份能过 deletion test 的改良提案，加一条 characterization test——正是地图上这课的产出。分支口径：在 <code>master</code> 上做，写命令前先 <code>git branch --show-current</code> 确认（沙盒的主干叫 master，别想当然写 main）。测试网看做没做前面的练习：做过 19–27 课练习的，<code>tests/</code> 里已有回归网，开工前先全量跑绿；没做过的，本课的特征测试落 <code>tests/</code> 时顺手建目录。入口线索同样分叉：做过 27 课练习的，先读 <code>.scratch/diagnosis/fix-layer.md</code> 和「不存在正确的缝」那笔账；没做过的，入口就是自己列的摩擦清单。</p>
   <ol>
     <li><strong>列摩擦清单。</strong>先收两条入口线索：读 <code>fix-layer.md</code>，把修层判断里露过头的架构问题记进去；「不存在正确的缝」那类发现本来就是给架构记的账，单独标一行。再自己在 <code>kb/</code> 里找两三处难改的点：id 生成抄两份、匹配规则抄两份都是现成的候选；找的时候可以用 code smell（代码坏味道）当路标——SE-EDU 列的 Long Method、Large Class、Shotgun Surgery 都是「快、但不必然有问题」的信号（第 25 课引过它的分寸：「smells don't always indicate a problem」）。跑 <code>git log --name-only --oneline</code> 看哪些文件反复出现在改动里，热点优先；沙盒历史短、找不出热点，就直接用上面两个现成候选。每处写两行：难在哪、现在改它要动几处。清单落 <code>.scratch/architecture/friction-list.md</code>。</li>
     <li><strong>钉现状：写第一条 characterization test。</strong>从清单里挑定要动的那处行为，照现状抄断言——比如搜索是子串匹配、大小写不敏感、顺序与加入顺序一致，或者编号约定（<code>e0001</code>）。测试要驱动真实路径（fixture → <code>JsonlStore</code> 或 CLI），第 26 课的教训照旧：断在 <code>InMemoryStore</code> 上锁不住真实存储。落 <code>tests/test_characterization.py</code>。写完跑一遍留绿记录；这就是安全网的第一块，后面每一步都靠它证明行为没变。</li>

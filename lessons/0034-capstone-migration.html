@@ -39,7 +39,7 @@
   <h2>位置：前 33 课各走一站，这一课把八站连成一条路</h2>
   <p>第 2 课把软件工程摊成八个活动，之后的每一课都在其中一个活动里练。模块 6 的四课练的是推进路上的判断：第 30 课答「下一步不清楚」，第 31 课答「手上没有事实」，第 32 课答「上下文装不下也不该装」，第 33 课答「哪些推进方式不允许」。这一课不占第九个活动：它没有新概念要教，做的是把这八个活动连起来走一遍。模块 6 四课的判断在演练里都会用到一次——30 课把一句决定写成「主句加分号条件」的格式，站 1 拍板时照着写；31 课的引用纪律管迁移计划的出处；32 课的五问管会话边界；33 课的清单管计划里「哪些交 agent」。</p>
   <p>它也是全课的收口。第 3 课装好工作台之后，每个活动都得到了一节课、一套产物、一张参考卡，但从需求到上线整条链，你还没有一次走完过。演练补的就是这一段。另一个对象要分清：演练对象是沙盒里真的功能，做完会合回主干、可以打标签；迁移对象是 knowledge-pet 的流程。课程一开始就定了边界——练习都在沙盒做，最后一课给 knowledge-pet 只写迁移计划，不改它的代码。所以 knowledge-pet 在本课只读不写；它的价值在于真实：tracker、词表、密钥、两进程，每一样都和沙盒不一样，每一样都会在迁移计划里变成一行待办。</p>
-  <p>沙盒和 knowledge-pet 各是什么，先对齐一下。沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 是课程的练习仓库：一个迷你知识库，<code>kb add</code> 和 <code>kb search</code> 两个命令，存储已经抽成 Store port（端口）——<code>kb/storage.py</code> 的模块注释里写着「调用者（CLI、将来的 HTTP adapter、测试）只应该依赖 Store 这个 port」。这个「将来的 HTTP adapter」等了十九课，这一课上线。knowledge-pet <code>D:\code\my_projects\knowledge-pet</code> 是你的真实项目：AI 知识问答桌宠，Tauri 壳加 Python sidecar（独立于壳的 Python 进程，knowledge-pet 自己的词条），产品决策已经记了一堆（<code>docs/research/</code> 里七份研究记录、GitHub 上的 Phase 0 spec 与工单），代码一行还没有。</p>
+  <p>沙盒和 knowledge-pet 各是什么，先对齐一下。沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 是课程的练习仓库：一个迷你知识库，<code>kb add</code> 和 <code>kb search</code> 两个命令，存储已经抽成 Store port（端口）——<code>kb/storage.py</code> 的模块注释里写着「调用者（CLI、将来的 HTTP adapter、测试）只应该依赖 Store 这个 port」。这个「将来的 HTTP adapter」等了十九课，这一课上线。knowledge-pet <code>D:\code\my_projects\knowledge-pet</code> 是你的真实项目：AI 知识问答桌宠，Tauri 壳加 Python sidecar（独立于壳的 Python 进程，knowledge-pet 自己的词条），产品决策已经记了一堆（<code>docs/research/</code> 里七份研究记录、GitHub 上的 Phase 0 spec 与工单），代码一行还没有。</p>
 </section>
 
 <section>
@@ -91,7 +91,7 @@
 
 <section>
   <h2>练习与带走：八站演练，加一份迁移计划</h2>
-  <p>练习分两半。前一半在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做综合演练：薄 HTTP adapter 从需求走到上线，八站全真跑，约两小时，跨多个会话。后一半写迁移计划，落 <code>.scratch/migration-3401/</code>，约一小时。两半之间靠 <code>notes.md</code> 连着：演练的卡点喂给计划。</p>
+  <p>练习分两半。前一半在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 做综合演练：薄 HTTP adapter 从需求走到上线，八站全真跑，约两小时，跨多个会话。后一半写迁移计划，落 <code>.scratch/migration-3401/</code>，约一小时。两半之间靠 <code>notes.md</code> 连着：演练的卡点喂给计划。</p>
   <h3>第 0 步：起点盘点</h3>
   <ul>
     <li>确认分支与状态：<code>git branch --show-current</code>（沙盒在 master 上），<code>git status --short</code>（应为空，或只剩你机器上已有的缓存目录）。</li>
@@ -162,7 +162,7 @@
 <section>
   <h2>反馈回路：让零上下文的接手人挑这份计划</h2>
   <p>把计划交给一个零上下文的 agent：开一个新会话（或派一个子代理），工作目录随它，只给它计划路径。它扮演刚接手 knowledge-pet 的人，只回答问题，不改任何文件，但要按计划给的路径去读文件：</p>
-  <pre><code>读 D:\code\my_projects\se-course-sandbox\.scratch\migration-3401\migration-plan.md，
+  <pre><code>读 E:\code\my_projects\se-course-sandbox\.scratch\migration-3401\migration-plan.md，
 按它引用的路径去读 knowledge-pet 和沙盒的相关文件。你扮演一个零上下文、
 刚接手 knowledge-pet 的人，只回答问题，不改任何文件。
 

@@ -18,7 +18,8 @@
 - **技能入口写法已统一（2026-11-17）**：全课程改用 `@skill-id`，共 135 处，只保留 `/clear`、`/compact`、`/new` 等 OpenCode 真命令的斜杠写法。第 32 课那张「技能文档的写法 vs OpenCode 里的动作」对照表是唯一例外，中间栏保留斜杠并写明理由。详见 `NOTES.md` 第七十一次调整。以后新增课按 `@` 写。
 - **本地课件已补齐（2026-11-17）**：`courseware/fowler/mocks-arent-stubs.html` 与 `courseware/meszaros/` 六页到位（xunitpatterns.com 经 web.archive.org 的 `id_` 快照），课程地图里那处死链消失。`courseware/` 不进 git，换机器要重抓，抓法与来源记在两个目录的 `README.md`。详见 `NOTES.md`「补下载记录（2026-11-17）」。
 - **课程站点已上线（2026-11-17）**：`https://telecomshy.github.io/telecomshy-se-lessons/`。入口是仓库根目录的 `index.html`（封面与目录），样式在 `assets/landing.css`；Pages 源是 `main` 根目录，带 `.nojekyll`。课件里的本地课件链接（`courseware/`）线上会 404，属已知限制。
-- **路径随机器而变（2026-11-07 与用户确认，重要）**：开发在两台机器上进行，文档不写死机器专属路径。技能包在当前用户主目录的 `.agents\skills\`，课件与参考卡统一写 `%USERPROFILE%\.agents\skills\`（44 个文件已批量替换）；课程地图页脚工作区写「本仓库」。两台机器现状：admin 机 `C:\Users\admin\.agents\skills\`（51 个目录）、沙盒已建；18907 机 `C:\Users\18907\.agents\skills\`（40 个目录）、工作区 `E:\code\my_projects\telecomshy-se-lessons`、沙盒未建。**派审计子代理时由主代理现场解析成当次机器的具体路径，不写 %USERPROFILE% 字面量。**沙盒两台机器约定同一路径 `D:\code\my_projects\se-course-sandbox`，本机建沙盒时放同一位置。
+- **沙盒已建（2026-11-17）**：`E:\code\my_projects\se-course-sandbox`，私有仓库 `telecomshy/se-course-sandbox`，主干 `master`。**目前是最小版**：只有 `AGENTS.md`、`docs/agents/` 三件（issue-tracker / domain / triage-labels）、`README.md`、`.gitignore`，**没有 `kb/` 代码**。够第 3–13 课用；**模块 3 之前必须把代码骨架补进来**，并在第 14 课起点打 `lesson-14-start` 标签，否则第 14 课开头那步 `git switch -c lesson14-practice lesson-14-start` 会失败。原 admin 机沙盒的历史（根提交 `b2162ce`、收尾 `49f4388`）不再当基线，课程地图里那串 hash 已改口。
+- **路径随机器而变（2026-11-07 与用户确认，重要）**：开发在两台机器上进行，文档不写死机器专属路径。技能包在当前用户主目录的 `.agents\skills\`，课件与参考卡统一写 `%USERPROFILE%\.agents\skills\`（44 个文件已批量替换）；课程地图页脚工作区写「本仓库」。两台机器现状：admin 机 `C:\Users\admin\.agents\skills\`（51 个目录）；18907 机 `C:\Users\18907\.agents\skills\`（40 个目录）、工作区 `E:\code\my_projects\telecomshy-se-lessons`。**派审计子代理时由主代理现场解析成当次机器的具体路径，不写 %USERPROFILE% 字面量。**沙盒路径统一为 `E:\code\my_projects\se-course-sandbox`（2026-11-17 从 D 盘改来，课件与参考卡 34 处已批量替换），两台机器 clone 同一私有仓库 `telecomshy/se-course-sandbox`。
 - 写作原则：软件工程理论是主线，AI + 技能包是实践；课件是文章不是 PPT；文字没有 AI 味；修改课件先通读整篇（细则见 `COURSE-STANDARD.md`）。
 - 结构定型：正文性小节（如「三个常见误区」）排在练习之前；recap 在练习与反馈回路之后；`div.source`、`div.next` 收尾。
 - 自查分工（2026-11-03 定）：派审计前主代理只做机械自查（术语首见、引文照抄、文件互链、回指名）；掌握度、表达、逻辑、事实四类实质判断只归审计子代理。
@@ -154,7 +155,7 @@
 - **第 20 课练习添的两组契约问题**：`delete` 删不到的返回值、返回值形状、id 复用（同样是示例决定，别把示例当契约），以及「删光后重开 id 从哪排」（计数痕迹被删除抹掉，三条出路见第 20 课循环四，课件只当契约空洞处理，未给答案）。
 - **第 22 课练习添的一组契约问题**：`JsonlStore` 写文件失败（权限、磁盘满）的错误行为——抛什么、返回什么——契约没定，课件明写「先拍板写进契约再断言，拍不了记进未决问题」。**第 23 课练习正是把它拍板掉**：示例决定是三要素（失败抛 `StorageError` 带原异常 / 失败无返回值、成功路径仍返回副本 / 不留半截条目），学习者可照可改，拍完写进 `Store` docstring。第 34 课站 1 的错误映射推荐答案以它为前提；没做 23 课练习的人按 33 课参考卡样例拍。
 - **各课练习的留档约定**（第 24–33 课）仍见 `NOTES.md` 对应条目与本文件历史版本要点：lint 豁免写理由（24）、裁决与实验分支纪律（25）、盲诊断与注入（26）、四份诊断记录与撤修复实验（27）、git status 白名单含 GLOSSARY/ADR（28）、演练目录可复用（29）、记录留主分支原型进分支（30）、研究笔记单文件四要素（31）、handoff 四条核对（32）、责任清单七列与脱敏占位（33）。这些约定不因课程完结失效；第 34 课演练遇到缺口时按对应退路走。
-- 沙盒 `GLOSSARY.md`、`docs/adr/`、`.scratch/`、`.out-of-scope/` 仍懒创建，由各课练习带出，不要提前建。沙盒分支名是 `master`、无 remote。
+- 沙盒 `GLOSSARY.md`、`docs/adr/`、`.scratch/`、`.out-of-scope/` 仍懒创建，由各课练习带出，不要提前建。沙盒分支名是 `master`，远端为私有仓库 `telecomshy/se-course-sandbox`（2026-11-17 建，用于两台机器同步；第 24 课的「加远端」练习已改成「确认远端」）。
 - ~~技能包目录数两台机器不一致~~（已销账，2026-11-12 第 3 课审计核实）：本机 `.agents\skills\` 78 个目录 = Matt 技能恰 38 个（与三层表逐一相符）+ 非 Matt 40 个（26 个 arkcli-*、8 个 shy-*、find-skills、skill-creator、obsidian-markdown、playwriter、resolving-merge-conflicts、software-factory）；课件 L306 注释已覆盖混入情况，教学内容不改。目录总数随安装来源漂移，以后审计以「Matt 技能 = 三层表 38 个」为口径，不按目录总数。
 
 > AI生成

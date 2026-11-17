@@ -13,8 +13,8 @@
   <p class="eyebrow">模块 6 · 专业实践与 AI · 第 33 课</p>
   <h1>责任：安全、伦理与 AI 的边界</h1>
   <p class="lede">第 23 课那张错误处理工单如果按示例决定做完并合进主干，<code>kb add</code> 在写文件失败时会抛 <code>StorageError</code>，消息里带着原始异常。如果你的实现把原异常拼进了消息，终端里看到的是这样一行：</p>
-  <pre><code>StorageError: could not save entry: [Errno 13] Permission denied: 'D:\code\my_projects\se-course-sandbox\kb.jsonl'</code></pre>
-  <p class="lede">这句话对你很有用：一眼看出是权限问题，路径也指得明明白白。于是你让 agent 把提示改得友好一点，顺手补一条测试。agent 很快交回来：<code>保存失败：D:\code\my_projects\se-course-sandbox\kb.jsonl</code>。读起来确实顺了。可你想起第 15 课把存储抽成 port（端口），就是为将来的薄 HTTP（Hypertext Transfer Protocol，超文本传输协议）adapter（适配器）留的缝——同一个 <code>StorageError</code>，换到 HTTP 响应里，客户端会看到服务器上的绝对路径。</p>
+  <pre><code>StorageError: could not save entry: [Errno 13] Permission denied: 'E:\code\my_projects\se-course-sandbox\kb.jsonl'</code></pre>
+  <p class="lede">这句话对你很有用：一眼看出是权限问题，路径也指得明明白白。于是你让 agent 把提示改得友好一点，顺手补一条测试。agent 很快交回来：<code>保存失败：E:\code\my_projects\se-course-sandbox\kb.jsonl</code>。读起来确实顺了。可你想起第 15 课把存储抽成 port（端口），就是为将来的薄 HTTP（Hypertext Transfer Protocol，超文本传输协议）adapter（适配器）留的缝——同一个 <code>StorageError</code>，换到 HTTP 响应里，客户端会看到服务器上的绝对路径。</p>
   <p class="lede">同一条消息，在终端里是诊断信息，在 HTTP 响应里是信息泄露。变的是通道和读者，不是字符串。这一课就从这里开始：责任不是「代码是谁写的」，而是「这句话给谁看、这个动作谁批准、这个错误谁承担」。学完带走一张「哪些事不能交给 AI」的清单，加一个写清理由的安全取舍。</p>
 </header>
 
@@ -107,7 +107,7 @@
 
 <section>
   <h2>练习与带走：给沙盒做一次责任盘点</h2>
-  <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 上做。起点不依赖第 32 课：下面给一份固定的十件事清单。做过第 32 课的人，可以把 <code>decision.md</code> 里的挂账替换进来，但清单的列和判断方法不变。产出落在 <code>.scratch/responsibility-3301/</code>。</p>
+  <p>练习在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 上做。起点不依赖第 32 课：下面给一份固定的十件事清单。做过第 32 课的人，可以把 <code>decision.md</code> 里的挂账替换进来，但清单的列和判断方法不变。产出落在 <code>.scratch/responsibility-3301/</code>。</p>
   <p>清单里「处置」只填五个词之一；一件事如果分两段（agent 出报告、人做决定），主处置写前一段，后半段写进「你还要做什么」。「谁签字」只写对这个判断负责的人；「不做」行也写你，理由写在同一格或 <code>review-notes.md</code>。</p>
   <ol>
     <li><strong>建清单。</strong>建 <code>.scratch/responsibility-3301/delegation-ledger.md</code>，把下面这张表抄进去，列头照写：

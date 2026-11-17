@@ -99,7 +99,7 @@
 
 <section>
   <h2>练习：一张错误行为工单，走完 @implement</h2>
-  <p>对象是沙盒 <code>D:\code\my_projects\se-course-sandbox</code>，工单就是第 22 课候选 (c) 那个没拍板的问题：<code>JsonlStore</code> 写文件失败（权限、磁盘满）时报什么。产出五样：一张工单文件（<code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>）、写进 <code>Store</code> docstring 的错误契约、错误行为的测试（进 <code>tests/test_storage.py</code>）、一份两轴报告（存 <code>.scratch/error-handling/review-report.md</code>）、一次提交。做过第 19–22 课练习的，现成的回归网全程当裁判；没做过的也不缺素材——这张工单的测试面是 <code>JsonlStore.add</code> 的失败路径，不依赖 <code>delete</code> 和 CLI 的缝。</p>
+  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code>，工单就是第 22 课候选 (c) 那个没拍板的问题：<code>JsonlStore</code> 写文件失败（权限、磁盘满）时报什么。产出五样：一张工单文件（<code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>）、写进 <code>Store</code> docstring 的错误契约、错误行为的测试（进 <code>tests/test_storage.py</code>）、一份两轴报告（存 <code>.scratch/error-handling/review-report.md</code>）、一次提交。做过第 19–22 课练习的，现成的回归网全程当裁判；没做过的也不缺素材——这张工单的测试面是 <code>JsonlStore.add</code> 的失败路径，不依赖 <code>delete</code> 和 CLI 的缝。</p>
 
   <ol class="steps">
     <li><strong>拍板契约，把工单写出来。</strong>先把三个契约空洞拍板掉：写失败抛什么、返回什么、状态留不留。示例决定是三件事：失败时抛自定义异常 <code>StorageError</code>（带出原异常）；失败时没有返回值——异常就是出口，成功路径仍然返回新条目副本，第 15 课的承诺不变；仓库不留半截条目。这是示例，不是标准答案，拍板权在你。再读 <code>kb/storage.py</code> 找行为缺口：<code>JsonlStore.add</code> 先 <code>self._entries.append(entry)</code> 再写文件，写失败时内存里留了半截条目，下次 id 还会跳号。把这些写成验收标准，照第 10 课 to-tickets 的本地模板落盘到 <code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code>：What to build 一句行为，Acceptance criteria 四条（示例：写失败抛 <code>StorageError</code> 并带原异常、失败时无返回值且成功路径行为不变、失败后仓库状态与失败前一致、错误契约写进 <code>Store</code> docstring），每条后面留一行「证据从哪来」，Blocked by 写 None，Status 写 <code>ready-for-agent</code>。</li>

@@ -26,7 +26,7 @@
 |---|---|
 | `lessons/` | 课件，每节一个独立 HTML，直接浏览器打开 |
 | `reference/` | 参考卡；`course-map.html` 是 34 节的完整地图 |
-| `learning-records/` | 学习记录 |
+| `learning-records/` | 学习记录：只记会影响后续教学的判断（已会什么、误解被纠正、目标变化），不是逐课日志 |
 | `courseware/` | 理论来源课件的本机副本，不随仓库分发（来源见 `SOURCE-MAP.md`） |
 | `MISSION.md` | 课程目标、成功标准、约束、范围 |
 | `COURSE-STANDARD.md` | 写作规范：五段结构、来源要求、术语与叙事规则 |
@@ -39,7 +39,7 @@
 ## 怎么用
 
 1. 先打开 `reference/course-map.html`，看清 34 节和七个模块的关系。
-2. 从 `lessons/0001-what-is-software-engineering.html` 开始按序读；每节先读、再在沙盒 `D:\code\my_projects\se-course-sandbox` 里做练习。
+2. 从 `lessons/0001-what-is-software-engineering.html` 开始按序读；每节先读、再在沙盒 `E:\code\my_projects\se-course-sandbox` 里做练习。
 3. 写新课或改课之前，读 `AGENTS.md`、`COURSE-STANDARD.md`、`SOURCE-MAP.md`，再读前后各一节。
 
 ## 来源与版权
