@@ -765,4 +765,12 @@
 - 校验：grep 后只剩第 32 课那两行有意保留的技能斜杠；`/clear`、`/compact`、`/new` 计数不变；HTML 相对链接仍全部可解析（`course-map.html` 指向 `courseware/fowler/mocks-arent-stubs.html` 的旧死链属另一件事，未动）。
 - 流程观察：这次看着是机械替换，一半的判断在「哪些斜杠不是技能」。正则撞上的东西有 OpenCode 自己的命令、文件路径、枚举里的技能名；先批量替换再逐处看上下文，才分得清哪句在对学员说话、哪句在转述技能文档的写法。
 
+## 补下载记录（2026-11-17）
+
+- 补齐第 22 课缺的两处本地课件。`courseware/fowler/mocks-arent-stubs.html`：Fowler《Mocks Aren't Stubs》全文，55 KB，取自 `https://martinfowler.com/articles/mocksArentStubs.html`，页面自述日期 2 January 2007，逐字核过 `Of these kinds of doubles, only mocks insist upon behavior verification`（原文跨行，课件引的是整句）。
+- `courseware/meszaros/` 六页：xunitpatterns.com 已无法直连，经 web.archive.org 的 `id_` 原始快照取回，快照时间戳 mock-object 20231208103416、test-stub 20231216001809、test-spy 20231216001808、dummy-object 20231208103421、test-double 20240114214303、fake-object 20240117231316；单次请求间隔 4 秒，均 200。原站样式、图片与站内链接未取，离线只有文字。
+- 存成 ASCII 文件名 `mock-object.html`、`test-stub.html`、`test-double.html`、`fake-object.html`、`test-spy.html`、`dummy-object.html`，两个目录各写一份 `README.md` 记来源 URL、快照时间与抓法，方便换机器重抓。
+- 文档同步：`SOURCE-MAP.md` 两行（Fowler 行补抓取日期、Meszaros 行把「两页 + 其余限速未取到」改成六页清单）、经典来源段、`RESOURCES.md` 两处「martinfowler 未下载」、`courseware/README.md` 目录表与「仍未拿到」、第 22 课课件与参考卡的「经典说明」。
+- 校验：课程地图里 `../courseware/fowler/mocks-arent-stubs.html` 的死链消失，全课程相对链接零缺失。
+
 > AI生成

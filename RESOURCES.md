@@ -138,7 +138,7 @@
 
 - **SWEBOK 已补到 v4 PDF**（本地 `courseware/swebok/`）。课程仍不声称覆盖全部 KA，只取主线所需的子集。
 - **Berkeley CS 169 只有课程目录**：sp24 站点需要 CalNet 登录；SaaS 教材全文没有本地副本，只有主页与 teaching 页。
-- **`martinfowler.com` 与 SE Radio 未下载**：前者是文章站、后者是播客，不属于课件；需要时再按篇抓。
+- **`martinfowler.com` 与 SE Radio 未下载**：前者是文章站、后者是播客，不属于课件。2026-11-17 按第 22 课需要补了《Mocks Aren't Stubs》一篇（`courseware/fowler/`），其余文章按需再抓。
 - **中文系统课程未验证**：中国大学 MOOC 等平台的软件工程课程多数需要登录，无法确认内容与许可，暂不列入。
 - **没有找到中文一手材料讲这套 AI 辅助工程流程**；课程里的中文表述由我翻译，术语保留英文。
 - **未找到高质量中文社区**讨论这套流程；暂时用上面的英文社区替代。
@@ -168,6 +168,6 @@
 - **Rutgers（Marsic）教材**：`https://ece.rutgers.edu/~marsic/books/SE/` 301 后 404，原书可能已迁移或下线。
 - **Berkeley CS 169 的 sp24 站点**：`https://inst.eecs.berkeley.edu/~cs169/sp24/` 需要 CalNet 登录；本地只有课程目录页。
 - **SaaS 教材全文**：商业书；只有主页与 teaching 页，视频在 YouTube。
-- **SE Radio、Dijkstra archive、martinfowler 文章**：不是课件，未下载。
+- **SE Radio、Dijkstra archive、martinfowler 其余文章**：不是课件，未下载；《Mocks Aren't Stubs》一篇已于 2026-11-17 补进 `courseware/fowler/`。
 
 **代理已恢复（2026-10-20 10:31）**：结束后台旧 CLI 并重启后，新 CLI（PID 23480）继承了 `HTTP_PROXY` / `HTTPS_PROXY`。`webfetch` 已实测可访问 MIT 6.031、Berkeley CS 169、SaaS Book、Google SRE；SWEBOK 根域仍不通，但 v4 PDF 已从 IEEE CS 下载。下载课件时用的 `curl -x` 是当时的临时办法，现在可以直接用 `webfetch`。
