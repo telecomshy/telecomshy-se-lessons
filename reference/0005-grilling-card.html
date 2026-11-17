@@ -12,7 +12,7 @@
 <header class="masthead">
   <p class="eyebrow">参考卡 · 第 5 课</p>
   <h1>grilling 逼问记录卡</h1>
-  <p class="lede">elicitation（需求获取）是 Requirements 的第一个子活动。目标不是「开工」，而是把藏着的决定一个个摊开、拍板，直到前沿为空。</p>
+  <p class="lede">elicitation（需求获取）是 Requirements（需求）的第一个子活动。目标不是「开工」，而是把藏着的决定一个个摊开、拍板，直到前沿为空。</p>
 </header>
 
 <h2>位置：它属于哪个活动</h2>
@@ -20,7 +20,7 @@
   <table>
     <thead><tr><th>活动</th><th>elicitation 在这里做什么</th></tr></thead>
     <tbody>
-      <tr><td class="skill">Requirements（需求）</td><td>第一个子活动：把散落在头脑、来源、旧系统里的需求「取」出来，写成可检验的形式。</td></tr>
+      <tr><td class="skill">Requirements（需求）</td><td>第一个子活动：把散落在头脑、来源、旧系统里的候选需求「取」出来、摆上桌面（SWEBOK：surface candidate requirements）；写成可检验的形式是第 6 课的活。</td></tr>
       <tr><td class="skill">紧接其后</td><td>第 4 课先给了一致的词；本课用词去问「做什么」；第 6 课把答案写成完整需求。</td></tr>
     </tbody>
   </table>
@@ -34,7 +34,7 @@
       <tr><td class="what">design tree（设计树）</td><td>每个决定挂在依赖它的子决定下面，画出「先定哪个、再定哪个」的依赖关系。</td></tr>
       <tr><td class="what">frontier（前沿）</td><td>树里所有「前置已定、现在就能问」的问题的集合。一次问完一轮，答案把树推大，再问下一轮。</td></tr>
       <tr><td class="what">rounds（轮次）</td><td>每轮只问 frontier；某个问题依赖本轮还没答的别的决定，就顺延到下一轮。</td></tr>
-      <tr><td class="what">事实 vs 决定</td><td>可查的（文件系统、代码现状）是事实，归 agent 派子代理查；选择与取舍是决定，归你拍板。</td></tr>
+      <tr><td class="what">事实 vs 决定</td><td>可查的（文件系统、代码现状）是事实，归 agent（智能体）派子代理查；选择与取舍是决定，归你拍板。</td></tr>
     </tbody>
   </table>
 </div>
@@ -54,11 +54,11 @@
 
 <h2>一句话的逼问流程</h2>
 <ol class="steps">
-  <li>给它一个模糊想法（一行 seed，不给更多）。</li>
-  <li>它画 design tree，每次只问 frontier，一轮一个推荐答案。</li>
+  <li>给它一个模糊想法：一行 seed（种子句），不给更多。</li>
+  <li>它画 design tree，每轮只问 frontier，每个问题都附一个推荐答案。</li>
   <li>回答每个决定；答不上来的如果是事实，让它查，别替它查。</li>
   <li>frontier 空了、它问「我们一致了吗」——先自检有没有被默认掉的决定，再确认。</li>
-  <li>把这段对话存下来 = 本课产物：一份以明确决定收尾的逼问记录。</li>
+  <li>把这段对话存下来（让 agent 导出成文件，或自己复制保存）＝本课产物：一份以明确决定收尾的逼问记录。</li>
 </ol>
 
 <h2>行业做法（SE-EDU Gathering Requirements）</h2>
@@ -70,7 +70,7 @@
       <tr><td class="what">Observation（观察）</td><td>看真实行为或使用数据，发现用户在哪犯错；错点往往是新需求。</td><td>有现有系统时用；单人项目里你观察的常是自己。</td></tr>
       <tr><td class="what">Surveys（问卷）</td><td>封闭式问题给选项以便统计，加一两个开放题。</td><td>用户量大、要群体分布时用；只能答到你问过的问题。</td></tr>
       <tr><td class="what">Focus group / Brainstorming（焦点小组 / 头脑风暴）</td><td>一群人互相激发；brainstorming 只管多、不管对，先不问「对不对」。</td><td>方向未定、要大量候选时；易跑偏、受声音大的人影响。</td></tr>
-      <tr><td class="what">Prototyping（原型）</td><td>做缩小版 UI 或概念验证原型，拿它跟用户「对」，确认是不是这个意思；原型本身可当 spec。</td><td>交互类需求讲不清时用；有制作成本，太真会让人误当成品。</td></tr>
+      <tr><td class="what">Prototyping（原型）</td><td>做缩小版 UI 或概念验证原型，拿它跟用户「对」，确认是不是这个意思；原型本身可当 spec（规格说明）。</td><td>交互类需求讲不清时用；有制作成本，太真会让人误当成品。</td></tr>
     </tbody>
   </table>
 </div>
@@ -89,7 +89,7 @@
 </div>
 
 <h2>AI + Matt 怎么落地：<code>grilling</code></h2>
-<p><code>grilling</code> 是<strong>用户调用（user-invoked）</strong>的技能：你主动说「跑一次 grilling，目标是把 X 问成决定」。它把模糊想法长成 design tree，一轮一轮问 frontier，并给每个问题附推荐答案。</p>
+<p><code>grilling</code> 是<strong>模型调用（model-invoked）</strong>的技能（第 3 课地图口径）：你说「跑一次 grilling，目标是把 X 问成决定」，agent 就把它拉起来；专门的用户入口是 <code>/grill-with-docs</code> 与 <code>grill-me</code>。它把模糊想法长成 design tree，一轮一轮问 frontier，并给每个问题附推荐答案。</p>
 <p>你要做三件事：回答 frontier 每个决定（尤其认真挑推荐）；把领域真实说法、约束、旧实现喂给它；当它停、问「一致了吗」时，核对有没有被悄悄默认的决定。</p>
 <p><strong>它自动化了什么：</strong>拆树、排轮次、算前沿、亮默认值、事实派子代理查。<strong>它没自动化：</strong>每个决定、每个推荐是否接受、树是否问完——全是你把关。</p>
 <p><strong>适用条件与边界：</strong>它逼问的对象是你自己，不是真实用户。单人项目里这是合理收敛；交付真人的产品仍要补真实用户访谈。它不能替代 elicitation 的访谈 / 观察 / 问卷。</p>
@@ -115,7 +115,7 @@
 </div>
 
 <div class="source">
-  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章，p48–61（需求活动分类与 elicitation）；SE-EDU《Gathering Requirements》（全章）；CMU 17-313《07-specs》（spec 是契约，derive 前需清晰理解）。</p>
+  <p><strong>理论来源：</strong>SWEBOK v4 第 1 章，p48–61（需求活动分类与 elicitation）；SE-EDU《Gathering Requirements》（全章）；CMU 17-313《07-specs》（spec 是客户与工程师的契约，动手实现之前必须先理解清楚）。</p>
   <p><strong>实践工具：</strong>以 <code>%USERPROFILE%\.agents\skills\grilling\SKILL.md</code> 为准；它是落地方式，不是理论出处。</p>
 </div>
 

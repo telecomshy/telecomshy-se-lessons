@@ -69,7 +69,7 @@
 <ul>
   <li><strong>注入（盲诊断）：</strong>派子代理按下面的指令原文埋 bug，你不看 diff、不问答案、不打开 <code>.scratch/injected-bug.md</code>，分支 <code>bug-report</code> 留给第 27 课。</li>
   <li><strong>触发条件清单：</strong>报告拆四栏（现象 / 环境 / 数据 / 频率）＋假设＋类型判断（数据依赖还是 flaky）＋负证据（小数据复现失败）。</li>
-  <li><strong>会红的命令：</strong>断「search 结果顺序」，查询命中多条、跨过触发边界；形态自选（pytest 一条测试或小脚本调 <code>main(["search", ...])</code> 抓输出），都要走真实搜索路径（fixture → <code>JsonlStore</code> / CLI），别断在 <code>InMemoryStore</code> fake 上——fake 缝够不到 bug。造数据用 fixture 直写脚本（条目照 <code>Store</code> 契约四键、id 形如 <code>e0001</code> 递增），别用一万次 <code>kb add</code>：每加一条重读一遍文件，掐表外推即可。</li>
+  <li><strong>会红的命令：</strong>断「search 结果顺序」，查询命中多条、跨过触发边界；形态自选（pytest 一条测试或小脚本调 <code>main(["search", ...])</code> 抓输出），都要走真实搜索路径（fixture → <code>JsonlStore</code> / CLI），别断在 <code>InMemoryStore</code> fake 上——fake 缝够不到 bug。造数据用 fixture 直写脚本（条目照 <code>Store</code> 契约四键；id 用两个 adapter 当前的 <code>e0001</code> 递增约定），别用一万次 <code>kb add</code>：每加一条重读一遍文件，掐表外推即可。</li>
   <li><strong>记录：</strong>命令、红的输出、四判据证据、收紧前后耗时，写进 <code>.scratch/diagnosis/red-command.md</code>；盲诊断对照答案的发现记进同目录笔记。</li>
 </ul>
 

@@ -74,7 +74,7 @@
     <tbody>
       <tr><td class="what">删不存在的 id 返回什么</td><td>返回 <code>False</code></td><td>抛 <code>KeyError</code> / 返回 <code>None</code></td></tr>
       <tr><td class="what">返回值是什么</td><td>删到返回 <code>True</code></td><td>返回被删条目的副本</td></tr>
-      <tr><td class="what">id 复用吗</td><td>不复用，新条目接着排</td><td>回收复用（要重写 id 规则）</td></tr>
+      <tr><td class="what">id 复用吗</td><td>不复用，新条目接着排</td><td>回收复用（要重写 id 的生成机制）</td></tr>
       <tr><td class="what">删除持久化吗</td><td><code>JsonlStore</code> 重开后不该看到被删条目（adapter 责任）</td><td>写进契约由两个 adapter 共同承诺</td></tr>
       <tr><td class="what">删光后重开，id 从哪排</td><td>计数痕迹也持久化（墓碑行 / 计数文件）</td><td>接受删光后从头排 / 允许 id 复用</td></tr>
     </tbody>
@@ -145,7 +145,7 @@ def test_delete_does_not_reuse_ids(store):
 结论：哪一轮的证据是假的？回归网现在抓得住哪类 bug？</code></pre>
 
 <div class="note">
-  <p><strong>术语第一次出现都有中文：</strong>TDD（Test-Driven Development，测试驱动开发）、test-first programming 测试先行编程、red-green-refactor 红绿重构、red 红 / green 绿、test list 测试清单、regression testing 回归测试、refactoring 重构、horizontal slicing 横向切片、vertical slice 纵向切片（第 10 课）、tracer bullet 追踪弹（第 10 课）、seam 接缝（第 15 课）、oracle 判定器（第 19 课）、golden master 黄金基准（第 19 课）、contract test 契约测试（第 15 课）、shift-left 测试左移、claims 主张。</p>
+  <p><strong>术语第一次出现都有中文：</strong>TDD（Test-Driven Development，测试驱动开发）、test-first programming 测试先行编程、red-green-refactor 红绿重构、red 红 / green 绿、test list 测试清单、regression testing 回归测试、refactoring 重构、horizontal slicing 横向切片、vertical slice 纵向切片（第 10 课）、tracer bullet 曳光弹（第 10 课）、seam 接缝（第 15 课）、oracle 判定器（第 19 课）、golden master 黄金基准（第 19 课）、contract test 契约测试（第 15 课）、shift-left 测试左移、claims 主张。</p>
 </div>
 
 <div class="source">

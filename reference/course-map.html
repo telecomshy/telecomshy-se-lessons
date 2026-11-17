@@ -109,7 +109,7 @@
       <span class="module-num">2</span>
       <h3>计划与过程</h3>
     </div>
-    <p class="module-intro">对应 Process &amp; Management（过程与管理）。先知道这套流程在软件工程史里的位置，再学怎么切、怎么排、怎么估。Spec 不是需求文档，工单也不是任务清单。</p>
+    <p class="module-intro">对应 Process &amp; Management（过程与管理）。先知道这套流程在软件工程史里的位置，再学怎么切、怎么排、怎么估；最后两课处理两头：太大拆不出来的，和外面递进来的。Spec 不是需求文档，工单也不是任务清单。</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -117,9 +117,9 @@
         </thead>
         <tbody>
           <tr><td class="num">9</td><td class="what"><a href="../lessons/0009-process-models.html">过程模型：瀑布、迭代、敏捷，以及这套流程的位置</a></td><td class="skill">—</td><td>一张对照表：什么项目适合什么过程，为什么</td></tr>
-          <tr><td class="num">10</td><td class="what"><a href="../lessons/0010-vertical-slice.html">纵向切片与阻塞边：先做哪个</a></td><td class="skill">to-tickets</td><td>一个穿透所有层的工单，加一张带阻塞边的依赖图</td></tr>
-          <tr><td class="num">11</td><td class="what"><a href="../lessons/0011-estimation.html">计划、估算与度量：为什么工时估算总是不准</a></td><td class="skill">—</td><td>一份带区间和假设的估算，以及一个不骗人的度量</td></tr>
-          <tr><td class="num">12</td><td class="what"><a href="../lessons/0012-wayfinder.html">模糊的大项目：wayfinder 与决策单</a></td><td class="skill">wayfinder</td><td>一张决策地图，以及「何时不该用」的判据</td></tr>
+          <tr><td class="num">10</td><td class="what"><a href="../lessons/0010-vertical-slice.html">纵向切片与阻塞边：先做哪个</a></td><td class="skill">to-tickets</td><td>一套带阻塞边的工单集，加一张依赖图</td></tr>
+          <tr><td class="num">11</td><td class="what"><a href="../lessons/0011-estimation.html">计划、估算与度量：为什么工时估算总是不准</a></td><td class="skill">—</td><td>一份带区间和假设的估算、一行显式 buffer，以及一个 GQM 台账</td></tr>
+          <tr><td class="num">12</td><td class="what"><a href="../lessons/0012-wayfinder.html">模糊的大项目：wayfinder 与决策单</a></td><td class="skill">wayfinder</td><td>一张五段齐全的纸面决策地图，以及「何时不该用」的判据</td></tr>
           <tr><td class="num">13</td><td class="what"><a href="../lessons/0013-triage.html">外部输入：triage 与 agent-ready</a></td><td class="skill">triage</td><td>一个别人提的 issue，被整理成可执行 brief</td></tr>
         </tbody>
       </table>
@@ -138,7 +138,7 @@
           <tr><th>#</th><th>课程</th><th>技能</th><th>学完带走</th></tr>
         </thead>
         <tbody>
-          <tr><td class="num">14</td><td class="what"><a href="../lessons/0014-deep-modules.html">深模块、信息隐藏与不变量</a></td><td class="skill">codebase-design</td><td>一个接口草图，加一条能在测试里守住的不变量</td></tr>
+          <tr><td class="num">14</td><td class="what"><a href="../lessons/0014-deep-modules.html">深模块、信息隐藏与不变量</a></td><td class="skill">codebase-design</td><td>一份接口草图（含接口不变量），加一条写在 rep 旁的表示不变量</td></tr>
           <tr><td class="num">15</td><td class="what"><a href="../lessons/0015-seams-adapters.html">接缝与适配器：测试的地基</a></td><td class="skill">codebase-design</td><td>一个 port 加两个 adapter</td></tr>
           <tr><td class="num">16</td><td class="what"><a href="../lessons/0016-design-it-twice.html">设计两次：先造两个候选再选</a></td><td class="skill">codebase-design</td><td>两套方案与一条取舍理由</td></tr>
           <tr><td class="num">17</td><td class="what"><a href="../lessons/0017-architecture-tradeoffs.html">架构：质量属性、视图与取舍</a></td><td class="skill">—</td><td>一张组件图，加三个质量属性的取舍说明</td></tr>
@@ -287,24 +287,27 @@
       <tbody>
         <tr><td class="what">本质复杂度 / 偶然复杂度</td><td>Brooks, <em>No Silver Bullet</em>（1986）</td><td class="num">1</td></tr>
         <tr><td class="what">需求 / 验收标准 / 非功能需求</td><td>SWEBOK 第 1 章；SE-EDU Requirements</td><td class="num">6</td></tr>
+        <tr><td class="what">spec 规格说明 / 可执行 / 可评审</td><td>SWEBOK 第 1 章 p52–54；CMU 17-313《07-specs》PDF p6；Matt Pocock <code>to-spec</code></td><td class="num">8</td></tr>
         <tr><td class="what">信息隐藏</td><td>Parnas, <em>On the Criteria To Be Used in Decomposing Systems into Modules</em>（1972）</td><td class="num">14–15</td></tr>
-        <tr><td class="what">深模块</td><td>Ousterhout, <em>A Philosophy of Software Design</em>（2018）</td><td class="num">14</td></tr>
-        <tr><td class="what">不变量 / rep invariant / abstraction function</td><td>MIT 6.031 Reading 11《Abstraction Functions &amp; Rep Invariants》</td><td class="num">14</td></tr>
+        <tr><td class="what">深模块</td><td>Ousterhout, <em>A Philosophy of Software Design</em>（2018；2nd ed. 2021）</td><td class="num">14</td></tr>
+        <tr><td class="what">不变量 / 接口不变量 / rep invariant / abstraction function</td><td>MIT 6.031 Reading 11《Abstraction Functions &amp; Rep Invariants》</td><td class="num">14</td></tr>
         <tr><td class="what">leverage 杠杆 / 接口草图</td><td>Ousterhout 摘录 ch.21；Matt Pocock <code>codebase-design</code></td><td class="num">14</td></tr>
         <tr><td class="what">接缝 seam</td><td>Feathers, <em>Working Effectively with Legacy Code</em>（2004）；Matt Pocock <code>to-spec</code>、<code>codebase-design</code></td><td class="num">8, 15</td></tr>
         <tr><td class="what">port 端口 / adapter 适配器 / enabling point 启用点</td><td>Cockburn, <em>Hexagonal Architecture</em>（2005）；Feathers（2004）；Matt Pocock <code>codebase-design</code></td><td class="num">15</td></tr>
         <tr><td class="what">设计两次 Design It Twice / design rationale 设计理由 / rejected alternatives 被否掉的方案</td><td>Ousterhout, <em>A Philosophy of Software Design</em>“Design It Twice”（经典转引）；SWEBOK v4 ch.3 §4.6、§5.9；Matt Pocock <code>codebase-design</code></td><td class="num">7, 16</td></tr>
-        <tr><td class="what">Tracer bullet</td><td>Hunt &amp; Thomas, <em>The Pragmatic Programmer</em>（1999）</td><td class="num">10</td></tr>
+        <tr><td class="what">Tracer bullet 曳光弹</td><td>Hunt &amp; Thomas, <em>The Pragmatic Programmer</em>（1999，经典转引）</td><td class="num">10</td></tr>
         <tr><td class="what">过程模型 / 预测式 / 自适应式</td><td>SWEBOK 第 9、10 章；SE-EDU Process Models</td><td class="num">9</td></tr>
-        <tr><td class="what">Walking skeleton</td><td>Freeman &amp; Pryce, <em>Growing Object-Oriented Software, Guided by Tests</em>（2009）</td><td class="num">10</td></tr>
-        <tr><td class="what">估算区间 / buffer / GQM / Goodhart's Law</td><td>SWEBOK ch.9、ch.15；SE-EDU Project Planning；CMU 06-Metrics</td><td class="num">11</td></tr>
-        <tr><td class="what">fog of war / 决策地图 / Plan don't do / HITL</td><td>Matt Pocock <code>wayfinder</code>；SWEBOK ch.9（自适应式 p9-9）；SE-EDU Milestones</td><td class="num">12</td></tr>
-        <tr><td class="what">triage / agent brief / institutional memory</td><td>SWEBOK ch.1（validation p43–66、change control p57–62）；Google SRE《Effective Troubleshooting》；Matt Pocock <code>triage</code></td><td class="num">13</td></tr>
+        <tr><td class="what">Walking skeleton 行走骨架</td><td>Freeman &amp; Pryce, <em>Growing Object-Oriented Software, Guided by Tests</em>（2009，经典转引）</td><td class="num">10</td></tr>
+        <tr><td class="what">vertical slice 纵向切片 / horizontal slice 横向切片 / blocking edge 阻塞边 / frontier 前沿（可开工工单）</td><td>Matt Pocock <code>to-tickets</code>；第 5 课的 design tree frontier 与第 12 课 wayfinder 的地图 frontier 是另外两种意思</td><td class="num">10</td></tr>
+        <tr><td class="what">WBS（Work Breakdown Structure，工作分解结构）/ milestone 里程碑 / wide refactor 宽重构 / expand-contract 先扩后缩 / prefactor 提前重构</td><td>SE-EDU Project Planning；SWEBOK v4 ch.9 §1.2；Matt Pocock <code>to-tickets</code>（宽重构与 prefactor）</td><td class="num">10</td></tr>
+        <tr><td class="what">估算区间 / buffer / PERT 与 critical path / GQM / Goodhart's Law / Hofstadter's Law</td><td>SWEBOK ch.9、ch.15；SE-EDU Project Planning；CMU 06-Metrics</td><td class="num">11</td></tr>
+        <tr><td class="what">fog of war / 决策地图 / Destination 目的地 / Notes / Decisions so far / Not yet specified / Out of scope 范围外 / Plan don't do / HITL / AFK</td><td>Matt Pocock <code>wayfinder</code>；SWEBOK ch.9（自适应式 p9-9，描述性）；SE-EDU Milestones；CMU 03-project-planning p63</td><td class="num">12</td></tr>
+        <tr><td class="what">triage / category role 类别角色 / state role 状态角色 / agent brief / triage notes / institutional memory</td><td>SWEBOK ch.1（五类活动 p48–61；validation p57–58；change control p59）；Google SRE《Being On-Call》《Effective Troubleshooting》；Matt Pocock <code>triage</code></td><td class="num">13</td></tr>
         <tr><td class="what">质量属性 / 视图</td><td>SWEBOK 第 2 章；SE-EDU Architecture</td><td class="num">17</td></tr>
         <tr><td class="what">ASR 架构级重要需求 / 架构风格 / architectural technical debt 架构技术债</td><td>SWEBOK v4 ch.2 §2.2、§2.4、§3.2.1；SE-EDU Architecture</td><td class="num">17</td></tr>
         <tr><td class="what">design doc 设计文档 / architecture description 架构描述 / design review 设计评审</td><td>SWEBOK v4 ch.2 §2、ch.3 §4、§6.1；CMU 17-313《08-design-docs》</td><td class="num">18</td></tr>
         <tr><td class="what">Ubiquitous Language</td><td>Evans, <em>Domain-Driven Design</em>（2003）</td><td class="num">4</td></tr>
-        <tr><td class="what">elicitation / design tree / frontier</td><td>SWEBOK 第 1 章；Matt Pocock <code>grilling</code></td><td class="num">5</td></tr>
+        <tr><td class="what">elicitation / design tree / frontier（设计树前沿）</td><td>SWEBOK 第 1 章；Matt Pocock <code>grilling</code></td><td class="num">5</td></tr>
         <tr><td class="what">ADR（架构决策记录）</td><td>Nygard, <em>Documenting Architecture Decisions</em>（2011）；Matt Pocock <code>domain-modeling</code></td><td class="num">7</td></tr>
         <tr><td class="what">红绿重构 / test-first programming 测试先行编程 / regression testing 回归测试</td><td>Beck, <em>Test-Driven Development: By Example</em>（2002，经典转引）；SWEBOK v4 ch.4 §4.16、ch.5 §2.2.5；Matt Pocock <code>tdd</code></td><td class="num">20</td></tr>
         <tr><td class="what">测试金字塔 / 覆盖率 / 等价类划分 / 边界值</td><td>Mike Cohn（2009）；SWEBOK ch.5；MIT 6.031 Testing；SE-EDU Test Case Design</td><td class="num">19</td></tr>
@@ -384,7 +387,7 @@
   <p>先做 CLI，后面加一个薄的 HTTP adapter。不是为了做产品，而是让课程需要的设计张力都有落点：</p>
   <ul>
     <li><strong>状态机</strong>：入库的排队、失败、重试、取消，够讲清楚状态与副作用。</li>
-    <li><strong>接缝</strong>：存储、文件读取、HTTP 各放一个 port，后面接多个 adapter；HTTP adapter 本身就是「接缝」那一课的真实产物。</li>
+    <li><strong>接缝</strong>：存储先放一个 port（第 15 课），后面接 <code>JsonlStore</code> / <code>InMemoryStore</code> 两个 adapter；以后文件读取、HTTP 入口各走自己的 port。HTTP adapter 本身是第 34 课综合演练的产物，它复用存储这条缝，不另起一套存储逻辑。</li>
     <li><strong>深模块</strong>：一个 <code>index.search(query)</code> 背后可以藏分块、倒排、排序，接口只有一个。</li>
     <li><strong>架构与质量属性</strong>：CLI 和 HTTP 两个入口，逼你谈延迟、可靠性、可观测性。</li>
     <li><strong>CI 与运维</strong>：有一个可启动、可打日志、可制造故障的对象；不需要云和数据库。</li>

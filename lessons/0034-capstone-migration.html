@@ -49,13 +49,13 @@
   <p>为什么先演练、后迁移？因为一条只在课件里存在的流程，搬进新仓库时你分不清两件事：卡住是新仓库不合适，还是流程本来就断。先在熟悉的环境里走通一遍，卡点才有出处——你在沙盒第几站卡了什么、怎么解的，随手记进 <code>.scratch/migration-3401/notes.md</code>（练习第 0 步会建这个文件），迁移计划里「按活动的迁移顺序」和「风险与回滚」两节就拿它立据。没有这份记录，计划里的迁移顺序只是课件目录的抄写。</p>
   <p>搬运的动作有个正式名字。SWEBOK 在过程一章里写了这样一段：「Each software system has its differential characteristics. These differential characteristics, together with the stakeholders' needs, lead to specific life cycles. This adaptation will include identifying all the relevant characteristics, selecting the appropriate standards or documents internal to an organization, selecting a development strategy/life cycle model, stages, and processes, and documenting the decisions and rationale.（每个软件系统都有自己的差异特征；这些特征连同干系人的需要，导出各自的生命周期。这次裁剪（adaptation）包括：识别所有相关特征，挑选合适的标准或组织内部文档，选开发策略、生命周期模型、阶段与过程，并把决定与理由记录下来。）」（ch.10 §2.8, printed 10-8）。这段话把裁剪拆成四步：识别差异特征，挑标准与文档，选策略、阶段与过程，记录决定与理由。最后还有一句给搬运人的许可：「The adaptation will not require keeping the names provided in Section 2, or including them all（裁剪不要求保留第 2 节给出的那些名字，也不要求把它们全部带上）」——迁移计划允许留、允许舍、允许换名字，条件是四步都走了、理由都写了。</p>
   <p>这个道理第 9 课出现过一次。同一章 §1.1 写着「no ideal process, or set of processes exists: software processes must be selected, adapted, and applied as appropriate for each project and each organizational context（不存在理想的过程或过程集合：软件过程必须针对每个项目和每个组织情境恰当地选择、裁剪和应用）」（printed 10-2）。第 9 课用它在一个项目里选过程模型，本课用它把整套流程搬进另一个项目——尺度变了，道理没变。</p>
-  <p>裁剪的第一刀切在哪，行业有一个便宜的做法，放在下一节讲。先记住它借用的概念：第 10 课的 tracer bullet（追踪弹），一条纵穿所有层的最小完整路径。搬流程的时候，「所有层」换成「所有站」。</p>
+  <p>裁剪的第一刀切在哪，行业有一个便宜的做法，放在下一节讲。先记住它借用的概念：第 10 课的 tracer bullet（曳光弹），一条纵穿所有层的最小完整路径。搬流程的时候，「所有层」换成「所有站」。</p>
 </section>
 
 <section>
-  <h2>行业做法：追踪弹、可重复的发布、两层复盘</h2>
+  <h2>行业做法：曳光弹、可重复的发布、两层复盘</h2>
   <p>先把标尺说清：「流程怎么搬进另一个项目」没有统一标准。SWEBOK 给的是裁剪的步骤，没给「该留什么」的清单；下面三条是主流做法和取舍，每条写清怎么做、产物是什么、代价是什么。</p>
-  <p><strong>第一条，第一张工单当流程的追踪弹。</strong>迁移不从铺配置开始，从一张真工单开始：挑一张小而完整的工单，让它走完需求到上线整条链，卡在哪一站就补哪一站的配置，补完再走第二张。什么时候用：搬流程的头一两周。产物是第一条链的完整记录——spec、工单、测试、发布说明。代价是第一张工单最慢，每一站都在现学。取舍在这里：有些团队先把全套模板配齐再开工，那是人数摊薄了配置成本；单人项目反过来，追踪弹更便宜，因为配置错了会立刻在工单上疼。例子就是本课的演练：HTTP adapter 的第一张工单走八站，<code>notes.md</code> 里记下的每个卡点，都是第二张工单（在 knowledge-pet 上）开工前要补的配置。</p>
+  <p><strong>第一条，第一张工单当流程的曳光弹。</strong>迁移不从铺配置开始，从一张真工单开始：挑一张小而完整的工单，让它走完需求到上线整条链，卡在哪一站就补哪一站的配置，补完再走第二张。什么时候用：搬流程的头一两周。产物是第一条链的完整记录——spec、工单、测试、发布说明。代价是第一张工单最慢，每一站都在现学。取舍在这里：有些团队先把全套模板配齐再开工，那是人数摊薄了配置成本；单人项目反过来，曳光弹更便宜，因为配置错了会立刻在工单上疼。例子就是本课的演练：HTTP adapter 的第一张工单走八站，<code>notes.md</code> 里记下的每个卡点，都是第二张工单（在 knowledge-pet 上）开工前要补的配置。</p>
   <p><strong>第二条，发布口径要可重复。</strong>Google SRE 把 release engineering（发布工程）概括为「building and delivering software（构建并交付软件）」，并且说「Running reliable services requires reliable release processes.（可靠的运行依赖可靠的发布流程。）」他们的要求具体到字面：产物要「built in a reproducible, automated way so that releases are repeatable and aren't 'unique snowflakes.'（以可复现、自动化的方式构建，让发布可重复，而不是独一无二的雪花）」，对发布流程的任何改动都「should be intentional, rather than accidental（应该是有意的，而不是随手的）」（SRE Book,《Release Engineering》）。SWEBOK 给 release 的定义则支持把这件事做小：「release refers to distributing software and related artifacts outside the development activity, including internal releases and distribution to customers（发布指把软件和相关制品分发到开发活动之外，包括内部发布和分发给客户）」（ch.8 §6, printed 8-13）——内部发布也算发布，单人沙盒也有「上线」可谈。落到本课，上线口径是三件套加一条底线：实现合回主干、README（项目说明文件）里一段发布说明（端点、启动命令、已知限制）、可选的一个标签；底线是检查绿——CI 配置过就看 CI，没配置过就本地跑第 24 课那三条命令。已知限制写进发布说明，就是第 33 课「写 significant risks and trade-offs」的最小版。代价是口径要维护：下个版本还得照着走，改动要是有意的。</p>
   <p><strong>第三条，复盘分两层。</strong>上线之后回看，第 29 课已经把两件事分清：postmortem（事故复盘）管「这次事故为什么发生」，<code>retro</code> 管「下一次 agent 跑得更顺」，对象是 agent 的工作环境——导航、自动检查、编码标准、工具开销。演练里没出事故，收口跑 <code>/retro</code> 就够；真把 <code>kb.jsonl</code> 弄坏了，那就按第 29 课走复盘，别混。<code>retro</code> 是用户调用（frontmatter 里有 <code>disable-model-invocation: true</code>），它给的是建议清单：能自动化的落仓库（lint 规则、CI 任务），判断类的记 <code>CODING_STANDARDS.md</code>（第 24 课的口径）。建议只有落盘才会生效，这是它的代价——也是第 29 课「文档写完不算交付」在环境改进上的版本。</p>
 </section>
@@ -189,7 +189,7 @@ git status</code></pre>
   <h2>今天带走的三句话</h2>
   <ol>
     <li>流程靠裁剪搬进新仓库：先在熟悉的地方把整条链走通一遍（演练），再按新仓库的差异特征决定留什么、舍什么、先搬哪一站（SWEBOK ch.10 §2.8 的四步）。</li>
-    <li>第一张工单就是流程的追踪弹：走完需求到上线八站，卡在哪一站，迁移顺序就把那一站前置；上线按可重复的口径收口——发布说明、可选标签、能重跑的检查。</li>
+    <li>第一张工单就是流程的曳光弹：走完需求到上线八站，卡在哪一站，迁移顺序就把那一站前置；上线按可重复的口径收口——发布说明、可选标签、能重跑的检查。</li>
     <li>迁移计划是写给零上下文读者的：差异盘点立据、决定带理由、引用给路径；用第 32 课的判据验它——新会话拿着它，不追问就能开工。</li>
   </ol>
 </div>

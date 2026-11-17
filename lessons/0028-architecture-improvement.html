@@ -88,7 +88,7 @@
   <h2>三个常见误区</h2>
   <p><strong>一上来就想重写。</strong>难改的代码看着都想扔，可 SE-EDU 把话说死了：「Refactoring is not rewriting（重构不是重写）」。整段扔掉重写，丢掉的清单很长：特征测试钉住的行为、踩坑之后补进契约的规则（第 20、23 课拍板的那些契约决定就在这类地方）、注释和提交历史里的隐性知识。真要替换整库，那是 SWEBOK 说的另一件事——「replace aging legacy software」——它有自己的方法论，本地没有正源，别在一次改良提案里顺手做。</p>
   <p><strong>提案只是多包一层。</strong>提案写「加一个管理器统一管理这些规则」，读起来顺理成章，deletion test 一做就露馅：想象删掉它，规则还散在原处，或者调用者反而多了一层转发——复杂度没被藏住，只是挪了位置。这就是 pass-through。提案的 after 形态必须写清两件事：复杂度藏到哪去了、接口小到什么程度；写不出这两句，说明形状还没想清楚。</p>
-  <p><strong>把特征测试当规格。</strong>特征测试断的是现在长什么样。拿它当规格，连现状里的错也会被锁进去——比如 id 规则「e 加四位」和 10000 条之后宽度自变的现实打架（第 19 课记下的契约空洞），照现状抄一条断言，等于把这个空洞钉死。第 21 课的界线在这里同样生效：锁现状当安全网是手段，真正要长期保证的规则该写进 <code>Store</code> 的 docstring、配规格测试；已经知道的怪现状，在提案里单列一笔，别混进「现状」一锅端。</p>
+  <p><strong>把特征测试当规格。</strong>特征测试断的是现在长什么样。拿它当规格，连现状里的错也会被锁进去——比如两个 adapter 当前的编号约定「e 加四位」和 10000 条之后宽度自变的现实打架（第 19 课记下的契约空洞），照现状抄一条断言，等于把这个空洞钉死。第 21 课的界线在这里同样生效：锁现状当安全网是手段，真正要长期保证的规则该写进 <code>Store</code> 的 docstring、配规格测试；已经知道的怪现状，在提案里单列一笔，别混进「现状」一锅端。</p>
 </section>
 
 <section>
@@ -96,7 +96,7 @@
   <p>练习在沙盒 <code>D:\code\my_projects\se-course-sandbox</code> 做，产出两样：一份能过 deletion test 的改良提案，加一条 characterization test——正是地图上这课的产出。分支口径：在 <code>master</code> 上做，写命令前先 <code>git branch --show-current</code> 确认（沙盒的主干叫 master，别想当然写 main）。测试网看做没做前面的练习：做过 19–27 课练习的，<code>tests/</code> 里已有回归网，开工前先全量跑绿；没做过的，本课的特征测试落 <code>tests/</code> 时顺手建目录。入口线索同样分叉：做过 27 课练习的，先读 <code>.scratch/diagnosis/fix-layer.md</code> 和「不存在正确的缝」那笔账；没做过的，入口就是自己列的摩擦清单。</p>
   <ol>
     <li><strong>列摩擦清单。</strong>先收两条入口线索：读 <code>fix-layer.md</code>，把修层判断里露过头的架构问题记进去；「不存在正确的缝」那类发现本来就是给架构记的账，单独标一行。再自己在 <code>kb/</code> 里找两三处难改的点：id 生成抄两份、匹配规则抄两份都是现成的候选；找的时候可以用 code smell（代码坏味道）当路标——SE-EDU 列的 Long Method、Large Class、Shotgun Surgery 都是「快、但不必然有问题」的信号（第 25 课引过它的分寸：「smells don't always indicate a problem」）。跑 <code>git log --name-only --oneline</code> 看哪些文件反复出现在改动里，热点优先；沙盒历史短、找不出热点，就直接用上面两个现成候选。每处写两行：难在哪、现在改它要动几处。清单落 <code>.scratch/architecture/friction-list.md</code>。</li>
-    <li><strong>钉现状：写第一条 characterization test。</strong>从清单里挑定要动的那处行为，照现状抄断言——比如搜索是子串匹配、大小写不敏感、顺序与加入顺序一致，或者 id 形如 <code>e0001</code>。测试要驱动真实路径（fixture → <code>JsonlStore</code> 或 CLI），第 26 课的教训照旧：断在 <code>InMemoryStore</code> 上锁不住真实存储。落 <code>tests/test_characterization.py</code>。写完跑一遍留绿记录；这就是安全网的第一块，后面每一步都靠它证明行为没变。</li>
+    <li><strong>钉现状：写第一条 characterization test。</strong>从清单里挑定要动的那处行为，照现状抄断言——比如搜索是子串匹配、大小写不敏感、顺序与加入顺序一致，或者编号约定（<code>e0001</code>）。测试要驱动真实路径（fixture → <code>JsonlStore</code> 或 CLI），第 26 课的教训照旧：断在 <code>InMemoryStore</code> 上锁不住真实存储。落 <code>tests/test_characterization.py</code>。写完跑一遍留绿记录；这就是安全网的第一块，后面每一步都靠它证明行为没变。</li>
     <li><strong>真跑 <code>/improve-codebase-architecture</code>。</strong>把你挑的方向指给它——你指了方向，它就不再自己猜范围。报告会落在 <code>%TEMP%\architecture-review-&lt;时间戳&gt;.html</code>，打开读卡片：六项内容、三档强度徽章、Top recommendation。顺手查词汇纪律：报告里说的是 module、seam、adapter，冒出 component、service、API、boundary 就是漂了，圈出来。</li>
     <li><strong>选一个候选，走一轮 grill。</strong>它会拉起 <code>grilling</code>，把约束、依赖、加深后的模块形状、缝后面放什么、哪些测试活下来问清。新概念让它顺手记进 <code>GLOSSARY.md</code>。这一步的产物是候选的 after 形态：新 module 的 interface 草图（方法、参数、承诺），和谁坐在缝后面。</li>
     <li><strong>写改良提案，把两道门都过了。</strong>提案落 <code>.scratch/architecture/improvement-proposal.md</code>，六节：问题、目标与非目标、after 形态、取舍、影响面、验证。影响面照 SWEBOK §2.1.3 的三问答：动这里波及谁、要多少工夫、风险在哪。验证节做 deletion test 的推演：想象把 after 形态的新 module 删掉，规则是散回 N 个调用点（挣到位置，过）还是消失（pass-through，回去重画），把推理过程写下来。再跑一遍特征测试，确认现状还钉着。提案就是本课的产物，改良的实现不在这里做。</li>

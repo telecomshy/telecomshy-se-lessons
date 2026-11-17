@@ -12,7 +12,7 @@
 <header class="masthead">
   <p class="eyebrow">参考卡 · 第 9 课</p>
   <h1>过程模型参考卡</h1>
-  <p class="lede">spec 就绪不等于「知道怎么开工」。过程模型在回答「怎么把工作排开」，本质是你对「需求何时敢提前写死」的预判。没有普适最佳，只有按项目画像在「预测式 → 自适应式」连续谱上挑一个落点。</p>
+  <p class="lede">spec 就绪不等于「知道怎么开工」。过程模型规定走哪些阶段、每阶段产出什么、阶段之间怎么流转、要不要迭代。选择它，本质是对「需求何时敢提前写死」的预判；没有普适最佳，只有按项目画像在「预测式 → 自适应式」连续谱上挑一个落点。</p>
 </header>
 
 <h2>位置：它属于哪个活动</h2>
@@ -21,64 +21,74 @@
     <thead><tr><th>活动</th><th>过程在这里做什么</th></tr></thead>
     <tbody>
       <tr><td class="skill">Process &amp; Management（过程与管理）</td><td>模块二的导读：第 8 课 spec 就绪后，回答「用什么样的过程把它排出来」。给第 10 课 to-tickets、第 11 课估算定位。</td></tr>
-      <tr><td class="skill">SWEBOK 支点</td><td>「没有理想过程存在，只能挑选和适配」（ch.10 p10-2）；过程是一条 predictive → adaptive 的连续谱（ch.9 p9-8）。</td></tr>
+      <tr><td class="skill">SWEBOK 支点</td><td>没有理想过程，只能按项目挑选和适配（ch.10 p10-2）；过程是一条 predictive → adaptive 的连续谱（ch.9 p9-8）。</td></tr>
+      <tr><td class="skill">选型动作</td><td>SWEBOK 把它写成一次 adaptation：认项目特点 → 选模型、阶段与过程 → 记下决定和理由（ch.10 p10-8）。</td></tr>
     </tbody>
   </table>
 </div>
 
 <h2>核心概念：过程在回答什么</h2>
-<p><strong>过程模型（process model）= 你怎么把工作排开。</strong>选择它，本质是回答「需求此刻有多可确定」——这就是预测式与自适应式的分歧。</p>
+<p><strong>process model（过程模型）规定走哪些阶段、每阶段产出什么、阶段之间怎么流转、要不要迭代；一句话是「你怎么把工作排开」。</strong>选择它，本质是回答「需求此刻有多可确定」——这就是预测式与自适应式的分歧。</p>
 
 <h2>谱系：predictive → adaptive</h2>
 <div class="table-wrap">
   <table>
     <thead><tr><th>端点</th><th>特征</th></tr></thead>
     <tbody>
-      <tr><td class="what">预测式 predictive</td><td>开工前写死需求和架构、尽量少迭代；一次计划成本最低。</td></tr>
-      <tr><td class="what">自适应式 adaptive</td><td>接受需求会变、小步迭代、频繁调计划；靠反馈兜底。</td></tr>
+      <tr><td class="what">predictive（预测式）</td><td>开工前写死需求和架构、尽量少迭代；不必在阶段之间来回切换，省下这部分开销，代价是需求一变，计划全作废。</td></tr>
+      <tr><td class="what">adaptive（自适应式）</td><td>接受需求会变、小步迭代、频繁调计划；靠反馈兜底，代价是有反馈回路才养得起。</td></tr>
       <tr><td class="what">中间</td><td>预设日程产出增量（偏预测式）或频繁更新的小周期产出增量（偏自适应式）。</td></tr>
     </tbody>
   </table>
 </div>
 
-<h2>三种过程：各怕什么</h2>
+<h2>三种过程：怎么做、适合什么、代价是什么</h2>
 <div class="table-wrap">
   <table>
     <thead><tr><th>过程</th><th>怎么做</th><th>适合</th><th>代价</th></tr></thead>
     <tbody>
-      <tr><td class="what">瀑布式 waterfall（顺序式）</td><td>需求 → 设计 → 实现 → 测试一条直线，只向前走，需求定下后基本不改（SE-EDU Sequential）。</td><td>需求一开始就被理解清楚、要按合同交付</td><td>需求在开工后才变 → 一次性计划全部作废</td></tr>
-      <tr><td class="what">迭代式 iterative</td><td>多轮迭代，每圈走全程、产新版本、反馈进下一圈；广度优先每圈有可用产品 / 深度优先每圈厚实一部分</td><td>需求会变、要多早拿到反馈</td><td>计划要随反馈反复调整，得有反馈回路</td></tr>
-      <tr><td class="what">敏捷 agile（Scrum / XP）</td><td>需求按价值进 product backlog；Sprint（冲刺）内需求冻结；结束时演示 + 复盘；依赖持续客户协作</td><td>需求频繁变化、要快速交付拿反馈</td><td>高度依赖客户参与和团队自律，否则塌空</td></tr>
+      <tr><td class="what">waterfall（瀑布式）</td><td>需求 → 设计 → 实现 → 测试一条直线，严格版只向前走，需求定下后基本不改（SE-EDU Sequential）；SWEBOK 的定义留了重叠与极少量迭代的余地（ch.10 p10-6）。</td><td>需求一开始就被理解清楚、要按合同交付</td><td>需求在开工后才变 → 一次性计划全部作废</td></tr>
+      <tr><td class="what">iterative（迭代式）</td><td>多轮迭代，每圈都可以走全程、产新版本、反馈进下一圈；范围常在早期定下，之后随反馈变的是时间与成本；breadth-first（广度优先）每圈有可用产品，depth-first（深度优先）每圈只做厚一部分组件</td><td>需求会变、但整体范围还能先大致定下来</td><td>计划要随反馈反复调整，得有反馈回路</td></tr>
+      <tr><td class="what">agile（敏捷）</td><td>沿用迭代的循环，另加固定节奏、产品待办与每轮承诺；需求按价值进 product backlog（产品待办），Sprint（冲刺）前先计划、轮内需求冻结，结束时演示 + 复盘；依赖持续客户协作</td><td>需求频繁变化、要快速交付拿反馈</td><td>高度依赖客户参与和团队自律，否则只剩一串会议和一张没人看的看板</td></tr>
     </tbody>
   </table>
 </div>
 
 <h2>没有标准答案：选型的四个变量</h2>
-<p>SWEBOK：没有理想过程，只有对项目和上下文的挑选、适配。选型看四件事：<strong>需求多稳、风险多高、多早要反馈、团队 / 客户能不能持续参与</strong>。</p>
+<p>ISO/IEC/IEEE 12207 规定软件生命周期过程（ch.10 参考文献 [1]，p10-11），ISO/IEC 33000 规定过程评估（ch.10 p10-10），它们不替你选模型。所以这里只有主流做法和取舍：瀑布在合同交付、需求稳定的项目里仍是主流；迭代和敏捷在需求易变的项目里是主流。</p>
+<p>选型看四件事：<strong>需求多稳、风险多高、多早要反馈、团队 / 客户能不能持续参与</strong>。需求越稳越敢往预测式走；风险越高越要早做最不确定的部分、尽早验证；越早要反馈越不能把验收压到最后；团队和客户不能持续参与，就别选靠每轮澄清与承诺的敏捷。</p>
 <div class="card-rule">
-  <p><strong>别把任何过程当「最佳实践」。</strong>过程不是教条，是一个你按项目画的取舍。</p>
+  <p><strong>别把任何过程当「最佳实践」。</strong>过程是一张要按项目画出来的取舍图，没有可以直接照抄的食谱。</p>
 </div>
 
 <h2>本课程自己这套流程站在哪</h2>
 <ul>
-  <li>链路：grill → to-spec → to-tickets → implement → code-review（第 3 课五步）＝一套完整过程。</li>
-  <li>偏预测式：先 spec 再动手、每张工单带验收、一次只做一件事。</li>
-  <li>偏自适应式：拆得小、每张可独立验收、有反馈回路、没写死的需求靠下一张工单补。</li>
-  <li>为什么是中间路：<strong>单人 + agent</strong>，没有团队沟通成本、没有合同化交付压力，不必为它们买单。</li>
-  <li>提醒：别把本课中间路当新教条；真实项目要按画像往谱两端选。</li>
+  <li>链路：grill-with-docs → to-spec → to-tickets → implement → code-review 审查、提交（第 3 课五步）＝一条覆盖到提交为止的流程。</li>
+  <li>偏预测式：默认先 spec 再动手（一次会话能做完的小改动可直接 implement），每个决定写进 spec，每张工单带验收、一次只做一件事。</li>
+  <li>偏迭代 / 自适应：工单压进一个上下文窗口，做完跑 code-review、问题在同一张修掉，工单自包含；真正偏自适应的是回退——spec 没覆盖的需求要回 grilling / to-spec 补，再重新拆。</li>
+  <li>为什么是中间路：<strong>一个人 + 一套 agent 编排</strong>（主 agent 按需派子代理，code-review 固定开两个子代理，implement-spec 并行推进当前能开工的工单），没有多人同步成本，也没有合同化交付压力。</li>
+  <li>提醒：选型只能由人拍板；agent 的检查单只证明前后一致，不判决选型对错，也别把本课中间路当新教条。</li>
 </ul>
 
 <h2>练习怎么验</h2>
-<pre><code>读我这份「什么项目适合什么过程」的对照表，再读
-SWEBOK 第 9、10 章、SE-EDU Process Models。
+<pre><code>读我这份「什么过程适合什么项目」的对照表，再读
+课程仓库里的本地副本：SWEBOK 第 9、10 章
+（courseware/swebok/swebok-v4.pdf；p9-8 = PDF 209，p10-2 = 222，p10-5 = 225，
+p10-6 = 226，p10-8 = 228，p10-10 = 230）和
+SE-EDU《Process Models》
+（courseware/se-education/book/processModels/print.html）
+的 Sequential / Iterative / Agile 三节。
 
 逐条检查：
-1. 我选的模型，跟「需求稳不稳、反馈快不快」对上了吗？
-2. 有没有把某过程当绝对最佳？有没有写下「这个项目为什么」？
+1. 我选的模型，跟「需求稳不稳、风险多高、反馈多快、团队和客户能不能持续参与」
+   这四个变量对上了吗？
+2. 理由里有没有把某一种过程当绝对最佳？有没有写下「这个项目为什么」、另外两个为什么落选？
 3. 我在 predictive / adaptive 谱上的定位跟理由一致吗？
-4. 备注里标出「明天要交货」这类变量会让选型怎么变了吗？
+4. 「变量一变怎么改」那一列有没有标出两个反例：哪个变量一变，选型往哪端挪？
+5. 有没有出现「一般最好」这种空话，每句都能解释「所以这样选」吗？
 
-最后给结论：现在选型和理由还成立吗？哪里站不住？</code></pre>
+最后给结论：这张表前后一致吗？哪里站不住？</code></pre>
+<p>满足五条才算过：四个变量都对上画像；没有把某种过程当绝对最佳，另外两个的落选理由能对上画像；谱系位置与理由方向一致；「变量一变怎么改」那一列有两个反例；每句都能解释「所以这样选」，没有「一般最好」。agent 的结论只证明内部一致，选型仍由你拍板。</p>
 
 <h2>三个容易滑进去的坑</h2>
 <div class="table-wrap">
@@ -86,19 +96,19 @@ SWEBOK 第 9、10 章、SE-EDU Process Models。
     <thead><tr><th>坑</th><th>表现</th><th>怎么防</th></tr></thead>
     <tbody>
       <tr><td class="what">把过程当教条</td><td>「敏捷就是对的」「瀑布过时了」</td><td>每次都说清「这个项目为什么」，不写「一般最好」</td></tr>
-      <tr><td class="what">忘了先想需求稳不稳</td><td>上来就选，不画项目画像</td><td>先写需求多稳、反馈多快，再落到谱上</td></tr>
+      <tr><td class="what">忘了先想需求稳不稳</td><td>上来就选，不画项目画像</td><td>先写需求多稳、风险多高、反馈多快、谁能持续参与，再落到谱上</td></tr>
       <tr><td class="what">把本课流程当新模板</td><td>真实项目也照搬「先 spec 再小步」</td><td>记住选型的变量，按画像选，别照搬</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="note">
-  <p><strong>术语第一次出现都有中文：</strong>process model 过程模型、predictive 预测式、adaptive 自适应式、waterfall 瀑布式、sequential 顺序式、iterative 迭代式、agile 敏捷、Sprint 冲刺、product backlog 产品待办。</p>
+  <p><strong>术语第一次出现都有中文：</strong>process model 过程模型、predictive 预测式、adaptive 自适应式、adaptation 适配、waterfall 瀑布式、sequential 顺序式、iterative 迭代式、agile 敏捷、Scrum 敏捷过程框架、Sprint 冲刺、product backlog 产品待办、sprint backlog 本轮待办、XP（Extreme Programming）极限编程、V-model（V 模型）。</p>
 </div>
 
 <div class="source">
-  <p><strong>理论来源：</strong>SWEBOK v4 第 10 章 p10-2（无理想过程、只能挑选适配）；第 9 章 p9-8~9-9（predictive → adaptive 连续谱、瀑布 / 增量 / 螺旋 / 敏捷）；SE-EDU《Process Models》全章（Sequential / Iterative / Agile）。</p>
-  <p><strong>实践方式：</strong>本课无独立技能，回指第 3 课五步链路（grill → spec → tickets → implement → review）。</p>
+  <p><strong>理论来源：</strong>SWEBOK v4 第 10 章 p10-2（无理想过程、只能挑选适配）、p10-3（过程与生命周期定义）、p10-5~p10-6（四种生命周期、瀑布 / 增量 / 螺旋 / 敏捷，瀑布归入 predictive、螺旋 risk-driven）、p10-8（Life Cycle Adaptation：认项目特点、选模型、记决定与理由）、p10-10（ISO/IEC 33000 过程评估）；第 9 章 p9-8（predictive → adaptive 连续谱、中段两类增量）、p9-9（估算，仅作背景）；SE-EDU《Process Models》全章（Sequential / Iterative / Agile）。</p>
+  <p><strong>实践方式：</strong>本课无独立技能，回指第 3 课五步链路（grill-with-docs → to-spec → to-tickets → implement → code-review）。</p>
 </div>
 
 <footer class="colophon">

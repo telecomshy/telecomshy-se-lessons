@@ -46,7 +46,7 @@
   <h2>问题与概念：四十个绿测试，可能什么都没证明</h2>
   <p>把开头那个场景拆开看。agent 写的四十个测试，每个都合法：创建 store，<code>add</code> 一条，<code>search</code> 一个词，断言结果里有那条。它们没有语法错误，也没有断言错东西；问题在于样本。<strong>四十个用例都在测同一小块输入空间</strong>：标题开头、大小写相同、仓库里只有一条。它们把同一件事验证了四十遍，没碰标题中间、标题结尾、只在正文命中、空仓库、多条命中这些地方。测试数量给了你安全感，覆盖面没有。</p>
   <p>SWEBOK 给测试的定义是：在有限的一组测试用例上动态验证系统，这组用例从通常无限的执行域里选出来（SWEBOK v4, ch.5, p5-1~5-2）。定义里有四个关键词：dynamic（动态）、finite（有限）、selected（选出来）、expected（有预期）。前三个是重点。动态，意味着真的把程序跑起来；有限，意味着穷举不可能；选出来，意味着测试设计就是选样本。第四个「有预期」放在 oracle 那段讲。Dijkstra 那句老话说得更绝：测试能证明 bug 的存在，不能证明 bug 的不存在（SWEBOK v4, ch.5, p5-5；SE-EDU 的《Test Case Design》也引了同一句）。所以一组测试的价值，不取决于它跑了多少次，而取决于它选中的样本能不能代表那些会出错的输入。</p>
-  <p>先把三个词定清。一个 <strong>test case（测试用例）</strong>是「一组输入 + 预期结果」；一组用例叫 <strong>test suite（测试套件）</strong>。预期结果由 <strong>oracle（判定器）</strong>给出：它可以是人、规格、行为模型，也可以是另一个独立实现，负责对每次执行说「过」或「不过」（SWEBOK v4, ch.5, p5-4~5-5 举了规格、行为模型、代码注解；CMU 17-313《11-oracles》p18 把「另一个实现」叫 differential testing（差分测试））。没有 oracle 的测试只是把程序跑了一遍——它看到输出，但不知道输出对不对。第 15 课的 port 契约就是本课的 oracle：条目恰好四个键、id 按顺序递增、<code>created_at</code> 是 UTC（协调世界时）、搜索大小写不敏感、返回副本。每一条预期都要能指回这几句话；指不回去的，先补契约，再写预期。</p>
+  <p>先把三个词定清。一个 <strong>test case（测试用例）</strong>是「一组输入 + 预期结果」；一组用例叫 <strong>test suite（测试套件）</strong>。预期结果由 <strong>oracle（判定器）</strong>给出：它可以是人、规格、行为模型，也可以是另一个独立实现，负责对每次执行说「过」或「不过」（SWEBOK v4, ch.5, p5-4~5-5 举了规格、行为模型、代码注解；CMU 17-313《11-oracles》p18 把「另一个实现」叫 differential testing（差分测试））。没有 oracle 的测试只是把程序跑了一遍——它看到输出，但不知道输出对不对。第 15 课的 port 契约就是本课的 oracle：返回的条目恰好四个键；id 非空、唯一且稳定；<code>created_at</code> 是 UTC（协调世界时）；搜索大小写不敏感；返回副本。每一条预期都要能指回这几句话；指不回去的，先补契约，再写预期。id 形如 <code>e0001</code>、按顺序递增是两个 adapter 当前的共同约定，不是 port 承诺——断言它，等于在测约定，心里要有数。如果你按第 15 课的可选挑战把 <code>InMemoryStore</code> 换成 <code>uuid4</code>，先改回 <code>eNNNN</code> 再对照本课示例。</p>
 
   <h3>一组好测试的三条标准：正确、彻底、小</h3>
   <p>MIT 6.031 的《Testing》给好测试套件列了三条标准，比「覆盖率越高越好」好用得多。<strong>correct（正确）</strong>：测试套件是规格的合法客户端，接受所有合法实现，不要求规格没承诺的行为。这条标准管的是「测试别越界」——它允许你换实现而不用改测试。<strong>thorough（彻底）</strong>：套件能抓到程序员真会犯的 bug。<strong>small（小）</strong>：用例少，写起来快、跑起来快、规格变了改起来也快（MIT 6.031, Testing, “Systematic testing”）。三条会互相拉扯：穷举很彻底但不可能小，随手写两个很小但不彻底。测试设计就是在三者之间找平衡。</p>
@@ -73,7 +73,7 @@
   </div>
   <p>这张表只放输入划分。边界值和返回值不变量不是输入子域，另外列：边界是「某个子域里的极端点」，不变量是「不管输入是什么都必须成立的性质」。把它们混进同一张表，读的人会以为「副本」也是一种输入。</p>
   <p>这张表不是一次成型的。你先写一版，写测试时发现某个格子里的行为其实不一样，再拆；拆完可能反过来发现契约有歧义，回去改契约。MIT 把这种来回叫 iterative test-first programming：写测试会暴露规格的错误、遗漏和歧义，这本来就是测试的收益之一（MIT 6.031, Testing, “Iterative test-first programming”）。对 <code>search</code>，这里就暴露了两处契约空洞，后面「AI + Matt」一节会让人来拍板：第一，「关键词」是子串匹配还是整词匹配？第二，空字符串算不算关键词？这两个问题不决定，测试就没法写预期。</p>
-  <p>还有一件容易漏的事：<strong>每个参与者都要分</strong>。<code>search(query)</code> 的参与者是 query 和仓库里的条目；条目的标题和正文又是两种不同的匹配面。只给 query 分、不给仓库状态分，就会漏掉空仓库和多条命中；只给标题分、不给正文分，就会漏掉只在正文命中的条目。<code>add(title, text)</code> 也有两个参与者，但本课的用例集中在 search，add 只测返回值和 id 规则。SE-EDU 把这些叫「data participants（数据参与者）」，并提醒它们不止参数，还包括被方法读写的外部数据（SE-EDU, Test Case Design, “Equivalence Partitions”）。对 <code>Store</code> 来说，仓库本身就是那个「外部数据」。</p>
+  <p>还有一件容易漏的事：<strong>每个参与者都要分</strong>。<code>search(query)</code> 的参与者是 query 和仓库里的条目；条目的标题和正文又是两种不同的匹配面。只给 query 分、不给仓库状态分，就会漏掉空仓库和多条命中；只给标题分、不给正文分，就会漏掉只在正文命中的条目。<code>add(title, text)</code> 也有两个参与者，但本课的用例集中在 search，add 只测返回值形状和 id 的语义。SE-EDU 把这些叫「data participants（数据参与者）」，并提醒它们不止参数，还包括被方法读写的外部数据（SE-EDU, Test Case Design, “Equivalence Partitions”）。对 <code>Store</code> 来说，仓库本身就是那个「外部数据」。</p>
 
   <h3>边界值单独拿出来</h3>
   <p>边界是两个子域交界的地方，也是 bug 爱待的地方。这种技术叫 <strong>boundary value analysis（边界值分析，BVA）</strong>。程序员常在这里写错比较符（<code>&lt;=</code> 写成 <code>&lt;</code>）、把计数器从 0 开始而不是 1、忘了空集合、或者把第一个和最后一个元素当特例处理（MIT 6.031, Testing, “Include boundaries in the partition”）。SWEBOK 说得更直接：很多故障集中在输入的极端值附近（SWEBOK v4, ch.5, §3.1.2, p5-11）。所以边界值不该混在普通代表里碰运气，要作为单独的子域，让测试套件必然会挑到它。</p>
@@ -90,7 +90,7 @@
       </tbody>
     </table>
   </div>
-  <p>边界要从契约来，不要从代码来。契约说 <code>created_at</code> 精确到秒，那「秒」就是边界：把字符串解析成 <code>datetime</code>，断言时区是 UTC、微秒为 0，但不要断言字符串是 <code>+00:00</code> 还是 <code>Z</code>——那是格式选择，不是契约。契约没规定 id 到 10000 条之后还是不是四位，那 <code>e9999 → e10000</code> 就不是你该擅自断言的边界，记进未决问题，别替契约做决定。还有一条组合纪律：边界要一个一个测。空 query、空仓库、不命中三个边界塞进同一个用例，红了你不知道是哪个边界坏了；SE-EDU 对非法输入的建议也是「先一个一个测，再考虑组合」（SE-EDU, Test Case Design, “Heuristic: Test invalid inputs individually before combining them”）。</p>
+  <p>边界要从契约来，不要从代码来。契约说 <code>created_at</code> 精确到秒，那「秒」就是边界：把字符串解析成 <code>datetime</code>，断言时区是 UTC、微秒为 0，但不要断言字符串是 <code>+00:00</code> 还是 <code>Z</code>——那是格式选择，不是契约。契约只承诺 id 非空、唯一、稳定，没规定宽度；两个 adapter 当前的 <code>eNNNN</code> 约定到 10000 条之后还灵不灵，不是契约边界，<code>e9999 → e10000</code> 也不是你该擅自断言的边界，记进未决问题，别替契约做决定。还有一条组合纪律：边界要一个一个测。空 query、空仓库、不命中三个边界塞进同一个用例，红了你不知道是哪个边界坏了；SE-EDU 对非法输入的建议也是「先一个一个测，再考虑组合」（SE-EDU, Test Case Design, “Heuristic: Test invalid inputs individually before combining them”）。</p>
   <p>最后是返回值不变量：副本（改了返回值不影响仓库）、条目恰好四个键、顺序与加入顺序一致。它们不是输入，是每次调用都要成立的性质；单独写测试，名字直接说明守的是哪条承诺。顺序在第 8 条用例里已经有一个代表，独立测试再写一条会更直白，不写也不算漏。</p>
 
   <h3>组合用例，别做笛卡尔积</h3>
