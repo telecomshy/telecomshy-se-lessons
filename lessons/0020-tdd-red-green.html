@@ -101,7 +101,7 @@
 
 <section>
   <h2>练习：给 Store 加 delete，走一轮完整的红绿</h2>
-  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 里的 <code>Store</code> 契约，行为是 <code>delete(id)</code>。产出三样：契约新增的部分（<code>Store</code> 的 <code>delete</code> 签名加 docstring 承诺）、两个 adapter 的实现、<code>tests/test_storage.py</code> 里新增的红绿测试，外加每轮循环的记录。</p>
+  <p>对象是沙盒仓库 <code>se-course-sandbox</code> 里的 <code>Store</code> 契约，行为是 <code>delete(id)</code>。产出三样：契约新增的部分（<code>Store</code> 的 <code>delete</code> 签名加 docstring 承诺）、两个 adapter 的实现、<code>tests/test_storage.py</code> 里新增的红绿测试，外加每轮循环的记录。</p>
   <p>起点按你的情况分两条路。做过第 19 课练习的，<code>tests/test_storage.py</code> 已经是现成的回归网，直接进第 2 步。没做过的，先补最小回归网：照参考卡 0019 的测试策略和七条 <code>search</code> 用例抄一份跑绿（fixture 参数化两个 adapter 那段是关键），这一步是补上一课的作业，不算本课的循环；本课的循环从 <code>delete</code> 开始。旧测试在这一课里是裁判：每轮绿都要连它们一起跑，不许改。</p>
 
   <ol class="steps">

@@ -98,7 +98,7 @@
 
 <section>
   <h2>练习：对第 23 课那份 diff 做一次完整审查</h2>
-  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 里第 23 课那张工单的 diff——<code>JsonlStore</code> 写文件失败的错误行为。产出四样：一份两轴报告（存 <code>.scratch/error-handling/review-report.md</code>，沿用第 23 课的落点）、一份逐条带理由和严重度的裁决（写在报告每条意见下面）、实验分支上两处注入的记录、复核的结论（后两样都记进 <code>.scratch/error-handling/review-notes.md</code>）。没做过第 23 课练习的，两条路选一条：先补做第 23 课练习——本课所有步骤都建在那张工单的 diff 上；或者拿参考卡里的示例两轴报告走第 3、4 步（分档、裁决），读法和裁决一样练，注入实验照卡片里的描述纸上判断。</p>
+  <p>对象是沙盒仓库 <code>se-course-sandbox</code> 里第 23 课那张工单的 diff——<code>JsonlStore</code> 写文件失败的错误行为。产出四样：一份两轴报告（存 <code>.scratch/error-handling/review-report.md</code>，沿用第 23 课的落点）、一份逐条带理由和严重度的裁决（写在报告每条意见下面）、实验分支上两处注入的记录、复核的结论（后两样都记进 <code>.scratch/error-handling/review-notes.md</code>）。没做过第 23 课练习的，两条路选一条：先补做第 23 课练习——本课所有步骤都建在那张工单的 diff 上；或者拿参考卡里的示例两轴报告走第 3、4 步（分档、裁决），读法和裁决一样练，注入实验照卡片里的描述纸上判断。</p>
 
   <ol class="steps">
     <li><strong>按顺序读 diff，广角先行。</strong>别一上来就逐行。先广角：<code>git log</code> 看这段 diff 有几笔提交、提交信息说在做什么，再打开第 23 课的工单文件 <code>.scratch/error-handling/issues/01-jsonl-write-failure.md</code> 读验收标准——这次改动该不该做、该做什么，先有数。然后找主文件：这段 diff 里改动最集中的那个，多半是 <code>kb/storage.py</code>。先读它，问一句整体设计讲不讲得通：错误契约加在哪一层、<code>StorageError</code> 放得对不对。主文件上如果有大问题，按 Google 的规矩立刻记下来，其余部分可能都要跟着变。最后再按序过剩下的文件（测试、<code>kb/cli.py</code>）和 docstring 的改动，一个别漏；读测试找「这次本来该干什么」的手感。把广角阶段的判断（该不该做、主文件是哪个、设计过关吗）先写进 <code>.scratch/error-handling/review-notes.md</code>，两三行就够。</li>

@@ -124,7 +124,7 @@ def test_next_id_after_delete():
 
 <section>
   <h2>练习：三个坏测试，改成三个好测试</h2>
-  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code>。产出两样：三个只测行为的测试落进 <code>tests/test_storage.py</code>（跟第 19、20 课的回归网放一起），坏测试的样子连同「坏在哪」的体检结论记进 <code>.scratch/shape-notes.md</code>。坏测试写在临时文件里跑，不进 <code>tests/</code>——仓库里不留下会红的测试。</p>
+  <p>对象是沙盒仓库 <code>se-course-sandbox</code>。产出两样：三个只测行为的测试落进 <code>tests/test_storage.py</code>（跟第 19、20 课的回归网放一起），坏测试的样子连同「坏在哪」的体检结论记进 <code>.scratch/shape-notes.md</code>。坏测试写在临时文件里跑，不进 <code>tests/</code>——仓库里不留下会红的测试。</p>
   <p>起点按你的情况分两条路。做过第 20 课练习的，<code>delete</code> 已经实现，四组红绿测试在回归网里，坏测试和好测试都拿 <code>delete</code> 的三个行为当素材：删存在的条目、删除后重开仍成立、删除不回收 id。没做过的，用 <code>add</code> 和 <code>search</code> 当素材，三个坏法照样成立：验 <code>add</code> 的副本去戳 <code>_entries</code>、验 <code>add</code> 落盘去读 <code>kb.jsonl</code>、给 <code>add</code> 的 id 或 <code>created_at</code> 照实现算预期值。下面的步骤以 <code>delete</code> 为主线写，另一条路把方法名换掉即可。</p>
 
   <ol class="steps">

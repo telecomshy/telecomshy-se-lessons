@@ -96,7 +96,7 @@
 
 <section>
   <h2>练习：给沙盒配一条会红的检查链</h2>
-  <p>对象是沙盒 <code>E:\code\my_projects\se-course-sandbox</code>，任务是配一条 push 就跑的检查链，跑格式化、lint、测试三样。工具用 ruff（格式化和 lint 一个工具管）加 pytest，类型检查这门课不进链——静态类型语言的链里通常会加 typecheck（类型检查），Missing Semester 的 CI 一节顺带提过，你以后要加就是清单里多一行命令。两个时机里的 pre-commit hook 本课不配：它是本地的、可跳过的，权威在 CI；你自己的仓库想配，命令还是这三条。产出四样：写进 README 的命令清单、流水线文件（<code>.github/workflows/ci.yml</code>）、格式化与 lint 存量清理的独立提交、三次「故意弄坏」的证据记录（<code>.scratch/ci-notes.md</code>）。做过第 19–23 课练习的，tests/ 里现成的错误行为测试就是链上线后最先被守护的东西；没做过的也不缺素材，见第 1 步的分支。</p>
+  <p>对象是沙盒仓库 <code>se-course-sandbox</code>，任务是配一条 push 就跑的检查链，跑格式化、lint、测试三样。工具用 ruff（格式化和 lint 一个工具管）加 pytest，类型检查这门课不进链——静态类型语言的链里通常会加 typecheck（类型检查），Missing Semester 的 CI 一节顺带提过，你以后要加就是清单里多一行命令。两个时机里的 pre-commit hook 本课不配：它是本地的、可跳过的，权威在 CI；你自己的仓库想配，命令还是这三条。产出四样：写进 README 的命令清单、流水线文件（<code>.github/workflows/ci.yml</code>）、格式化与 lint 存量清理的独立提交、三次「故意弄坏」的证据记录（<code>.scratch/ci-notes.md</code>）。做过第 19–23 课练习的，tests/ 里现成的错误行为测试就是链上线后最先被守护的东西；没做过的也不缺素材，见第 1 步的分支。</p>
 
   <ol class="steps">
     <li><strong>先把三条命令在本地跑通，抄进 README。</strong>装工具：<code>python -m pip install ruff pytest</code>。然后逐条敲：<code>python -m ruff format --check .</code>（只检查格式）、<code>python -m ruff check .</code>（lint）、<code>python -m pytest -q</code>（测试）。三条各自看退出码：绿是 0，红就先弄明白红在哪。红了的常见原因有两类。一是测试：tests/ 还不存在（第 19–23 课的练习没做），pytest 会以「没收集到测试」退出非零——先补一个最小冒烟测试（比如 <code>tests/test_smoke.py</code> 里断言 <code>InMemoryStore</code> 加一条能搜到），或者让流水线暂时只跑前两样，做完前面练习再把测试步加回来。二是存量：老代码第一次过格式化和 lint 必然报错，处置在下一步。三条命令随手写进 README 的「开发命令」段（或一个 <code>Makefile</code>）——这份命令清单是本地和 CI 之间的合同，反馈回路的检查单会照着它核对。工具会升级，ruff 的规则集随版本变化；想让链不被升级打扰，可以在本地和 workflow 的安装命令里钉住版本，比如 <code>ruff==0.17.3</code>。</li>

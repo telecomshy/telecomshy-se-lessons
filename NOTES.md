@@ -794,4 +794,12 @@
 - **缺口复核（2026-11-17，用户追问后）**：原来写「够第 3–13 课用 / 模块 3 之前补」是错的。第 13 课练习第 2 步要求跑 `kb search`、拿它的输出写验证结论（「只打印 id 和标题，没有引用和行号」），沙盒没有代码这条就变成拍脑袋断言。所以代码的截止点提前到**第 13 课之前**；第 14 课另需 `lesson-14-start` 标签。`NEXT-SESSION.md` 与课程地图已同步。
 - **缺口按用户决定挂起（2026-11-17）**：用户的意思是先学到卡住再补，不做前置补齐。已把它从「当前状态」里的一条硬性待办，改成 `NEXT-SESSION.md`「待确认」第一条，写清了卡点（第 13 课练习第 2 步、第 14 课开头）、补法（主代理写两个提交，骨架打 `lesson-14-start`，迁 port 停在 `master`）、核对清单（第 13/14/15/19/22/23/34 课的说法）以及「优先搬运 admin 机历史」的优先级。课程地图同步从「必须之前补」改为「还缺，影响这两处，补法记在交接文档」。
 
+## 沙盒代码恢复与路径口径（2026-11-18）
+
+- 用户要求：主仓库拉最新；把远程私有沙盒仓库 clone 到本机工作区，删掉本地旧沙盒；只把代码恢复到沙盒并提交推送；参考卡里的沙盒路径不要写绝对目录（`E:\...` 是另一台机器的路径）。
+- 旧本地沙盒（`D:\code\my_projects\se-course-sandbox`）不是空仓库：6 个本地提交（`b2162ce`…`49f4388`）、标签 `lesson-14-start`、`kb/` 代码。远程新仓库的根提交 `1aca91b` 是另一段历史，两者无关。删除前先 `git bundle` 全量备份到 `D:\code\my_projects\_git-archive\se-course-sandbox-legacy-2026-11-18.bundle`（9.8 KB，含 `master` 与 `lesson-14-start`），再删目录、`gh repo clone` 重新拉取。
+- 代码恢复按新仓库的文档现状做，不搬旧文档：`kb/` 按 b2162ce 状态落第一个提交（`5544243`）并打 `lesson-14-start`，再按 49f4388 状态落第二个提交（`fa76ccd`）停在 `master`；`.gitignore` 补回 `kb.jsonl`，`README.md` 的「现在有什么」把「还没有代码」改成代码与分支说明（不写死 hash）。`python -m kb add` / `search` 实跑过，`lesson-14-start` 与 `master` 的 `kb/storage.py` 差异与旧历史一致。
+- 路径口径（2026-11-18 定，替代 2026-11-17 的「统一写 `E:\...`」）：课件、参考卡与 `README.md` 叙述写「沙盒仓库 `se-course-sandbox`（与本课程仓库同级）」；需要具体路径的命令与示例写 `<工作区>\se-course-sandbox`，`<工作区>` 在 `README.md` 与第 3 课定义一次。全仓库 39 处引用逐处改：18 个课件的对象说明改成「沙盒仓库 `se-course-sandbox`」；第 3 课建仓库、第 29 课 PowerShell 的 `$repo`、第 33 课的错误信息示例、第 34 课给 agent 的提示词改用 `<工作区>` 占位；`reference/0003`、`reference/0026`、`reference/course-map.html`、`README.md`、`NEXT-SESSION.md` 同步。`NOTES.md` 的历史条目保持原样，只在这里记账。
+- 两处遗留，留给用户拍板：① 第 3 课仍写 `mkdir` + `git init`，与「沙盒是现成私有仓库、第 24 课只要 `git remote -v` 确认」不一致；② 新仓库自带 `AGENTS.md` 与 `docs/agents/`，第 3 课的 setup 练习会变成「检查已配置」而不是「从零生成」。两处都涉及练习设计，不属路径修改，未动。
+
 > AI生成

@@ -39,7 +39,7 @@
 ## 怎么用
 
 1. 先打开 `reference/course-map.html`，看清 34 节和七个模块的关系。
-2. 从 `lessons/0001-what-is-software-engineering.html` 开始按序读；每节先读、再在沙盒 `E:\code\my_projects\se-course-sandbox` 里做练习。
+2. 从 `lessons/0001-what-is-software-engineering.html` 开始按序读；每节先读、再在沙盒仓库 `se-course-sandbox` 里做练习。沙盒仓库是独立私有仓库，与本课程仓库放在同一级目录；课件和参考卡里需要具体路径时写 `<工作区>\se-course-sandbox`，`<工作区>` 就指这个共同上级。
 3. 写新课或改课之前，读 `AGENTS.md`、`COURSE-STANDARD.md`、`SOURCE-MAP.md`，再读前后各一节。
 
 ## 来源与版权

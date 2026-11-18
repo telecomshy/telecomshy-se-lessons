@@ -129,10 +129,10 @@
 
 <section>
   <h2>练习与带走：把一次退化写成一份无责复盘</h2>
-  <p>练习在沙盒 <code>E:\code\my_projects\se-course-sandbox</code> 上做，但事故现场放在一个临时目录里，别拿你平时用的 <code>kb.jsonl</code> 开刀。这次是 drill（演练）：你同时扮演上报问题的同事、值班的人和事后写复盘的人。演练记录的是你这次真实操作的时间；复盘开头注明「演练重放」，读者就不会误会成生产事故。做过 26–28 课练习的人，把 <code>fix-layer.md</code> 和摩擦清单放在手边当提问清单；没做过的，用下面给的场景直接开始，不影响完成。</p>
+  <p>练习在沙盒仓库 <code>se-course-sandbox</code> 上做，但事故现场放在一个临时目录里，别拿你平时用的 <code>kb.jsonl</code> 开刀。这次是 drill（演练）：你同时扮演上报问题的同事、值班的人和事后写复盘的人。演练记录的是你这次真实操作的时间；复盘开头注明「演练重放」，读者就不会误会成生产事故。做过 26–28 课练习的人，把 <code>fix-layer.md</code> 和摩擦清单放在手边当提问清单；没做过的，用下面给的场景直接开始，不影响完成。</p>
   <ol>
-    <li><strong>搭演练现场，先开记录。</strong>下面这段在 PowerShell 里整段粘贴。临时目录只放演练用的 <code>kb.jsonl</code>，记录都写回沙盒仓库：
-      <pre><code>$repo  = "E:\code\my_projects\se-course-sandbox"
+    <li><strong>搭演练现场，先开记录。</strong>下面这段在 PowerShell 里整段粘贴，粘贴前把 <code>&lt;工作区&gt;</code> 换成你机器上的路径。临时目录只放演练用的 <code>kb.jsonl</code>，记录都写回沙盒仓库：
+      <pre><code>$repo  = "&lt;工作区&gt;\se-course-sandbox"
 $drill = Join-Path $env:TEMP "kb-incident-2901"
 New-Item -ItemType Directory -Force $drill | Out-Null
 New-Item -ItemType Directory -Force "$repo\.scratch\incident-2901" | Out-Null
