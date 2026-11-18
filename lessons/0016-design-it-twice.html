@@ -47,7 +47,7 @@
   <p>照这个办法来。第一个候选的约束是<strong>为最常见调用者优化</strong>：CLI 的两条命令是最常见用例，接口让它们最省事。第二个候选的约束换成<strong>最大化灵活性</strong>：支持多用例和扩展，把「按什么查」做成可以长的东西。两个约束顶着走，画出来的形状如下——代码只是把形状钉具体，重点看调用示例和参数表。</p>
 
   <p>候选 A（仓库式，查询维度进参数表）：</p>
-  <pre><code>class KnowledgeStore(Protocol):
+  <pre><code>class Store(Protocol):
     def add(self, title: str, body: str, tags: Sequence[str] = ()) -&gt; Entry: ...
     def search(self, keyword: str | None = None, tag: str | None = None,
                since: datetime | None = None, limit: int = 20) -&gt; list[Entry]: ...
@@ -63,7 +63,7 @@ class Query:
     tag: str | None = None
     since: datetime | None = None
 
-class KnowledgeStore(Protocol):
+class Store(Protocol):
     def save(self, title: str, body: str, tags: Sequence[str] = ()) -&gt; Entry: ...
     def find(self, query: Query, limit: int = 20) -&gt; list[Entry]: ...
 

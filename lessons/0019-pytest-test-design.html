@@ -164,6 +164,7 @@ def test_search_matches_title_or_text_ignoring_case(store, entries, query, expec
         store.add(title, text)
     assert [entry["id"] for entry in store.search(query)] == expected</code></pre>
   <p>逐行看。fixture 是一个普通函数，<code>@pytest.fixture(params=[...])</code> 让 pytest 对每个参数各调一次；<code>request.param</code> 是当前参数，<code>tmp_path</code> 是 pytest 自带的 fixture，给每个测试一个临时目录。于是 <code>JsonlStore</code> 每次拿到一个新文件，测试之间不会串；<code>InMemoryStore</code> 完全不碰文件。测试函数只要写一个名为 <code>store</code> 的参数，pytest 就按名字把 fixture 注入进来——这就是「fixture」的全部魔法，没有隐藏的全局状态。<code>@pytest.mark.parametrize</code> 把用例表变成数据，失败时 pytest 会告诉你哪一组参数、哪一行断言；普通 <code>assert</code> 会被 pytest 重写，失败信息里带着两边的实际值。每一行是「条目列表 + query + 预期 id」：空列表就是空仓库，三个元组就是多条命中。示例只演示七种场景，十一格剩下的标题中间命中（Test）、单字符、整标题、空 query 按同样方式加。</p>
+  <p>这段代码还依赖第 15 课定下的两个构造签名：<code>InMemoryStore()</code> 不带参数，<code>JsonlStore(path)</code> 收一个路径。你的实现如果不一样，先照第 15 课的约定改齐，或者把这几行改成你自己的签名——但签名一改，后面几课的示例都得跟着换，所以值得一开始就统一。</p>
   <p>跑起来是 <code>python -m pytest -q</code>，输出一行 <code>14 passed</code> 之类。覆盖率用 <code>python -m pytest -q --cov=kb.storage --cov-branch --cov-report=term-missing</code>，前提是装过 <code>pytest-cov</code>；如果还没装，先跑 <code>python -m pip install pytest pytest-cov</code>。这些命令先记住，练习里会真跑。</p>
 
   <h3>测试站在哪一层：单元测试与金字塔</h3>
@@ -196,7 +197,7 @@ def test_search_matches_title_or_text_ignoring_case(store, entries, query, expec
 
 <section>
   <h2>练习：给 Store 写一组小而彻底的测试</h2>
-  <p>对象是沙盒仓库 <code>se-course-sandbox</code> 里的 <code>Store</code> 契约。第 15 课的迁移已经做完，<code>Store</code>、<code>JsonlStore</code>、<code>InMemoryStore</code> 都在；这一课不做 CI。产出是一个 <code>tests/test_storage.py</code>，带测试策略注释、两个 adapter 的契约测试、不变量测试，以及一条 <code>JsonlStore</code> 专有的重开测试。</p>
+  <p>对象是沙盒仓库 <code>se-course-sandbox</code> 里的 <code>Store</code> 契约。前提是第 15 课的迁移已经合进主干：<code>Store</code>、<code>JsonlStore</code>、<code>InMemoryStore</code> 都在。没做那一课练习的，先回去把迁移补上——这一课的测试面全建在这个 port 上。这一课不做 CI。产出是一个 <code>tests/test_storage.py</code>，带测试策略注释、两个 adapter 的契约测试、不变量测试，以及一条 <code>JsonlStore</code> 专有的重开测试。</p>
 
   <ol class="steps">
     <li><strong>读契约，写测试策略注释。</strong>打开 <code>kb/storage.py</code>，把 <code>Store</code> 的 docstring 逐条读一遍。在 <code>tests/test_storage.py</code> 顶部写一段注释，列出你打算用的划分、每个划分的子域、以及边界值。先别写代码；这一步的产物是一张表，表里每个格子都要指得回契约的某句话。</li>

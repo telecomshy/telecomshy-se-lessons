@@ -42,8 +42,8 @@
 
 <section>
   <h2>问题与概念：调用者要学多少东西，才算这个模块造好了</h2>
-  <p>本课的起点里有一个能跑的最小骨架：迷你知识库的两个命令，<code>python -m kb add "标题" "正文"</code> 往库里加一条，<code>python -m kb search "关键词"</code> 按关键词搜；背后是一个存储模块 <code>KnowledgeStore</code>，把条目一行一条地存在 <code>kb.jsonl</code> 里。它小得不能再小，正好用来问那个开工第一天就要回答的问题：<strong>这个存储模块的接口该怎么定？</strong></p>
-  <p>先说清沙盒现在的状态，免得你打开代码时愣住。仓库的 <code>master</code> 分支已经走到第 15 课的完成态：存储被迁成了 port 加两个 adapter，返回值也改成了副本。本课要看的对照物是第 14 课的起点，标签 <code>lesson-14-start</code> 指着它。练习第一步会给出切换命令；现在先记住「起点」和「完成态」是两份代码，这一课讨论的是起点那一份。</p>
+  <p>本课的起点是你在第 13 课照 brief 立的最小骨架：迷你知识库的两个命令，<code>python -m kb add "标题" "正文"</code> 往库里加一条，<code>python -m kb search "关键词"</code> 按关键词搜；背后是一个存储模块 <code>KnowledgeStore</code>，把条目一行一条地存在 <code>kb.jsonl</code> 里。它小得不能再小，正好用来问那个开工第一天就要回答的问题：<strong>这个存储模块的接口该怎么定？</strong></p>
+  <p>先说清沙盒现在的状态，免得你打开代码时愣住。<code>master</code> 上是第 13 课照 brief 直译出来的那一版：一个 <code>KnowledgeStore</code> 把存储和文件逻辑混在一起，接口契约没写，测试也没有。第 15 课才会把它迁成 port 加两个 adapter，现在仓库里只有这一份代码。本课的起点就是它，标签 <code>lesson-14-start</code> 指着那个提交，练习第一步会给出切换命令。先记住一件事：那一版只回答了「这条链路跑不跑得通」，没回答「这个模块该长什么样」——后者才是设计，也是这一课要动的地方。</p>
   <p>起点长什么样？先看一个反面教材，它在真实项目里很常见。假设不抽存储模块，直接在每个命令里读写 JSONL：<code>add</code> 命令自己打开文件、拼一行 JSON、追加、关文件；<code>search</code> 命令自己打开文件、逐行解析、匹配。能跑，演示也过了。两周后三个需求接踵而来：换一种存储格式（JSONL 改 SQLite）、加项目定位里说好的薄 HTTP adapter（适配器）、给条目加标签。每个需求都要在每个命令里改一遍读写逻辑，改漏一处就是一处不一致的 bug。更糟的是测试：你想验证「搜索不区分大小写」，得先在测试里自己拼一个格式正确的 JSONL 文件，测试被迫知道了它根本不该关心的文件格式。</p>
   <p>这个痛的根源是<strong>调用者被迫学了太多东西</strong>。要描述这件事，先要有一对词。<strong>module（模块）</strong>是任何「有接口、有实现」的东西——一个函数、一个类、一个包都算；<strong>interface（接口）</strong>是调用者要正确使用这个模块所必须知道的一切；<strong>implementation（实现）</strong>是模块内部的代码。接口比签名宽得多：签名只是其中最机械的一部分，接口还包括接口上的承诺——接口不变量（哪些状态性质永远成立）、错误模式（出错时是什么表现）、顺序约束（调用有没有先后要求），以及配置和性能特征。任何「你不写下来，调用者就会猜错」的事实，都属于接口。</p>
 
@@ -119,12 +119,16 @@
   <p>本课练习在沙盒里真做，对象是起点的两个文件：<code>kb/cli.py</code> 和 <code>kb/storage.py</code>。产出三样东西：一份接口草图（含接口不变量、测试断言草图和接口缺口清单）、<code>storage.py</code> 里一条表示不变量注释，以及一处最小检查（<code>_check_rep()</code> 或 <code>assert</code>）。它们就是第 15 课画接缝的原料。</p>
 
   <ol class="steps">
-    <li><strong>先切到本课起点。</strong>在沙盒仓库 <code>se-course-sandbox</code> 里执行 <code>git switch -c lesson14-practice lesson-14-start</code>。如果这个名字的分支已经存在，就执行 <code>git switch lesson14-practice</code>。<code>master</code> 上是第 15 课的完成态，别在它上面做这一课；做完想对照答案，再用 <code>git diff lesson-14-start master -- kb/storage.py</code> 看。<code>kb.jsonl</code> 是被 .gitignore 的未跟踪文件，切分支不会清掉；如果里面已有旧条目，先删掉再往下走。</li>
+    <li><strong>先切到本课起点。</strong>在沙盒仓库 <code>se-course-sandbox</code> 里执行 <code>git switch -c lesson14-practice lesson-14-start</code>。如果这个名字的分支已经存在，就执行 <code>git switch lesson14-practice</code>。<code>master</code> 上还是你立的那份起点，别在它上面做这一课——练习在分支上做，主干留着随时可回；你的仓库主干如果叫 <code>main</code>，下文写 <code>master</code> 的地方换成 <code>main</code>。<code>kb.jsonl</code> 是被 .gitignore 的未跟踪文件，切分支不会清掉；如果里面已有旧条目，先删掉再往下走。</li>
     <li><strong>先把它跑起来。</strong>执行 <code>python -m kb add "第一条知识" "存储模块把条目存进 JSONL 文件"</code> 和 <code>python -m kb search "JSONL"</code>，确认你能看到返回的 id 和命中结果。跑不通就先修跑不通，设计讨论要对着能跑的东西做。</li>
-    <li><strong>遮住实现，画接口草图。</strong>在 <code>.scratch/storage-module/interface-sketch.md</code> 里写一节草图，只写调用者的需要：每个操作的签名、接口不变量、错误模式、顺序约束（要不要先建库再存？）、一两个调用示例。再写一节「调用者不必知道」清单，以及一节 <code>## 待改的接口问题</code>——下面分两小节：<code>### 表示暴露</code>（<code>entries</code> 公开可写、<code>add()</code> / <code>search()</code> 返回内部 dict）和 <code>### 接口缺口</code>（测试要读内部状态、但接口上没有公开观察手段，先留空，第 5 步往里记）。提示：JSONL 格式、id 的生成机制（<code>e0001</code> 这种编号怎么来的）、匹配算法在「不必知道」里；id 的语义（非空、唯一、稳定）和匹配语义（大小写、搜哪些字段、结果顺序）不在里面。</li>
+    <li><strong>遮住实现，画接口草图。</strong>在 <code>.scratch/storage-module/interface-sketch.md</code> 里写一节草图，只写调用者的需要：每个操作的签名、接口不变量、错误模式、顺序约束（要不要先建库再存？）、一两个调用示例。再写一节「调用者不必知道」清单，以及一节 <code>## 待改的接口问题</code>——下面分两小节：<code>### 表示暴露</code>（<code>entries</code> 公开可写、<code>add()</code> / <code>search()</code> 返回内部 dict）和 <code>### 接口缺口</code>（测试要读内部状态、但接口上没有公开观察手段，先留空，第 5 步往里记）。提示：JSONL 格式、id 的生成机制（<code>e0001</code> 这种编号怎么来的）、匹配算法在「不必知道」里；id 的语义（非空、唯一、稳定）和匹配语义（大小写、搜哪些字段、结果顺序）不在里面。写之前对照 <code>.scratch/kb-skeleton/brief.md</code> 的 out of scope：这一版里哪些「没做」是故意的（没写契约、没返回副本），哪些是 agent 漏的——前一种正是「表示暴露」那一小节的素材。</li>
     <li><strong>写两条不变量。</strong>接口不变量选一条调用者能依赖、能断言的，例如「每个条目 id 非空且唯一」。表示不变量写「<code>entries</code> 里的每个 dict 恰好四个键、id 非空且互不重复、created_at 是合法的 UTC 时间」，注明它由谁检查、破了会怎样。两条都写成「每个公开操作开始和结束时为真」的句子，别写成「add 之后应该……」这种只管一个时刻的愿望。想验证「重新打开同一路径还能搜到」的话，把它单独记成适配器行为，别混进这两条。</li>
     <li><strong>把它写成测试断言草图。</strong>用 pytest（Python 测试框架）的样子写（真测试是第 19 课的事）：造什么状态、调什么公开操作、断言什么。只许用接口上的操作——<strong>如果断言必须伸手进 <code>store.entries</code> 或直接读 <code>kb.jsonl</code> 才能写，记进 <code>### 接口缺口</code></strong>：这说明接口缺了观察手段。注意别和另一件事混起来：<code>entries</code> 是公开可写属性，这本身是表示暴露，要单独记一条；「测试要读它」和「外部能改它」是两条，修法也不同。</li>
     <li><strong>顺手交一笔学费。</strong>把表示不变量按 MIT 6.031 的写法补进 <code>kb/storage.py</code>：写成普通注释，紧挨 <code>entries</code> 的声明，不要写成公开的 docstring。然后再让它真的被检查一次：在 <code>__init__</code> 和 <code>add()</code> 末尾调用一个 <code>_check_rep()</code>（或先写一条 <code>assert</code>），至少检查「四个键齐全、id 不重复」。<code>created_at</code> 合法性这一条可以先留给下一版，但在注释里写明它还没被检查——检查单会问你还缺哪一条。这是「表示不变量写在 rep 旁边、由代码检查」的第一次实操；检查做不厚，第 15 课迁移 port 时再补。</li>
+    <li><strong>提交这一课，确认分支真的动过。</strong>提交是第 15 课的接口：那一课要从 <code>lesson14-practice</code> 接着做，没有提交，两边就是同一个提交，<code>git diff</code> 只会给你空输出。
+      <pre><code>git add kb/storage.py .scratch/storage-module/interface-sketch.md
+git commit -m "design: storage interface sketch and rep invariant"
+git diff --stat lesson-14-start lesson14-practice   # 看得到这一课改了什么</code></pre></li>
   </ol>
 
   <p>如果画草图时发现自己在描述「怎么实现 JSONL」，停一下：那是实现细节，不属于接口。草图的读者是调用者；给维护者的文档是第 18 课的事。</p>

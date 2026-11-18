@@ -16,9 +16,9 @@
 </header>
 
 <div class="lesson-meta">
-  <span><b>时间</b> 30–40 分钟</span>
-  <span><b>前置</b> 第 8、12 课</span>
-  <span><b>产出</b> 一份 agent brief + 一份 needs-info 的 triage notes（分诊记录）+ 一页 out of scope 记录</span>
+  <span><b>时间</b> 30–40 分钟阅读；练习另计，含一次二十到三十分钟的最小实现</span>
+  <span><b>前置</b> 第 8、10、12 课</span>
+  <span><b>产出</b> 一个能跑的最小骨架（tracer bullet）、一份 agent brief + 一份 needs-info 的 triage notes（分诊记录）+ 一页 out of scope 记录</span>
   <span><b>主读物</b> SWEBOK 第 1 章（validation 与变更控制）；Google SRE（Site Reliability Engineering，站点可靠性工程）《Effective Troubleshooting》</span>
 </div>
 
@@ -28,7 +28,7 @@
     <li>说清 triage 落在第 2 课八个活动的哪一块，以及它和第 12 课 wayfinder 分别管「先理清再动手」的哪两头。</li>
     <li>用 category role（类别角色）和 state role（状态角色）两套标签，把一条原始输入放进状态机；遇到「一条里混两件事」先拆再进。</li>
     <li>说清为什么「验证声明（verify the claim）」排在「动手修」之前，以及「比较急」为什么不能当严重度判据、排期要另算。</li>
-    <li>说清 agent brief 是契约不是描述：耐久（durability）、讲行为不讲步骤、有可测的验收标准、有明确的 out of scope。</li>
+    <li>说清 agent brief 是契约不是描述：durability（耐久）、讲行为不讲步骤、有可测的验收标准、有明确的 out of scope。</li>
     <li>在沙盒里把一条真实的复合输入拆成两条 issue，产出一份 brief 和一份 needs-info 的 triage notes。</li>
   </ul>
 </div>
@@ -43,7 +43,7 @@
 
 <section>
   <h2>问题与概念：一条原始输入，和它不能直接开工的理由</h2>
-  <p>先看一条真实的输入。你的迷你知识库已经在几个同事手里用起来了（他们拿它存 Markdown 资料、按关键词检索），今天 issue tracker（问题跟踪器）上来了一条：</p>
+  <p>先看一条真实的输入。练习里这个迷你知识库（你会在这课练习的第一小节先照 brief 把它立起来，下面先把它当成已经在同事手里用起来的样子）已经在几个同事手里用起来了（他们拿它存 Markdown 资料、按关键词检索），今天 issue tracker（问题跟踪器）上来了一条：</p>
   <blockquote>
     <p><strong>能不能贴个网址就入库？另外搜索的引用有点怪</strong></p>
     <p>我把工具推荐给了组里同事，大家都觉得挺好。但是我们存资料基本都是网页链接，能不能我贴一个网址进去，它就自己把内容抓下来放进库？不然每次还得先手工存成 Markdown，太麻烦了。</p>
@@ -102,7 +102,7 @@
 
   <h3>五步走查：把那条输入过一遍</h3>
   <p><code>@triage</code> 有两种入口：一种是让它列出三桶，即未打标签的、<code>needs-triage</code> 的、<code>needs-info</code> 且报告者已有新回复的，你挑一条；另一种是你直接点名 <code>#42</code>。下面走的是选定一条之后的五步。</p>
-  <p>第一步是 <strong>gather context（收集上下文）</strong>：读全 issue（正文、评论、状态行、时间），如果之前有过 triage notes 就先读，别问已经问过的问题；然后探索仓库——如果前几课建了 <code>GLOSSARY.md</code> 和 <code>docs/adr/</code>，按词表理解概念、尊重相关 ADR（架构决策记录）；没有就按 <code>docs/agents/domain.md</code> 的规定跳过，不在 gather context 这一步现建。同时跑两个检查：一是 <strong>redundancy check（冗余检查）</strong>，按领域概念（而不是报告者的措辞）搜「这功能是不是已经有了」，并报告搜了哪里——沙盒里搜下来，入库只有 <code>kb add</code> 一条手工路径（标题 + 正文，存进 <code>kb.jsonl</code>），没有网页抓取，也没有文件导入，所以没有等价实现；二是 <strong>prior rejection（既往拒绝）</strong>检查，读 <code>.out-of-scope/</code> 下的记录，看有没有概念相近的旧「不」——沙盒里这个目录还没建（仓库约定懒创建），所以没有旧拒。这一步做完，才谈得上「这是什么」。</p>
+  <p>第一步是 <strong>gather context（收集上下文）</strong>：读全 issue（正文、评论、状态行、时间），如果之前有过 triage notes 就先读，别问已经问过的问题；然后探索仓库——如果前几课建了 <code>GLOSSARY.md</code> 和 <code>docs/adr/</code>，按词表理解概念、尊重相关 ADR（架构决策记录）；没有就按 <code>docs/agents/domain.md</code> 的规定跳过，不在 gather context 这一步现建。同时跑两个检查：一是 <strong>redundancy check（冗余检查）</strong>，按领域概念（而不是报告者的措辞）搜「这功能是不是已经有了」，并报告搜了哪里——在这个迷你知识库里搜下来，入库只有 <code>kb add</code> 一条手工路径（标题 + 正文，存进 <code>kb.jsonl</code>），没有网页抓取，也没有文件导入，所以没有等价实现；二是 <strong>prior rejection（既往拒绝）</strong>检查，读 <code>.out-of-scope/</code> 下的记录，看有没有概念相近的旧「不」——沙盒里这个目录还没建（仓库约定懒创建），所以没有旧拒。这一步做完，才谈得上「这是什么」。</p>
   <p>第二步是 <strong>recommend（给出建议）</strong>：agent 带着理由建议类别和状态，附一段和请求相关的仓库现状，然后<strong>停下等你点头</strong>。第三步是 <strong>verify the claim（验证声明）</strong>——动手写任何东西之前，先证实报告者说的成立：bug 就按他的步骤复现；启用了 PR 入口时，PR 就跑相关测试核对 diff；结论只有三种：confirmed（确认，附代码路径）、failed（复现不了）、insufficient detail（信息不够）。我们这条 bug 就卡在这里：查询词有了，但缺哪条结果、哪条引用、期望/实际行号和版本，复现无从下手；insufficient detail 是一个强 <code>needs-info</code> 信号。验证过了再往下走，产物才可信。</p>
   <p>第四步是 <strong>grill if needed（必要时逼问）</strong>：请求还模糊时，agent 同时拉起 <code>grilling</code>（逼问，第 5 课）和 <code>domain-modeling</code>（领域建模，第 4 课），一轮一轮问清，顺手把落定的领域词写进 <code>GLOSSARY.md</code>、把定下来的决定记成 ADR（第 7 课）。对「贴 URL 入库」，一轮像样的问题大概是：入库的是网页正文还是只存链接？正文要不要清洗版式？抓取失败重试还是报错？要不要保留原 URL 当出处？这些问题问完，愿望才变成规格。</p>
   <p>第五步是 <strong>apply outcome（落实去向）</strong>，按状态产出对应的东西：</p>
@@ -129,18 +129,86 @@
 </section>
 
 <section>
+  <h2>开工前：把练习对象叫起来</h2>
+  <p>从第 4 课到第 12 课，你交的都是文件：术语表、ADR、spec、工单、估时表、决策地图。这一课第一次要碰一个能跑的东西——triage 的第 3 步要按报告者的步骤复现，验证「搜索的引用有点怪」那半句，光读文件读不出来。沙盒里得先有一个迷你知识库：<code>kb add</code> 能入库，<code>kb search</code> 能按关键词搜，条目落在 <code>kb.jsonl</code>。骨架是一个命令行界面（CLI）加一个存储模块，先不碰网络。</p>
+  <p>所以练习前面加一步：用二十到三十分钟，照一份短 brief 把这个骨架立出来。这件事在第 10 课有名字——tracer bullet（曳光弹）：先让一条最窄、但能穿透整个系统的真实路径跑通，证明这条路存在，后面再一层层加厚。骨架就是这门课整条链路的曳光弹，它跑通了，后面每一课才有具体的对象可谈。</p>
+  <p>这一版故意不做设计：存储和文件格式混在一个类里，返回值就是内部 dict，接口契约一个字不写，也没有测试和 CI。它们是留给后面几课的对照物——第 14 课问接口该怎么定，第 15 课把存储抽成 port，第 19 课才开始写测试。现在的目标只是让它跑起来。课程不给你成品代码，后面几课批评的就是你自己写的东西，这比批评一份抄来的示例更容易看出问题。</p>
+  <p>动手时把下面这份 brief 贴给 agent，用 <code>@implement</code> 也行，但要先和它说清楚这次关掉技能里的默认动作：不跑 tdd、不写测试、不跑全量测试、不调 code-review、不替你提交。brief 照第 8 课的写法，几行就够，措辞可以自己改，下面这些条款不要动——后面的课按它们找代码：</p>
+
+  <pre><code>在 se-course-sandbox 里做一个迷你知识库的命令行界面（CLI）骨架，给课程后面的练习当对象。
+
+产物与行为：
+- kb/ 包，四个文件：__init__.py（导出 KnowledgeStore）、__main__.py（python -m kb 入口）、
+  cli.py（命令行）、storage.py（存储模块）。文件名和位置照写，后面的课按这些路径找。
+- README.md 写一句项目定位：迷你知识库，先做命令行，后面加一层薄的 HTTP adapter；
+  不做桌面 GUI，不做向量检索。
+- python -m kb add "标题" "正文"：追加一条，打印新条目的 id。
+- python -m kb search "关键词"：大小写不敏感地搜标题和正文，结果顺序与加入顺序一致；
+  每条命中打印「id + 制表符 + 标题」，没有命中就不打印。
+- storage.py 里一个 KnowledgeStore(path)：add(title, text) 追加并返回该条目；
+  search(query) 返回命中的条目列表。
+- 条目是 dict，恰好四个键：id、title、text、created_at。id 形如 e0001，按加入顺序从 1
+  递增，重新打开仓库时接着排。created_at 是 UTC 的 ISO 8601，精确到秒。
+- 持久化：一行一个 JSON，写到仓库根目录的 kb.jsonl；kb.jsonl 和 __pycache__/ 加进 .gitignore。
+
+out of scope（这一版故意不做）：
+- 不写测试，不配 CI；不跑 tdd，不跑 code-review，不替我提交。
+- 不做信息隐藏：entries 是公开属性，add / search 直接返回内部 dict，
+  docstring 只写一句「这是什么」，不写契约。
+- 不加 HTTP adapter，不做导入导出和删除。
+- 不加防御性错误处理，文件写失败就让它按原异常抛出。
+- 不动 AGENTS.md、docs/agents/ 和已有的 .scratch/ 内容；新增文件只限 kb/、README.md、
+  .gitignore。</code></pre>
+
+  <p>agent 交回来的东西可能比 brief 多：顺手补了测试、抽了接口、返回值改成了副本。多出来的部分会把第 14、15、19 课的练习提前做掉——按 out of scope 让它删掉，或者自己删。同理，brief 里没写的行为也别加，比如分页、模糊匹配、编辑条目。</p>
+
+  <p>做完拿这张表过一遍，全对再提交、进练习：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>检查项</th><th>怎么验</th><th>为什么现在就要对</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="what">两个命令能跑</td><td>仓库根目录下 <code>python -m kb add "第一条" "正文"</code> 打印 <code>e0001</code>；<code>python -m kb search "第一条"</code> 打印 <code>e0001</code> 和标题，中间用制表符隔开。</td><td>这一课的复现、第 14、15 课的迁移都以它为前提。</td></tr>
+        <tr><td class="what">条目恰好四个键</td><td>打开 <code>kb.jsonl</code> 看一行，键是 id、title、text、created_at。</td><td>第 14 课的不变量、第 19 课的契约测试都按这四个键写。</td></tr>
+        <tr><td class="what">id 形如 <code>e0001</code>，重开接着排</td><td>再加一条看是不是 <code>e0002</code>；退出进程重新打开仓库后再加一条，编号跟得上。</td><td>第 15 课把 <code>KnowledgeStore</code> 迁成 <code>Store</code> port、第 20 课再给它加 <code>delete</code>，都建在这条约定上。</td></tr>
+        <tr><td class="what">搜索的匹配与顺序</td><td><code>python -m kb search "jsonl"</code> 能命中标题里写着 <code>JSONL</code> 的那条；命中多条时按加入顺序打印。</td><td>第 14、19 课的接口契约按「大小写不敏感、顺序与加入一致」这两句写。</td></tr>
+        <tr><td class="what">created_at 是 UTC 的 ISO 8601</td><td>用 <code>datetime.fromisoformat</code> 读得出来，时区是 <code>UTC</code>（协调世界时）、微秒为 0；写成 <code>+00:00</code> 或 <code>Z</code> 都算过。</td><td>第 19、22 课的断言口径是「时区对、微秒为 0」，不比较字符串长相。</td></tr>
+        <tr><td class="what">仍是第一版（没有 <code>Store</code> port）</td><td><code>kb/storage.py</code> 里只有一个 <code>KnowledgeStore</code>；没有 <code>Store</code>、<code>JsonlStore</code>、<code>InMemoryStore</code>，也没有 <code>_check_rep()</code>。<code>entries</code> 是公开属性，<code>add()</code> / <code>search()</code> 返回的就是内部 dict——改返回值里的一项，再 <code>store.search</code> 一次就看得见。</td><td>第 14 课的「表示暴露」、第 15 课的迁移都拿这些缺陷当对象；提前修好，那两课的练习就没有素材。</td></tr>
+        <tr><td class="what"><code>kb.jsonl</code> 和缓存被忽略</td><td><code>git status</code> 里看不到 <code>kb.jsonl</code>，也看不到 <code>kb/__pycache__/</code>。</td><td>练习数据不进仓库，后面几课的 <code>git status</code> 白名单才清爽。</td></tr>
+        <tr><td class="what">没有 <code>tests/</code>，也没有 CI 和 HTTP</td><td>仓库里找不到 <code>tests/</code>、<code>.github/workflows/</code>，<code>kb/</code> 里也没有 http 或导入、删除相关的文件。</td><td>测试、CI、HTTP adapter 分别是第 19、24、34 课的内容。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>全对之后提交，并把 brief 一起放进这一笔，再打标签。下面的主干名写 <code>master</code>；你的仓库如果叫 <code>main</code>，换成 <code>main</code>。先看一眼 <code>git branch --show-current</code> 再动手：</p>
+
+  <pre><code>git status                                  # 确认只有 kb/、README.md、.gitignore、.scratch/kb-skeleton/
+git add kb README.md .gitignore .scratch/kb-skeleton
+git commit -m "feat: kb skeleton per brief"
+git tag lesson-14-start
+git show lesson-14-start:.scratch/kb-skeleton/brief.md   # 确认标签里有 brief
+git log --oneline -1</code></pre>
+
+  <p>标签一定打在最后一笔提交上：第 14 课从它切分支，brief 是那一课批评这个模块时的证据。如果 agent 已经替你提交过，就再补一笔 brief 的提交，把标签打在新的一笔上。</p>
+  <p>如果你之前已经照这份 brief 建过骨架（<code>git show lesson-14-start:kb/storage.py</code> 出来的就是第一版），这一节跳过，对照表格确认一遍就进练习。要是你手上是别人克隆来的仓库，注意它的主干可能已经是迁移后的完成态；那种仓库只当参考，别拿它当自己的练习仓库，除非你从 <code>lesson-14-start</code> 另起分支并把 <code>origin</code> 换掉。</p>
+</section>
+
+<section>
   <h2>练习：把那条输入拆开、筛一遍、写成 brief</h2>
-  <p>本课练习在沙盒里真做：把这条输入登记进 tracker，走一遍 triage，留下两份产物。输入就用课里这条（也可以换你自己项目里真实收到过的一条，效果更好）。本练习按手工步骤写；让 <code>@triage</code> 跑时，它会按五步做事，在 recommend 和 grill 两处停下来问你，其余步骤它自己取证、起草，你核对。分类、拒不拒、验收标准仍由你拍板。</p>
+  <p>本课练习在沙盒里真做：把这条输入登记进 tracker，走一遍 triage，留下两份产物。第 2 步要跑 <code>kb search</code>，所以上一节先把骨架立好了。输入就用课里这条（也可以换你自己项目里真实收到过的一条，效果更好）。本练习按手工步骤写；让 <code>@triage</code> 跑时，它会按五步做事，在 recommend 和 grill 两处停下来问你，其余步骤它自己取证、起草，你核对。分类、拒不拒、验收标准仍由你拍板。</p>
 
   <ol class="steps">
     <li><strong>拆开并登记。</strong>按 <code>docs/agents/issue-tracker.md</code> 的约定，在 <code>.scratch/&lt;feature-slug&gt;/issues/</code> 下建<strong>两个</strong>文件：<code>01-url-ingest.md</code> 记「贴 URL 入库」，<code>02-citation-lines.md</code> 记「引用行号对不上」。每个文件的顺序是：第一行标题（<code># 贴 URL 入库</code> / <code># 引用行号对不上</code>），标题下第一行 AI 声明（原文见第 4 步），然后 <code>Category: enhancement</code> 或 <code>Category: bug</code>，再写 <code>Status: needs-triage</code>，原话整段贴进去当正文，最后在正文下面加一个 <code>## Comments</code> 标题；第 2、3 步的产物都追加在它下面。<code>Category:</code> 是本课补的本地约定，setup 只规定了 <code>Status:</code>；手工练习按这一行写；让 <code>@triage</code> 跑时，它可能写 <code>Category:</code>，也可能只写角色名 <code>bug</code> / <code>enhancement</code>，反馈两种都认。沙盒是本地 Markdown tracker，没有仓库标签系统。两条不是同一个功能，真实项目会各开目录；练习放同一目录只为对照。</li>
-    <li><strong>把 bug 条筛到 needs-info。</strong>对它跑「gather context + verify」：写一行验证结论——沙盒的 <code>kb search</code> 只打印 id 和标题，没有引用和行号输出；报告者说的「引用」在当前代码里定位不到。他已经给出查询词「引用格式」，缺的是哪条结果、哪条引用、期望 vs 实际行号、用的哪个版本，所以先写 insufficient detail；如果他能给出一个版本、你按步骤仍跑不出他说的现象，再改 failed。把这一行验证结论写进「已确认」第一条，例如「验证结论：insufficient detail，缺哪条结果、哪条引用、期望/实际行号、版本」。然后按 <code>%USERPROFILE%\.agents\skills\triage\SKILL.md</code> 的 Needs-info template 写一份 triage notes，追加到 <code>## Comments</code> 下，标题用 <code>### Triage Notes</code>（模板里的 <code>##</code> 降一级），第一行加 AI 声明。「已确认」共四条：验证结论；查询词是「引用格式」；排期约束是「下周演示前」（业务约束，不是严重度）；严重度未知，等信息。「还需要」只问缺的四样，不要再问「哪条查询」。状态改成 <code>needs-info</code>。</li>
+    <li><strong>把 bug 条筛到 needs-info。</strong>先跑 <code>python -m kb search "引用格式"</code>，确认它只打印 id 和标题，没有引用和行号输出。报告者说的「引用」在当前代码里定位不到：他可能用的是另一个版本，也可能把笔记正文里的引用说成了搜索结果的引用。两种都属于信息不够——缺的仍是哪条结果、哪条引用、期望 vs 实际行号、用的哪个版本，所以先写 insufficient detail；如果他能给出一个版本、你按步骤仍跑不出他说的现象，再改 failed。把这一行验证结论写进「已确认」第一条，例如「验证结论：insufficient detail，缺哪条结果、哪条引用、期望/实际行号、版本」。然后按 <code>%USERPROFILE%\.agents\skills\triage\SKILL.md</code> 的 Needs-info template 写一份 triage notes，追加到 <code>## Comments</code> 下，标题用 <code>### Triage Notes</code>（模板里的 <code>##</code> 降一级），第一行加 AI 声明。「已确认」共四条：验证结论；查询词是「引用格式」；排期约束是「下周演示前」（业务约束，不是严重度）；严重度未知，等信息。「还需要」只问缺的四样，不要再问「哪条查询」。状态改成 <code>needs-info</code>。</li>
     <li><strong>把 enhancement 条筛到 ready-for-agent。</strong>先在 <code>## Comments</code> 下写一条 <code>### Scope Checks</code>，记下两个检查的结论（冗余检查搜了哪里、有没有等价实现；<code>.out-of-scope/</code> 里有没有旧拒），再以维护者身份拍四个产品决定（可以假想报告者在场，只提供他看到的现象和版本）：入库存正文还是链接？版式清洗吗？失败重试吗？保留原 URL 吗？最后按 <code>%USERPROFILE%\.agents\skills\triage\AGENT-BRIEF.md</code> 的 Template 写成一份 agent brief，追加到文件的 <code>## Comments</code> 下，标题用 <code>### Agent Brief</code>（模板里的 <code>##</code> 降一级），第一行加 AI 声明，状态改成 <code>ready-for-agent</code>。</li>
-    <li><strong>补上 AI 声明（disclaimer）。</strong>你登记的两条 issue 也算 triage 发布的 issue：标题下第一行已经写声明；<code>## Comments</code> 下的每条评论（含 triage notes 和 brief）第一行也要写。检查这两处都以 <code>&gt; *This was generated by AI during triage.*</code> 开头。这是 triage 的硬纪律，不是可选项。</li>
+    <li><strong>补上 disclaimer（AI 声明）。</strong>你登记的两条 issue 也算 triage 发布的 issue：标题下第一行已经写声明；<code>## Comments</code> 下的每条评论（含 triage notes 和 brief）第一行也要写。检查这两处都以 <code>&gt; *This was generated by AI during triage.*</code> 开头。这是 triage 的硬纪律，不是可选项。</li>
     <li><strong>顺带走一次「不做」。</strong>假设后来有人在另一条 issue 里提「要不你们出个桌面 GUI（图形用户界面）」，把它判为 out of scope：写一页 <code>.out-of-scope/desktop-gui.md</code>（概念名、决定、理由、历次请求），理由要引用项目定位：这个知识库是 CLI（命令行界面）加一层薄的 HTTP adapter（适配器），目前还没做。这一步让你记住「拒了要留档」长什么样。</li>
   </ol>
 
   <p>写 brief 时如果发现自己在描述「怎么实现」，那是第 8 课的老毛病又犯了：brief 是合同不是施工图。验收标准如果写成「入库功能正常」，重写成一条能打勾的具体行为。</p>
+  <p>练习的产物提交到主干：<code>git add .scratch .out-of-scope</code>，再 <code>git commit -m "triage: two issues, notes, brief"</code>。第 14 课从 <code>lesson-14-start</code> 切分支时，这些文件不会跟过去，这是正常的——那一课只需要代码骨架。</p>
 </section>
 
 <section>
@@ -175,7 +243,7 @@
 
 <div class="source">
   <p><strong>理论来源：</strong>SWEBOK v4 第 1 章 p48–61（五类需求活动）；§5 validation（PDF p57–58：评审、模拟执行、原型；审的是可审的形式，文档或可执行规格）；§6.2 change control（PDF p59：计划驱动项目的变更请求、可选影响分析、接受或拒绝或延后、通知受影响方、跟踪到关闭；敏捷里变更请求进 backlog）；Foreword（PDF p26：generally accepted, consensus-based knowledge，非规范）。Google SRE Book《Being On-Call》（收到并确认告警后 triage、按需升级）与《Effective Troubleshooting》Triage 一节（按影响面定级、先止血、保留证据；Triage/Examine/Diagnose 易败）；CMU 17-313《07-specs》PDF p6（spec 是与客户达成一致的基础，第 8 课把这层一致叫契约）。</p>
-  <p><strong>实践方式：</strong><code>triage</code>（用户调用，<code>disable-model-invocation: true</code>）——三桶入口（未标 / <code>needs-triage</code> / <code>needs-info</code> 有新回复）与五步流程（gather context 含 redundancy / prior rejection 两检查 → recommend 等你点头 → verify the claim → grill if needed 调 grilling + domain-modeling → apply outcome 五种产物）；brief 写法见 <code>AGENT-BRIEF.md</code> 四原则，拒的功能留档见 <code>OUT-OF-SCOPE.md</code>。本机路径 <code>%USERPROFILE%\.agents\skills\triage\</code>（只作实践方式，不作理论来源）。</p>
+  <p><strong>实践方式：</strong><code>triage</code>（用户调用，<code>disable-model-invocation: true</code>）——三桶入口（未标 / <code>needs-triage</code> / <code>needs-info</code> 有新回复）与五步流程（gather context 含 redundancy / prior rejection 两检查 → recommend 等你点头 → verify the claim → grill if needed 调 grilling + domain-modeling → apply outcome 五种产物）；brief 写法见 <code>AGENT-BRIEF.md</code> 四原则，拒的功能留档见 <code>OUT-OF-SCOPE.md</code>。本课立骨架时还会用到 <code>implement</code>（用户调用）：这次只在提示词里借它照 brief 动手的那一段，tdd、测试、code-review、提交四步都关掉，完整规矩第 23 课讲。本机路径 <code>%USERPROFILE%\.agents\skills\triage\</code> 与 <code>%USERPROFILE%\.agents\skills\implement\</code>（只作实践方式，不作理论来源）。</p>
   <p><strong>延伸：</strong>第 14 课进模块 3「设计与架构」，第一站是深模块、信息隐藏与不变量。brief 签好了，接下来轮到把它做对。</p>
 </div>
 
